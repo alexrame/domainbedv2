@@ -1,6 +1,10 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 
 import os
+import pickle
+import pandas as pd
+import numpy as np
+
 import torch
 from PIL import Image, ImageFile
 from torchvision import transforms
@@ -8,6 +12,7 @@ import torchvision.datasets.folder
 from torch.utils.data import TensorDataset, Subset
 from torchvision.datasets import MNIST, ImageFolder
 from torchvision.transforms.functional import rotate
+
 
 # from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
 # from wilds.datasets.fmow_dataset import FMoWDataset
@@ -30,7 +35,9 @@ DATASETS = [
     "SVIRO",
     # WILDS datasets
     "WILDSCamelyon",
-    "WILDSFMoW"
+    "WILDSFMoW",
+    # correlation shift
+    "CelebA_Blond",
 ]
 
 def get_dataset_class(dataset_name):
@@ -338,6 +345,131 @@ class WILDSDataset(MultipleDomainDataset):
         return sorted(list(set(metadata_vals.view(-1).tolist())))
 
 
+# this class is adapted from https://github.com/chingyaoc/fair-mixup/blob/master/celeba/main_dp.py
+class CelebA(torch.utils.data.Dataset):
+
+    def __init__(self, dataframe, folder_dir, target_id, transform=None, cdiv=0, ccor=0):
+        self.dataframe = dataframe
+        self.folder_dir = folder_dir
+        self.target_id = target_id
+        self.transform = transform
+        self.file_names = dataframe.index
+        self.targets = np.concatenate(dataframe.labels.values).astype(int)
+        gender_id = 20
+
+        target_idx0 = np.where(self.targets[:, target_id] == 0)[0]
+        target_idx1 = np.where(self.targets[:, target_id] == 1)[0]
+        gender_idx0 = np.where(self.targets[:, gender_id] == 0)[0]
+        gender_idx1 = np.where(self.targets[:, gender_id] == 1)[0]
+        nontarget_males = list(set(gender_idx1) & set(target_idx0))
+        nontarget_females = list(set(gender_idx0) & set(target_idx0))
+        target_males = list(set(gender_idx1) & set(target_idx1))
+        target_females = list(set(gender_idx0) & set(target_idx1))
+
+        u1 = len(nontarget_males) - int(
+            (1 - ccor) * (len(nontarget_males) - len(nontarget_females))
+        )
+        u2 = len(target_females) - int((1 - ccor) * (len(target_females) - len(target_males)))
+        selected_idx = nontarget_males[:u1] + nontarget_females + target_males + target_females[:u2]
+        self.targets = self.targets[selected_idx]
+        self.file_names = self.file_names[selected_idx]
+
+        target_idx0 = np.where(self.targets[:, target_id] == 0)[0]
+        target_idx1 = np.where(self.targets[:, target_id] == 1)[0]
+        gender_idx0 = np.where(self.targets[:, gender_id] == 0)[0]
+        gender_idx1 = np.where(self.targets[:, gender_id] == 1)[0]
+        nontarget_males = list(set(gender_idx1) & set(target_idx0))
+        nontarget_females = list(set(gender_idx0) & set(target_idx0))
+        target_males = list(set(gender_idx1) & set(target_idx1))
+        target_females = list(set(gender_idx0) & set(target_idx1))
+
+        selected_idx = nontarget_males + nontarget_females[:int(
+            len(nontarget_females) * (1 - cdiv)
+        )] + target_males + target_females[:int(len(target_females) * (1 - cdiv))]
+        self.targets = self.targets[selected_idx]
+        self.file_names = self.file_names[selected_idx]
+
+        target_idx0 = np.where(self.targets[:, target_id] == 0)[0]
+        target_idx1 = np.where(self.targets[:, target_id] == 1)[0]
+        gender_idx0 = np.where(self.targets[:, gender_id] == 0)[0]
+        gender_idx1 = np.where(self.targets[:, gender_id] == 1)[0]
+        nontarget_males = list(set(gender_idx1) & set(target_idx0))
+        nontarget_females = list(set(gender_idx0) & set(target_idx0))
+        target_males = list(set(gender_idx1) & set(target_idx1))
+        target_females = list(set(gender_idx0) & set(target_idx1))
+        print(len(nontarget_males), len(nontarget_females), len(target_males), len(target_females))
+
+        self.targets = self.targets[:, self.target_id]
+
+    def __len__(self):
+        return len(self.targets)
+
+    def __getitem__(self, index):
+        image = Image.open(os.path.join(self.folder_dir, self.file_names[index]))
+        label = self.targets[index]
+        if self.transform:
+            image = self.transform(image)
+        return image, label
+
+
+class CelebA_Blond(MultipleDomainDataset):
+    ENVIRONMENTS = ["unbalanced_1", "unbalanced_2", "balanced"]
+    N_STEPS = 2001
+    CHECKPOINT_FREQ = 200
+
+    def __init__(self, root, test_envs, hparams):
+        super().__init__()
+        environments = self.ENVIRONMENTS
+        print(environments)
+
+        self.input_shape = (3, 224, 224,)
+        self.num_classes = 2 # blond or not
+
+        dataframes = []
+        for env_name in ('tr_env1', 'tr_env2', 'te_env'):
+            with open(f'{root}/celeba/blond_split/{env_name}_df.pickle', 'rb') as handle:
+                dataframes.append(pickle.load(handle))
+        tr_env1, tr_env2, te_env = dataframes
+
+        orig_w = 178
+        orig_h = 218
+        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        images_path = f'{root}/celeba/img_align_celeba'
+        transform = transforms.Compose([
+            transforms.CenterCrop(min(orig_w, orig_h)),
+            transforms.Resize(self.input_shape[1:]),
+            transforms.ToTensor(),
+            normalize,
+        ])
+
+        if hparams['data_augmentation']:
+            augment_transform = transforms.Compose([
+                transforms.RandomResizedCrop(self.input_shape[1:],
+                                             scale=(0.7, 1.0), ratio=(1.0, 1.3333333333333333)),
+                transforms.ColorJitter(0.3, 0.3, 0.3, 0.0),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                normalize
+            ])
+
+            if hparams.get('test_data_augmentation', False):
+                transform = augment_transform
+        else:
+            augment_transform = transform
+
+        cdiv = hparams.get('cdiv', 0)
+        ccor = hparams.get('ccor', 1)
+
+        target_id = 9
+        tr_dataset_1 = CelebA(pd.DataFrame(tr_env1), images_path, target_id, transform=augment_transform,
+                              cdiv=cdiv, ccor=ccor)
+        tr_dataset_2 = CelebA(pd.DataFrame(tr_env2), images_path, target_id, transform=augment_transform,
+                              cdiv=cdiv, ccor=ccor)
+        te_dataset = CelebA(pd.DataFrame(te_env), images_path, target_id, transform=transform)
+
+        self.datasets = [tr_dataset_1, tr_dataset_2, te_dataset]
+
+
 class WILDSCamelyon(WILDSDataset):
     ENVIRONMENTS = [ "hospital_0", "hospital_1", "hospital_2", "hospital_3",
             "hospital_4"]
@@ -354,4 +486,3 @@ class WILDSFMoW(WILDSDataset):
         dataset = FMoWDataset(root_dir=root)
         super().__init__(
             dataset, "region", test_envs, hparams['data_augmentation'], hparams)
-
