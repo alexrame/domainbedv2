@@ -193,7 +193,7 @@ if __name__ == "__main__":
     if args.command == 'launch':
         to_launch = [j for j in jobs if j.state == Job.NOT_LAUNCHED]
         print(f'About to launch {len(to_launch)} jobs.')
-        if not args.skip_confirmation:
+        if False and not args.skip_confirmation:
             ask_for_confirmation()
         launcher_fn = command_launchers.REGISTRY[args.command_launcher]
         Job.launch(to_launch, launcher_fn)

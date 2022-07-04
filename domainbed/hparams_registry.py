@@ -35,6 +35,8 @@ def _hparams(algorithm, dataset, random_seed):
     _hparam('nonlinear_classifier', False,
             lambda r: bool(r.choice([False, False])))
 
+    MAX_EPOCH_5000 = dataset != 'CelebA_Blond'
+
     # Algorithm-specific hparam definitions. Each block of code below
     # corresponds to exactly one algorithm.
 
@@ -61,7 +63,7 @@ def _hparams(algorithm, dataset, random_seed):
     elif algorithm == "IRM":
         _hparam('irm_lambda', 1e2, lambda r: 10**r.uniform(-1, 5))
         _hparam('irm_penalty_anneal_iters', 500,
-                lambda r: int(10**r.uniform(0, 4)))
+                lambda r: int(10**r.uniform(0, 4. if MAX_EPOCH_5000 else 3.5)))
 
     elif algorithm == "Mixup":
         _hparam('mixup_alpha', 0.2, lambda r: 10**r.uniform(-1, -1))
@@ -82,7 +84,7 @@ def _hparams(algorithm, dataset, random_seed):
     elif algorithm == "VREx":
         _hparam('vrex_lambda', 1e1, lambda r: 10**r.uniform(-1, 5))
         _hparam('vrex_penalty_anneal_iters', 500,
-                lambda r: int(10**r.uniform(0, 4)))
+                lambda r: int(10**r.uniform(0, 4. if MAX_EPOCH_5000 else 3.5)))
 
     elif algorithm == "SD":
         _hparam('sd_reg', 0.1, lambda r: 10**r.uniform(-5, -1))
@@ -98,7 +100,7 @@ def _hparams(algorithm, dataset, random_seed):
         _hparam('k', 1e+1, lambda r: 10**r.uniform(-3, 5))
 
     elif algorithm == "Fishr":
-        _hparam('lambda', 1000., lambda r: 10**r.uniform(1., 4.))
+        _hparam('lambda', 1000., lambda r: int(10**r.uniform(0, 4. if MAX_EPOCH_5000 else 3.5)))
         _hparam('penalty_anneal_iters', 1500, lambda r: int(r.uniform(0., 5000.)))
         _hparam('ema', 0.95, lambda r: r.uniform(0.90, 0.99))
 
