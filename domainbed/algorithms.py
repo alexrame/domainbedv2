@@ -130,7 +130,7 @@ class ERM(Algorithm):
         return {'loss': loss.item()}
 
     def predict(self, x):
-        return {"erm": self.network(x)}
+        return {"": self.network(x)}
 
     ## DiWA for saving initialization ##
     def save_path_for_future_init(self, path_for_init):
@@ -162,7 +162,7 @@ class MA(ERM):
         self.network_ma.eval()
         return {
             "ma": self.network_ma(x),
-            "erm": self.network(x)
+            "": self.network(x)
             }
 
     def update_ma(self):
