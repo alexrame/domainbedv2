@@ -1,5 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
-
+import os
 import itertools
 import numpy as np
 
@@ -64,8 +64,8 @@ class OracleSelectionMethod(SelectionMethod):
         if not len(run_records):
             return None
         test_env = run_records[0]['args']['test_envs'][0]
-        test_out_acc_key = 'env{}_out_acc'.format(test_env)
-        test_in_acc_key = 'env{}_in_acc'.format(test_env)
+        test_out_acc_key = 'env{}_out_acc'.format(test_env) + os.environ.get("KEYACC", "")
+        test_in_acc_key = 'env{}_in_acc'.format(test_env) + os.environ.get("KEYACC", "")
         chosen_record = run_records.sorted(lambda r: r['step'])[-1]
         return {
             'val_acc':  chosen_record[test_out_acc_key],
@@ -82,11 +82,11 @@ class IIDAccuracySelectionMethod(SelectionMethod):
         test_env = record['args']['test_envs'][0]
         val_env_keys = []
         for i in itertools.count():
-            if f'env{i}_out_acc' not in record:
+            if f'env{i}_out_acc' + os.environ.get("KEYACC", "") not in record:
                 break
             if i != test_env:
-                val_env_keys.append(f'env{i}_out_acc')
-        test_in_acc_key = 'env{}_in_acc'.format(test_env)
+                val_env_keys.append(f'env{i}_out_acc' + os.environ.get("KEYACC", ""))
+        test_in_acc_key = 'env{}_in_acc'.format(test_env) + os.environ.get("KEYACC", "")
         return {
             'val_acc': np.mean([record[key] for key in val_env_keys]),
             'test_acc': record[test_in_acc_key]

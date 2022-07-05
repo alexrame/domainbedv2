@@ -192,39 +192,47 @@ def split_meta_train_test(minibatches, num_meta_test=1):
     meta_test = perm[-num_meta_test:]
 
     for i,j in zip(meta_train, cycle(meta_test)):
-         xi, yi = minibatches[i][0], minibatches[i][1]
-         xj, yj = minibatches[j][0], minibatches[j][1]
+        xi, yi = minibatches[i][0], minibatches[i][1]
+        xj, yj = minibatches[j][0], minibatches[j][1]
 
-         min_n = min(len(xi), len(xj))
-         pairs.append(((xi[:min_n], yi[:min_n]), (xj[:min_n], yj[:min_n])))
+        min_n = min(len(xi), len(xj))
+        pairs.append(((xi[:min_n], yi[:min_n]), (xj[:min_n], yj[:min_n])))
 
     return pairs
 
 def accuracy(network, loader, weights, device):
-    correct = 0
-    total = 0
+    dict_key_to_correct = {}
     weights_offset = 0
+    total = 0
 
     network.eval()
     with torch.no_grad():
         for x, y in loader:
             x = x.to(device)
             y = y.to(device)
-            p = network.predict(x)
+            prediction = network.predict(x)
+            if not isinstance(prediction, dict):
+                prediction = {"": prediction}
             if weights is None:
                 batch_weights = torch.ones(len(x))
             else:
-                batch_weights = weights[weights_offset : weights_offset + len(x)]
+                batch_weights = weights[weights_offset:weights_offset + len(x)]
                 weights_offset += len(x)
             batch_weights = batch_weights.to(device)
-            if p.size(1) == 1:
-                correct += (p.gt(0).eq(y).float() * batch_weights.view(-1, 1)).sum().item()
-            else:
-                correct += (p.argmax(1).eq(y).float() * batch_weights).sum().item()
             total += batch_weights.sum().item()
+
+            for key_p, p in prediction.items():
+                if key_p not in dict_key_to_correct:
+                    dict_key_to_correct[key_p] = 0
+                if p.size(1) == 1:
+                    dict_key_to_correct[key_p] += (p.gt(0).eq(y).float() * batch_weights.view(-1, 1)).sum().item()
+                else:
+                    dict_key_to_correct[key_p] += (p.argmax(1).eq(y).float() * batch_weights).sum().item()
+
     network.train()
 
-    return correct / total
+    return {key_p: correct / total for key_p, correct in dict_key_to_correct.items()}
+
 
 class Tee:
     def __init__(self, fname, mode="a"):

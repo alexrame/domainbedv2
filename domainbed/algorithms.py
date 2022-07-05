@@ -121,7 +121,7 @@ class ERM(Algorithm):
     def update(self, minibatches, unlabeled=None):
         all_x = torch.cat([x for x,y in minibatches])
         all_y = torch.cat([y for x,y in minibatches])
-        loss = F.cross_entropy(self.predict(all_x), all_y)
+        loss = F.cross_entropy(self.network(all_x), all_y)
 
         self.optimizer.zero_grad()
         loss.backward()
@@ -130,7 +130,7 @@ class ERM(Algorithm):
         return {'loss': loss.item()}
 
     def predict(self, x):
-        return self.network(x)
+        return {"erm": self.network(x)}
 
     ## DiWA for saving initialization ##
     def save_path_for_future_init(self, path_for_init):
@@ -160,7 +160,10 @@ class MA(ERM):
 
     def predict(self, x):
         self.network_ma.eval()
-        return self.network_ma(x)
+        return {
+            "ma": self.network_ma(x),
+            "erm": self.network(x)
+            }
 
     def update_ma(self):
         self.global_iter += 1
