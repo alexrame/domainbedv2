@@ -23,21 +23,40 @@ class SelectionMethod:
         """
         raise NotImplementedError
 
+    # @classmethod
+    # def hparams_accs(self, records):
+    #     """
+    #     Given all records from a single (dataset, algorithm, test env) pair,
+    #     return a sorted list of (run_acc, records) tuples.
+    #     """
+    #     return (records.group('args.hparams_seed')
+    #         .map(lambda _, run_records:
+    #             (
+    #                 self.run_acc(run_records),
+    #                 run_records
+    #             )
+    #         ).filter(lambda x: x[0] is not None)
+    #         .sorted(key=lambda x: x[0]['val_acc'])[::-1]
+    #     )
     @classmethod
     def hparams_accs(self, records):
         """
         Given all records from a single (dataset, algorithm, test env) pair,
         return a sorted list of (run_acc, records) tuples.
         """
-        return (records.group('args.hparams_seed')
+        accs = (records.group('args.hparams_seed')
             .map(lambda _, run_records:
                 (
                     self.run_acc(run_records),
                     run_records
                 )
             ).filter(lambda x: x[0] is not None)
-            .sorted(key=lambda x: x[0]['val_acc'])[::-1]
+            .sorted(key=lambda x: x[0]['val_acc'])
         )
+        test_env = accs[0][1][0]["args"]["test_envs"][0]
+        trial_seed = accs[0][1][0]["args"]["trial_seed"]
+        print(f"len(accs): {len(accs)} for test_env: {test_env} and trial_seed: {trial_seed} for dataset: {accs[0][1][0]['args']['dataset']}")
+        return accs[::-1]
 
     @classmethod
     def sweep_acc(self, records):
