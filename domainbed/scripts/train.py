@@ -50,7 +50,7 @@ if __name__ == "__main__":
     parser.add_argument('--skip_model_save', action='store_true')
     parser.add_argument('--save_model_every_checkpoint', action='store_true')
     ## DiWA ##
-    parser.add_argument('--init_step', action='store_true')
+    parser.add_argument('--train_only_classifier', action='store_true')
     parser.add_argument('--path_for_init', type=str, default=None)
     args = parser.parse_args()
 
@@ -287,7 +287,7 @@ if __name__ == "__main__":
 
     ## DiWA ##
     if args.init_step:
-        assert args.train_only_classifier
+        assert args.train_only_classifier or n_steps == -1
         algorithm.save_path_for_future_init(args.path_for_init)
     save_checkpoint('model.pkl')
 
