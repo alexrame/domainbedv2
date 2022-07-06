@@ -34,7 +34,7 @@ def get_score(results, test_envs, metric_key="acc"):
                 val_env_keys.append(acc_key)
         else:
             break
-    assert i > 0
+    assert i > 0, results
     return np.mean([results[key] for key in val_env_keys])
 
 ## DiWA ##
