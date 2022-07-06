@@ -18,7 +18,7 @@ def _get_args():
     parser.add_argument('--test_env', type=int)
 
     parser.add_argument('--output_dir', type=str)
-    parser.add_argument('--data_dir', type=str, default="default")
+    parser.add_argument('--data_dir', type=str)
 
     # select which checkpoints
     parser.add_argument('--weight_selection', type=str, default="uniform") # or "restricted"
