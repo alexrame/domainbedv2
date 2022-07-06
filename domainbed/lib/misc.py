@@ -18,8 +18,11 @@ import operator
 import numpy as np
 import torch
 import tqdm
+import socket
 from collections import Counter
 
+def get_machine_name():
+    return socket.gethostname()
 
 ## DiWA ##
 def get_score(results, test_envs, metric_key="acc"):

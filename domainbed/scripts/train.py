@@ -14,11 +14,12 @@ import PIL
 import torch
 import torchvision
 import torch.utils.data
+from torch.utils.tensorboard import SummaryWriter
 
 from domainbed import datasets
 from domainbed import hparams_registry
 from domainbed import algorithms
-from domainbed.lib import misc
+from domainbed.lib import misc, experiments_handler
 from domainbed.lib.fast_data_loader import InfiniteDataLoader, FastDataLoader
 
 if __name__ == "__main__":
@@ -61,6 +62,8 @@ if __name__ == "__main__":
     os.makedirs(args.output_dir, exist_ok=True)
     sys.stdout = misc.Tee(os.path.join(args.output_dir, 'out.txt'))
     sys.stderr = misc.Tee(os.path.join(args.output_dir, 'err.txt'))
+
+    writer = SummaryWriter(log_dir=args.output_dir)
 
     print("Environment:")
     print("\tPython: {}".format(sys.version.split(" ")[0]))
@@ -240,12 +243,14 @@ if __name__ == "__main__":
 
             for key, val in checkpoint_vals.items():
                 results[key] = np.mean(val)
+                writer.add_scalar("Metrics/" + key, results[key], step)
 
             evals = zip(eval_loader_names, eval_loaders, eval_weights)
             for name, loader, weights in evals:
                 acc = misc.accuracy(algorithm, loader, weights, device)
                 for key_acc, val_acc in acc.items():
                     results[name + '_acc' + key_acc] = val_acc
+                    writer.add_scalar(f'{name}_{key}', acc[key], step)
 
             results['mem_gb'] = torch.cuda.max_memory_allocated() / (1024.*1024.*1024.)
 
@@ -290,3 +295,11 @@ if __name__ == "__main__":
 
     with open(os.path.join(args.output_dir, 'done'), 'w') as f:
         f.write('done')
+
+    experiments_handler.main_mlflow(
+        experiments_handler.get_run_name(args.__dict__, hparams=hparams),
+        results,
+        args=args.__dict__,
+        output_dir=args.output_dir,
+        hparams=hparams,
+    )
