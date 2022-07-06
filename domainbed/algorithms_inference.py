@@ -20,16 +20,13 @@ class DiWA(algorithms.ERM):
         """
         """
         algorithms.Algorithm.__init__(self, input_shape, num_classes, num_domains, hparams={})
-        self.network_wa = None
+        self.network = None
         self.global_count = 0
 
     def add_weights(self, network):
-        if self.network_wa is None:
-            self.network_wa = copy.deepcopy(network)
+        if self.network is None:
+            self.network = copy.deepcopy(network)
         else:
-            for param_q, param_k in zip(network.parameters(), self.network_wa.parameters()):
+            for param_q, param_k in zip(network.parameters(), self.network.parameters()):
                 param_k.data = (param_k.data * self.global_count + param_q.data) / (1. + self.global_count)
         self.global_count += 1
-
-    def predict(self, x):
-        return self.network_wa(x)

@@ -28,6 +28,7 @@ def _get_args():
         default="-1",
         help='Trial number (used for seeding split_dataset and random_hparams).'
     )
+    parser.add_argument('--path_for_init', type=str, default=None)
 
     inf_args = parser.parse_args()
     return inf_args
@@ -115,6 +116,9 @@ def get_wa_results(
 
     wa_algorithm.to(device)
     wa_algorithm.eval()
+    if inf_args.path_for_init:
+        wa_algorithm.save_path_for_future_init(inf_args.path_for_init)
+
     random.seed(train_args["seed"])
     np.random.seed(train_args["seed"])
     torch.manual_seed(train_args["seed"])
@@ -134,7 +138,9 @@ def get_wa_results(
 
     for name, loader in data_evals:
         print(f"Inference at {name}")
-        dict_results[name + "_acc"] = misc.accuracy(wa_algorithm, loader, None, device)
+        acc = misc.accuracy(wa_algorithm, loader, None, device)
+        for acc_key, acc_value in acc.items():
+            dict_results[name + acc_key + "_acc"] = acc_value
 
     dict_results["length"] = len(good_checkpoints)
     return dict_results
