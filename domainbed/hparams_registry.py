@@ -1,4 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
+import os
 import numpy as np
 from domainbed.lib import misc
 
@@ -145,27 +146,33 @@ def _hparams(algorithm, dataset, random_seed):
 
     ## DiWA ##
     ## Mild hyperparameter ranges as first defined in SWAD (https://arxiv.org/abs/2102.08604)
-    _hparam('lr', 5e-5, lambda r: r.choice([1e-5, 3e-5, 5e-5]))
-    # if dataset in SMALL_IMAGES:
-    #     _hparam('lr', 1e-3, lambda r: 10**r.uniform(-4.5, -2.5))
-    # else:
-    #     _hparam('lr', 5e-5, lambda r: 10**r.uniform(-5, -3.5))
+    if os.environ.get("HP") == "L":
+        if dataset in SMALL_IMAGES:
+            _hparam('lr', 1e-3, lambda r: 10**r.uniform(-4.5, -2.5))
+        else:
+            _hparam('lr', 5e-5, lambda r: 10**r.uniform(-5, -3.5))
+    else:
+        _hparam('lr', 5e-5, lambda r: r.choice([1e-5, 3e-5, 5e-5]))
 
-    _hparam('weight_decay', 0, lambda r: r.choice([1e-4, 1e-6]))
-    # if dataset in SMALL_IMAGES:
-    #     _hparam('weight_decay', 0., lambda r: 0.)
-    # else:
-    #     _hparam('weight_decay', 0., lambda r: 10**r.uniform(-6, -2))
+    if os.environ.get("HP") == "L":
+        if dataset in SMALL_IMAGES:
+            _hparam('weight_decay', 0., lambda r: 0.)
+        else:
+            _hparam('weight_decay', 0., lambda r: 10**r.uniform(-6, -2))
+    else:
+        _hparam('weight_decay', 0, lambda r: r.choice([1e-4, 1e-6]))
 
-    _hparam('batch_size', 32, lambda r: 32)
-    # if dataset in SMALL_IMAGES:
-    #     _hparam('batch_size', 64, lambda r: int(2**r.uniform(3, 9)))
-    # elif algorithm == 'ARM':
-    #     _hparam('batch_size', 8, lambda r: 8)
-    # elif dataset == 'DomainNet':
-    #     _hparam('batch_size', 32, lambda r: int(2**r.uniform(3, 5)))
-    # else:
-    #     _hparam('batch_size', 32, lambda r: int(2**r.uniform(3, 5.5)))
+    if os.environ.get("HP") == "L":
+        if dataset in SMALL_IMAGES:
+            _hparam('batch_size', 64, lambda r: int(2**r.uniform(3, 9)))
+        elif algorithm == 'ARM':
+            _hparam('batch_size', 8, lambda r: 8)
+        elif dataset == 'DomainNet':
+            _hparam('batch_size', 32, lambda r: int(2**r.uniform(3, 5)))
+        else:
+            _hparam('batch_size', 32, lambda r: int(2**r.uniform(3, 5.5)))
+    else:
+        _hparam('batch_size', 32, lambda r: 32)
 
     if algorithm in ['DANN', 'CDANN'] and dataset in SMALL_IMAGES:
         _hparam('lr_g', 1e-3, lambda r: 10**r.uniform(-4.5, -2.5))
