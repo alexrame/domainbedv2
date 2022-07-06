@@ -273,6 +273,8 @@ if __name__ == "__main__":
             ## DiWA ##
             current_score = misc.get_score(results, args.test_envs)
             if current_score > best_score:
+                results["best_score"] = best_score
+                results["best_step"] = step
                 best_score = current_score
                 print(f"Saving new best score at step: {step} at path: model_best.pkl")
                 save_checkpoint(
