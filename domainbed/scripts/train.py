@@ -57,7 +57,6 @@ if __name__ == "__main__":
     # If we ever want to implement checkpointing, just persist these values
     # every once in a while, and then load them from disk here.
     start_step = 0
-    algorithm_dict = None
 
     os.makedirs(args.output_dir, exist_ok=True)
     sys.stdout = misc.Tee(os.path.join(args.output_dir, 'out.txt'))
@@ -178,18 +177,15 @@ if __name__ == "__main__":
     eval_loader_names += ['env{}_uda'.format(i)
         for i in range(len(uda_splits))]
 
-    algorithm_class = algorithms.get_algorithm_class(args.algorithm)
-    if args.algorithm == "ERM":
-        algorithm = algorithm_class(dataset.input_shape, dataset.num_classes,
-            len(dataset) - len(args.test_envs), hparams,
-            init_step=args.init_step,
-            path_for_init=args.path_for_init)
-    else:
-        algorithm = algorithm_class(dataset.input_shape, dataset.num_classes,
-            len(dataset) - len(args.test_envs), hparams)
+    algorithm = algorithms.get_algorithm_class(args.algorithm)(
+        dataset.input_shape,
+        dataset.num_classes,
+        len(dataset) - len(args.test_envs),
+        hparams,
+        train_only_classifier=args.train_only_classifier,
+        path_for_init=args.path_for_init
+    )
 
-    if algorithm_dict is not None:
-        algorithm.load_state_dict(algorithm_dict)
 
     algorithm.to(device)
 
@@ -283,7 +279,6 @@ if __name__ == "__main__":
                 )
                 algorithm.to(device)
 
-            algorithm_dict = algorithm.state_dict()
             start_step = step + 1
             checkpoint_vals = collections.defaultdict(lambda: [])
 
@@ -292,6 +287,7 @@ if __name__ == "__main__":
 
     ## DiWA ##
     if args.init_step:
+        assert args.train_only_classifier
         algorithm.save_path_for_future_init(args.path_for_init)
     save_checkpoint('model.pkl')
 
