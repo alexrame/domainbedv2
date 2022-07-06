@@ -246,7 +246,7 @@ if __name__ == "__main__":
                 acc = misc.accuracy(algorithm, loader, weights, device)
                 for key_acc, val_acc in acc.items():
                     results[name + '_acc' + key_acc] = val_acc
-                    writer.add_scalar(f'{name}_{key}', acc[key], step)
+                    writer.add_scalar(name + '_acc' + key_acc, val_acc, step)
 
             results['mem_gb'] = torch.cuda.max_memory_allocated() / (1024.*1024.*1024.)
 
