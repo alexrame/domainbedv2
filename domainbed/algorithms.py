@@ -28,28 +28,10 @@ ALGORITHMS = [
     'IRM',
     'GroupDRO',
     'Mixup',
-    'MLDG',
     'CORAL',
     'MMD',
-    'DANN',
-    'CDANN',
-    'MTL',
-    'SagNet',
-    'ARM',
     'VREx',
-    'RSC',
-    'SD',
-    'ANDMask',
-    'SANDMask',
-    'IGA',
-    'SelfReg',
     "Fishr",
-    'TRM',
-    'IB_ERM',
-    'IB_IRM',
-    'CAD',
-    'CondCAD',
-    'Transfer',
 ]
 
 def get_algorithm_class(algorithm_name):
@@ -526,6 +508,7 @@ class Fishr(Algorithm):
         ## DiWA load shared initialization ##
         if path_for_init is not None:
             if os.path.exists(path_for_init):
+                print(f"Load weights from {path_for_init}")
                 self.network.load_state_dict(torch.load(path_for_init))
             else:
                 assert self._train_only_classifier, "Your initialization has not been saved yet"

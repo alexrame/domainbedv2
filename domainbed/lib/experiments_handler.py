@@ -26,13 +26,13 @@ def set_experiment_name(args):
     #     cfg.MLFLOW.EXPERIMENT_NAME)
 
 
-def get_run_name(args, hparams, hp):
+def get_run_name(args, hparams):
     name = "_".join([args[key] for key in [
         "dataset",
         "algorithm",
     ]])
     keys = sorted(hparams.keys())
-    keys.extend(list(hp.keys()))
+    # keys.extend(list(hp.keys()))
     keys = list(dict.fromkeys(keys))
 
     def params_to_str(param):

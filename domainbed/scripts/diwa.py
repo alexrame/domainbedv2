@@ -59,20 +59,27 @@ def create_splits(domain, inf_args, dataset, _filter):
     return splits
 
 
+def get_best_model(output_folder):
+    if "model_best.pkl" in os.listdir(output_folder):
+        return os.path.join(output_folder, "model_best.pkl")
+    if "best" in os.listdir(output_folder):
+        return os.path.join(output_folder, "best/model_with_weights.pkl")
+    return None
+
 def get_dict_folder_to_score(inf_args):
-    output_folders = [
+    _output_folders = [
         os.path.join(output_dir, path)
         for output_dir in inf_args.output_dir.split(",")
         for path in os.listdir(output_dir)
     ]
     output_folders = [
-        output_folder for output_folder in output_folders
-        if os.path.isdir(output_folder) and "done" in os.listdir(output_folder) and "model_best.pkl" in os.listdir(output_folder)
+        output_folder for output_folder in _output_folders
+        if os.path.isdir(output_folder) and "done" in os.listdir(output_folder) and get_best_model(output_folder)
     ]
 
     dict_folder_to_score = {}
     for folder in output_folders:
-        model_path = os.path.join(folder, "model_best.pkl")
+        model_path = get_best_model(folder)
         save_dict = torch.load(model_path)
         train_args = save_dict["args"]
 
@@ -86,7 +93,8 @@ def get_dict_folder_to_score(inf_args):
         print(f"Found: {folder}")
         dict_folder_to_score[folder] = misc.get_score(
             json.loads(save_dict["results"]),
-            [inf_args.test_env], metric_key="acc")
+            [inf_args.test_env],
+            metric_key=os.environ.get("KEYACC", "acc"))
 
     if len(dict_folder_to_score) == 0:
         raise ValueError(f"No folders found for: {inf_args}")
@@ -101,7 +109,7 @@ def get_wa_results(
         len(dataset) - 1,
     )
     for folder in good_checkpoints:
-        save_dict = torch.load(os.path.join(folder, "model_best.pkl"))
+        save_dict = torch.load(get_best_model(folder))
         train_args = save_dict["args"]
 
         # load individual weights
