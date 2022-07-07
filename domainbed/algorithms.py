@@ -108,8 +108,9 @@ class ERM(Algorithm):
         self.network = nn.Sequential(self.featurizer, self.classifier)
 
         ## DiWA load shared initialization ##
-        if path_for_init is not None:
+        if path_for_init not in [None, ""]:
             if os.path.exists(path_for_init):
+                print(f"Load weights from {path_for_init}")
                 self.network.load_state_dict(torch.load(path_for_init))
             else:
                 assert self._train_only_classifier, "Your initialization has not been saved yet"
@@ -120,6 +121,7 @@ class ERM(Algorithm):
             parameters_to_be_optimized = self.network.parameters()
         else:
             # linear probing
+            print("Learn only last classification layer")
             parameters_to_be_optimized = self.classifier.parameters()
 
         self.optimizer = torch.optim.Adam(
