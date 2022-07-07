@@ -161,7 +161,7 @@ if __name__ == "__main__":
     ## DiWA ##
     parser.add_argument('--test_env', type=int, default=None)
     parser.add_argument('--path_for_init', type=str, default=None)
-    parser.add_argument('--train_only_classifier', action='store_true')
+    parser.add_argument('--train_only_classifier', type=int, default=0)
 
     args = parser.parse_args()
 
