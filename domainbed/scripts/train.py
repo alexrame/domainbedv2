@@ -51,12 +51,9 @@ if __name__ == "__main__":
     parser.add_argument('--save_model_every_checkpoint', action='store_true')
     ## DiWA ##
     parser.add_argument('--train_only_classifier', action='store_true')
-    parser.add_argument('--path_for_init', type=str, default=None)
+    parser.add_argument('--init_step', action='store_true')
+    parser.add_argument('--path_for_init', type=str, default="")
     args = parser.parse_args()
-
-    # If we ever want to implement checkpointing, just persist these values
-    # every once in a while, and then load them from disk here.
-    start_step = 0
 
     os.makedirs(args.output_dir, exist_ok=True)
     sys.stdout = misc.Tee(os.path.join(args.output_dir, 'out.txt'))
@@ -177,6 +174,9 @@ if __name__ == "__main__":
     eval_loader_names += ['env{}_uda'.format(i)
         for i in range(len(uda_splits))]
 
+    if "{trial_seed}" in args.path_for_init:
+        args.path_for_init = args.path_for_init.format(trial_seed=args.trial_seed)
+
     algorithm = algorithms.get_algorithm_class(args.algorithm)(
         dataset.input_shape,
         dataset.num_classes,
@@ -216,7 +216,7 @@ if __name__ == "__main__":
 
     best_score = -float("inf")
     last_results_keys = None
-    for step in range(start_step, n_steps):
+    for step in range(0, n_steps):
         step_start_time = time.time()
         minibatches_device = [(x.to(device), y.to(device))
             for x,y in next(train_minibatches_iterator)]
@@ -272,18 +272,18 @@ if __name__ == "__main__":
                 results["best_score"] = best_score
                 results["best_step"] = step
                 best_score = current_score
-                print(f"Saving new best score at step: {step} at path: model_best.pkl")
-                save_checkpoint(
-                    'model_best.pkl',
-                    results=json.dumps(results, sort_keys=True),
-                )
-                algorithm.to(device)
+                if step != 0:
+                    print(f"Saving new best score at step: {step} at path: model_best.pkl")
+                    save_checkpoint(
+                        'model_best.pkl',
+                        results=json.dumps(results, sort_keys=True),
+                    )
+                    algorithm.to(device)
 
-            start_step = step + 1
             checkpoint_vals = collections.defaultdict(lambda: [])
 
             if args.save_model_every_checkpoint:
-                save_checkpoint(f'model_step{step}.pkl')
+                save_checkpoint(f'model_step{step}.pkl', results=json.dumps(results, sort_keys=True))
 
     ## DiWA ##
     if args.init_step:

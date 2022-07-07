@@ -28,7 +28,7 @@ def _get_args():
         default="-1",
         help='Trial number (used for seeding split_dataset and random_hparams).'
     )
-    parser.add_argument('--path_for_init', type=str, default=None)
+    parser.add_argument('--path_for_save_weight', type=str, default=None)
 
     inf_args = parser.parse_args()
     return inf_args
@@ -116,8 +116,8 @@ def get_wa_results(
 
     wa_algorithm.to(device)
     wa_algorithm.eval()
-    if inf_args.path_for_init:
-        wa_algorithm.save_path_for_future_init(inf_args.path_for_init)
+    if inf_args.path_for_save_weight:
+        wa_algorithm.save_path_for_future_init(inf_args.path_for_save_weight)
 
     random.seed(train_args["seed"])
     np.random.seed(train_args["seed"])

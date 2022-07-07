@@ -131,7 +131,10 @@ class ERM(Algorithm):
     def update(self, minibatches, unlabeled=None):
         all_x = torch.cat([x for x,y in minibatches])
         all_y = torch.cat([y for x,y in minibatches])
-        loss = F.cross_entropy(self.network(all_x), all_y)
+        all_features = self.featurizer(all_x)
+        if self._train_only_classifier:
+            all_features = all_features.detach()
+        loss = F.cross_entropy(self.classifier(all_features), all_y)
 
         self.optimizer.zero_grad()
         loss.backward()
@@ -212,7 +215,11 @@ class IRM(ERM):
         penalty = 0.
 
         all_x = torch.cat([x for x,y in minibatches])
-        all_logits = self.network(all_x)
+        all_features = self.featurizer(all_x)
+        if self._train_only_classifier:
+            all_features = all_features.detach()
+        all_logits = self.classifier(all_features)
+
         all_logits_idx = 0
         for i, (x, y) in enumerate(minibatches):
             logits = all_logits[all_logits_idx:all_logits_idx + x.shape[0]]
@@ -256,7 +263,11 @@ class VREx(ERM):
         nll = 0.
 
         all_x = torch.cat([x for x, y in minibatches])
-        all_logits = self.network(all_x)
+        all_features = self.featurizer(all_x)
+        if self._train_only_classifier:
+            all_features = all_features.detach()
+        all_logits = self.classifier(all_features)
+
         all_logits_idx = 0
         losses = torch.zeros(len(minibatches))
         for i, (x, y) in enumerate(minibatches):
@@ -301,7 +312,10 @@ class Mixup(ERM):
                                  self.hparams["mixup_alpha"])
 
             x = lam * xi + (1 - lam) * xj
-            predictions = self.predict(x)
+            features = self.featurizer(x)
+            if self._train_only_classifier:
+                features = features.detach()
+            predictions = self.classifier(features)
 
             objective += lam * F.cross_entropy(predictions, yi)
             objective += (1 - lam) * F.cross_entropy(predictions, yj)
@@ -335,7 +349,10 @@ class GroupDRO(ERM):
 
         for m in range(len(minibatches)):
             x, y = minibatches[m]
-            losses[m] = F.cross_entropy(self.predict(x), y)
+            features = self.featurizer(x)
+            if self._train_only_classifier:
+                features = features.detach()
+            losses[m] = F.cross_entropy(self.classifier(features), y)
             self.q[m] *= (self.hparams["groupdro_eta"] * losses[m].data).exp()
 
         self.q /= self.q.sum()
@@ -363,6 +380,7 @@ class AbstractMMD(ERM):
             self.kernel_type = "gaussian"
         else:
             self.kernel_type = "mean_cov"
+        assert not self._train_only_classifier
 
     def my_cdist(self, x1, x2):
         x1_norm = x1.pow(2).sum(dim=-1, keepdim=True)
@@ -457,7 +475,12 @@ class SD(ERM):
     def update(self, minibatches, unlabeled=None):
         all_x = torch.cat([x for x,y in minibatches])
         all_y = torch.cat([y for x,y in minibatches])
-        all_p = self.predict(all_x)
+
+        all_x = torch.cat([x for x, y in minibatches])
+        all_features = self.featurizer(all_x)
+        if self._train_only_classifier:
+            all_features = all_features.detach()
+        all_p = self.classifier(all_features)
 
         loss = F.cross_entropy(all_p, all_y)
         penalty = (all_p ** 2).mean()
@@ -515,6 +538,8 @@ class Fishr(Algorithm):
         len_minibatches = [x.shape[0] for x, y in minibatches]
 
         all_z = self.featurizer(all_x)
+        if self._train_only_classifier:
+            all_z = all_z.detach()
         all_logits = self.classifier(all_z)
 
         penalty = self.compute_fishr_penalty(all_logits, all_y, len_minibatches)

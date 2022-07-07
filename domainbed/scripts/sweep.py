@@ -95,8 +95,10 @@ def all_test_env_combinations(n):
         for j in range(i+1, n):
             yield [i, j]
 
-def make_args_list(n_trials, dataset_names, algorithms, n_hparams_from, n_hparams, steps,
-    data_dir, task, holdout_fraction, single_test_envs, hparams, force_test_env, path_for_init):
+def make_args_list(
+    n_trials, dataset_names, algorithms, n_hparams_from, n_hparams, steps, data_dir, task,
+    holdout_fraction, single_test_envs, hparams, force_test_env, **kwargs
+):
     args_list = []
     for trial_seed in range(n_trials):
         for dataset in dataset_names:
@@ -120,7 +122,7 @@ def make_args_list(n_trials, dataset_names, algorithms, n_hparams_from, n_hparam
                         train_args['data_dir'] = data_dir
                         train_args['task'] = task
                         train_args['trial_seed'] = trial_seed
-                        train_args['path_for_init'] = path_for_init
+                        train_args.update(**kwargs)
                         train_args['seed'] = misc.seed_hash(dataset,
                             algorithm, test_envs, hparams_seed, trial_seed)
                         if steps is not None:
@@ -159,6 +161,7 @@ if __name__ == "__main__":
     ## DiWA ##
     parser.add_argument('--test_env', type=int, default=None)
     parser.add_argument('--path_for_init', type=str, default=None)
+    parser.add_argument('--train_only_classifier', action='store_true')
 
     args = parser.parse_args()
 
@@ -176,7 +179,8 @@ if __name__ == "__main__":
         hparams=args.hparams,
         ## DiWA ##
         force_test_env=args.test_env,
-        path_for_init=args.path_for_init
+        path_for_init=args.path_for_init,
+        train_only_classifier=args.train_only_classifier
     )
 
     jobs = [Job(train_args, args.output_dir) for train_args in args_list]
