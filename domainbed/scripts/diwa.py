@@ -35,6 +35,7 @@ def _get_args():
         default=["diwa"])
 
     inf_args = parser.parse_args()
+    misc.print_args(inf_args)
     return inf_args
 
 

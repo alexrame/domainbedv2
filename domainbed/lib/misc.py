@@ -204,12 +204,30 @@ def split_meta_train_test(minibatches, num_meta_test=1):
     return pairs
 
 
+def _print_dict(_dict):
+    """
+    function that print args dictionaries in a beautiful way
+    """
+    print("\n" + "#" * 40)
+    col_width = max(len(str(word)) for word in _dict) + 2
+    for arg in sorted(list(_dict.keys())):
+        str_print = str(_dict[arg])
+        _str = "".join([str(arg).ljust(col_width), str_print])
+        print(_str)
+    print("#" * 40 + "\n")
+
+
+def print_args(args):
+    _dict = args if isinstance(args, dict) else args.__dict__
+    _print_dict(_dict)
+
+
 def results_ensembling(algorithm, loader, device):
     algorithm.eval()
     dict_stats, batch_classes = algorithm.get_dict_prediction_stats(loader, device)
     dict_results = {}
     for key in dict_stats:
-        dict_results[f"acc_{key}"] = sum(
+        dict_results[("acc_" + key if key != "" else "acc")] = sum(
             dict_stats[key]["correct"].numpy()) / len(dict_stats[key]["correct"].numpy())
     if len(algorithm.networks):
         dict_results["acc_netm"] = np.mean(
@@ -220,6 +238,7 @@ def results_ensembling(algorithm, loader, device):
         )
 
     targets = torch.cat(batch_classes).cpu().numpy()
+    print("Compute diversity across different networks")
     dict_diversity = algorithm.get_dict_diversity(dict_stats, targets, device)
     dict_results.update(dict_diversity)
     return dict_results

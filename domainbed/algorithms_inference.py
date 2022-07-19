@@ -95,7 +95,7 @@ class DiWA(algorithms.ERM):
         return dict_stats, batch_classes
 
     def get_dict_diversity(self, dict_stats, targets, device):
-        results = {}
+        dict_diversity = {}
         for regex in ["wa_ens", "net0_net1",]:
             key0, key1 = regex.split("_")
 
@@ -103,17 +103,19 @@ class DiWA(algorithms.ERM):
                 if key0 == "wa":
                     key0 = ""
                 else:
+                    print(f"Skip {regex}")
                     continue
 
             if key1 not in dict_stats:
+                print(f"Skip {regex}")
                 continue
 
             preds0 = dict_stats[key0]["preds"].numpy()
             preds1 = dict_stats[key1]["preds"].numpy()
-            results[f"divr_{regex}"] = diversity_metrics.ratio_errors(
+            dict_diversity[f"divr_{regex}"] = diversity_metrics.ratio_errors(
                 targets, preds0, preds1
             )
-            results[f"divq_{regex}"] = diversity_metrics.Q_statistic(
+            dict_diversity[f"divq_{regex}"] = diversity_metrics.Q_statistic(
                 targets, preds0, preds1
             )
-        return results
+        return dict_diversity
