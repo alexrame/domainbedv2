@@ -233,7 +233,8 @@ def results_ensembling(algorithm, loader, device):
         dict_results["acc_netm"] = np.mean(
             [
                 dict_results[f"acc_net{key}"]
-                for key in range(len(algorithm.networks))
+                for key in range(
+                    min(len(algorithm.networks), os.environ.get("MAXM", 3)))
             ]
         )
 
