@@ -152,9 +152,9 @@ def get_wa_results(
 
     for name, loader in data_evals:
         print(f"Inference at {name}")
-        acc = misc.accuracy_ensembling(wa_algorithm, loader, device)
-        for acc_key, acc_value in acc.items():
-            dict_results[name + acc_key + "_acc"] = acc_value
+        _results_name = misc.results_ensembling(wa_algorithm, loader, device)
+        for key, value in _results_name.items():
+            dict_results[name + "_" + key] = value
 
     dict_results["length"] = len(good_checkpoints)
     return dict_results

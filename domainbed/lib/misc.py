@@ -204,17 +204,17 @@ def split_meta_train_test(minibatches, num_meta_test=1):
     return pairs
 
 
-def accuracy_ensembling(algorithm, loader, device):
+def results_ensembling(algorithm, loader, device):
     algorithm.eval()
     dict_stats, batch_classes = algorithm.get_dict_prediction_stats(loader, device)
     dict_results = {}
     for key in dict_stats:
-        dict_results[f"acc{key}"] = sum(
+        dict_results[f"acc_{key}"] = sum(
             dict_stats[key]["correct"].numpy()) / len(dict_stats[key]["correct"].numpy())
     if len(algorithm.networks):
-        dict_results["accnetm"] = np.mean(
+        dict_results["acc_netm"] = np.mean(
             [
-                dict_results[f"accnet{key}"]
+                dict_results[f"acc_net{key}"]
                 for key in range(len(algorithm.networks))
             ]
         )
@@ -256,7 +256,8 @@ def accuracy(network, loader, weights, device):
 
     network.train()
 
-    return {key_p: correct / total for key_p, correct in dict_key_to_correct.items()}
+    return {("acc_" + key_p if key_p != "" else "acc"): (correct / total)
+            for key_p, correct in dict_key_to_correct.items()}
 
 
 class Tee:

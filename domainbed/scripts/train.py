@@ -243,10 +243,10 @@ if __name__ == "__main__":
 
             evals = zip(eval_loader_names, eval_loaders, eval_weights)
             for name, loader, weights in evals:
-                acc = misc.accuracy(algorithm, loader, weights, device)
-                for key_acc, val_acc in acc.items():
-                    results[name + '_acc' + key_acc] = val_acc
-                    writer.add_scalar(name + '_acc' + key_acc, val_acc, step)
+                _results_name = misc.accuracy(algorithm, loader, weights, device)
+                for key, value in _results_name.items():
+                    results[name + '_' + key] = value
+                    writer.add_scalar(name + '_' + key, value, step)
 
             results['mem_gb'] = torch.cuda.max_memory_allocated() / (1024.*1024.*1024.)
 
