@@ -101,8 +101,8 @@ class DiWA(algorithms.ERM):
     def get_dict_diversity(self, dict_stats, targets, device):
         dict_diversity = collections.defaultdict(list)
         num_members = min(len(self.networks), os.environ.get("MAXM", 3))
-        regexes = [("netm", "net{i}_net{j}") for i in range(num_members) for j in range(i + 1, num_members)]
-        for regexname, regex in [(0, "wa_ens")] + regexes:
+        regexes = [("netm", f"net{i}_net{j}") for i in range(num_members) for j in range(i + 1, num_members)]
+        for regexname, regex in [("waens", "wa_ens")] + regexes:
             key0, key1 = regex.split("_")
 
             if key0 not in dict_stats:
