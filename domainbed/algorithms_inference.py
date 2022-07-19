@@ -45,7 +45,8 @@ class DiWA(algorithms.ERM):
         for i, network in enumerate(self.networks):
             _logits_i = network(x)
             logits_ens.append(_logits_i)
-            dict_predictions["net" + str(i)] = _logits_i
+            if i < 3:
+                dict_predictions["net" + str(i)] = _logits_i
         dict_predictions["ens"] = torch.mean(torch.stack(logits_ens, dim=0), 0)
         return dict_predictions
 

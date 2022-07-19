@@ -155,7 +155,8 @@ def get_wa_results(
         print(f"Inference at {name}")
         _results_name = misc.results_ensembling(wa_algorithm, loader, device)
         for key, value in _results_name.items():
-            dict_results[name + "_" + key] = value
+            new_key = name + "_" + key if name != "test" else key
+            dict_results[new_key] = value
 
     dict_results["length"] = len(good_checkpoints)
     return dict_results
@@ -164,8 +165,8 @@ def get_wa_results(
 
 def print_results(dict_results):
     results_keys = sorted(list(dict_results.keys()))
-    misc.print_row(results_keys, colwidth=12)
-    misc.print_row([dict_results[key] for key in results_keys], colwidth=12)
+    misc.print_row(results_keys, colwidth=20)
+    misc.print_row([dict_results[key] for key in results_keys], colwidth=20)
 
 
 def main():
