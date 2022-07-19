@@ -1,7 +1,9 @@
 import os
 import copy
+import numpy as np
 import torch
 import torch.nn as nn
+import collections
 from domainbed import networks, algorithms
 from domainbed.lib import diversity_metrics
 
@@ -97,8 +99,10 @@ class DiWA(algorithms.ERM):
         return dict_stats, batch_classes
 
     def get_dict_diversity(self, dict_stats, targets, device):
-        dict_diversity = {}
-        for regex in ["wa_ens", "net0_net1",]:
+        dict_diversity = collections.defaultdict(list)
+        num_members = min(len(self.networks), os.environ.get("MAXM", 3))
+        regexes = [("netm", "net{i}_net{j}") for i in range(num_members) for j in range(i + 1, num_members)]
+        for regexname, regex in [(0, "wa_ens")] + regexes:
             key0, key1 = regex.split("_")
 
             if key0 not in dict_stats:
@@ -114,10 +118,11 @@ class DiWA(algorithms.ERM):
 
             preds0 = dict_stats[key0]["preds"].numpy()
             preds1 = dict_stats[key1]["preds"].numpy()
-            dict_diversity[f"divr_{regex}"] = diversity_metrics.ratio_errors(
+            dict_diversity[f"divr_{regexname}"].append(diversity_metrics.ratio_errors(
                 targets, preds0, preds1
-            )
-            dict_diversity[f"divq_{regex}"] = diversity_metrics.Q_statistic(
+            ))
+            dict_diversity[f"divq_{regexname}"].append(diversity_metrics.Q_statistic(
                 targets, preds0, preds1
-            )
-        return dict_diversity
+            ))
+
+        return {key: np.mean(value) for key, value in dict_diversity.items()}
