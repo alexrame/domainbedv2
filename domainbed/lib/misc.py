@@ -203,6 +203,28 @@ def split_meta_train_test(minibatches, num_meta_test=1):
 
     return pairs
 
+
+def accuracy_ensembling(algorithm, loader, device):
+    algorithm.eval()
+    dict_stats, batch_classes = algorithm.get_dict_prediction_stats(loader, device)
+    dict_results = {}
+    for key in dict_stats:
+        dict_results[f"acc{key}"] = sum(
+            dict_stats[key]["correct"].numpy()) / len(dict_stats[key]["correct"].numpy())
+    if len(algorithm.networks):
+        dict_results["accnetm"] = np.mean(
+            [
+                dict_results[f"accnet{key}"]
+                for key in range(len(algorithm.networks))
+            ]
+        )
+
+    targets = torch.cat(batch_classes).cpu().numpy()
+    dict_diversity = algorithm.get_dict_diversity(dict_stats, targets, device)
+    dict_results.update(dict_diversity)
+    return dict_results
+
+
 def accuracy(network, loader, weights, device):
     dict_key_to_correct = {}
     weights_offset = 0

@@ -29,6 +29,10 @@ def _get_args():
         help='Trial number (used for seeding split_dataset and random_hparams).'
     )
     parser.add_argument('--path_for_save_weight', type=str, default=None)
+    parser.add_argument(
+        '--what',
+        nargs='+',
+        default=["diwa"])
 
     inf_args = parser.parse_args()
     return inf_args
@@ -120,6 +124,8 @@ def get_wa_results(
         )
         algorithm.load_state_dict(save_dict["model_dict"], strict=False)
         wa_algorithm.add_weights(algorithm.network)
+        if "netm" in inf_args.what:
+            wa_algorithm.add_network(algorithm.network)
         del algorithm
 
     wa_algorithm.to(device)
@@ -146,7 +152,7 @@ def get_wa_results(
 
     for name, loader in data_evals:
         print(f"Inference at {name}")
-        acc = misc.accuracy(wa_algorithm, loader, None, device)
+        acc = misc.accuracy_ensembling(wa_algorithm, loader, device)
         for acc_key, acc_value in acc.items():
             dict_results[name + acc_key + "_acc"] = acc_value
 
