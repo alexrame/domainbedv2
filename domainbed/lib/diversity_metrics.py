@@ -40,6 +40,7 @@ def Q_statistic(y, y_pred1, y_pred2):
     return Q
 
 
+
 class CudaCKA(object):
 
     def __init__(self, device):
