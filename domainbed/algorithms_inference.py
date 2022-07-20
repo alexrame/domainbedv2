@@ -94,7 +94,9 @@ class DiWA(algorithms.ERM):
                     # dict_stats[key]["probs"].append(probs.cpu())
                     dict_stats[key]["preds"].append(preds.cpu())
                     dict_stats[key]["correct"].append(preds.eq(y).float().cpu())
-                    dict_stats[key]["tcp"].append(probs[:, torch.flatten(y)].cpu())
+                    dict_stats[key]["tcp"].append(probs[:, torch.flatten(y)].flatten().cpu())
+                    if len(dict_stats[key]["tcp"] == 1):
+                        print(dict_stats[key])
                     # dict_stats[key]["confs"].append(probs.max(dim=1)[0].cpu())
         for key0 in dict_stats:
             for key1 in dict_stats[key0]:
@@ -130,15 +132,16 @@ class DiWA(algorithms.ERM):
 
         dict_results = {key: np.mean(value) for key, value in dict_diversity.items()}
 
-        # cf https://arxiv.org/abs/2110.13786
-        tcps = [dict_stats[f"net{i}"]["tcps"].numpy() for i in range(num_members)]
-        tcps = np.stack(tcps, axis=1)
+        if num_members > 0:
+            # cf https://arxiv.org/abs/2110.13786
+            tcps = [dict_stats[f"net{i}"]["tcp"].numpy() for i in range(num_members)]
+            tcps = np.stack(tcps, axis=1)
 
-        def div_pac(row):
-            max_row = np.max(row)
-            normalized_row = [r/(math.sqrt(2) * max_row) for r in row]
-            return np.var(normalized_row)
+            def div_pac(row):
+                max_row = np.max(row)
+                normalized_row = [r/(math.sqrt(2) * max_row) for r in row]
+                return np.var(normalized_row)
 
-        dict_results["divp_netm"] = np.mean(np.apply_along_axis(div_pac, 1, tcps))
+            dict_results["divp_netm"] = np.mean(np.apply_along_axis(div_pac, 1, tcps))
 
         return dict_results
