@@ -79,8 +79,12 @@ def get_dict_folder_to_score(inf_args):
     ]
     output_folders = [
         output_folder for output_folder in _output_folders
-        if os.path.isdir(output_folder) and "done" in os.listdir(output_folder) and get_best_model(output_folder)
+        if os.path.isdir(output_folder)
+        and "done" in os.listdir(output_folder)
+        and get_best_model(output_folder)
     ]
+    if len(dict_folder_to_score) == 0:
+        raise ValueError(f"No done folders found for: {inf_args}")
 
     dict_folder_to_score = {}
     for folder in output_folders:
