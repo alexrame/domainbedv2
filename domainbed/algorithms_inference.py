@@ -143,8 +143,6 @@ class DiWA(algorithms.ERM):
                 max_row = np.max(row)
                 normalized_row = [r/(math.sqrt(2) * max_row + 1e-7) for r in row]
                 return np.var(normalized_row)
-            print(tcps)
-            print(np.apply_along_axis(div_pac, 1, tcps))
             dict_results["divp_netm"] = np.mean(np.apply_along_axis(div_pac, 1, tcps))
 
         return dict_results
