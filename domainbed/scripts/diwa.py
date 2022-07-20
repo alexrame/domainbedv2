@@ -175,6 +175,10 @@ def get_wa_results(
             dict_results[new_key] = value
 
     dict_results["length"] = len(good_checkpoints)
+    if "VARM" in os.environ:
+        dict_results["varm"] = float(os.environ["VARM"])
+    if "MAXM" in os.environ:
+        dict_results["maxm"] = int(os.environ["MAXM"])
     return dict_results
 
 
