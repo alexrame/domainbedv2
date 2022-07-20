@@ -99,10 +99,6 @@ class DiWA(algorithms.ERM):
                         probs[range(len(torch.flatten(y))),
                               torch.flatten(y)].flatten().cpu()
                     )
-                    if len(dict_stats[key]["tcp"]) == 1:
-                        print(dict_stats[key])
-                        print(probs)
-                        print(y)
                     # dict_stats[key]["confs"].append(probs.max(dim=1)[0].cpu())
         for key0 in dict_stats:
             for key1 in dict_stats[key0]:
@@ -145,9 +141,10 @@ class DiWA(algorithms.ERM):
 
             def div_pac(row):
                 max_row = np.max(row)
-                normalized_row = [r/(math.sqrt(2) * max_row) for r in row]
+                normalized_row = [r/(math.sqrt(2) * max_row + 1e-7) for r in row]
                 return np.var(normalized_row)
-
+            print(tcps)
+            print(np.apply_along_axis(div_pac, 1, tcps))
             dict_results["divp_netm"] = np.mean(np.apply_along_axis(div_pac, 1, tcps))
 
         return dict_results
