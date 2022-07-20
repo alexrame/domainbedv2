@@ -26,16 +26,38 @@ class DiWA(algorithms.ERM):
         """
         algorithms.Algorithm.__init__(self, input_shape, num_classes, num_domains, hparams={})
         self.network = None
+        self.var_network = None
         self.networks = []
         self.global_count = 0
+        self.var_global_count = 0
 
-    def add_weights(self, network):
+    def update_mean_network(self, network):
         if self.network is None:
             self.network = copy.deepcopy(network)
         else:
-            for param_q, param_k in zip(network.parameters(), self.network.parameters()):
-                param_k.data = (param_k.data * self.global_count + param_q.data) / (1. + self.global_count)
+            for param_n, param_m in zip(network.parameters(), self.network.parameters()):
+                param_m.data = (param_m.data * self.global_count + param_n.data) / (1. + self.global_count)
         self.global_count += 1
+
+    def update_var_network(self, network):
+        if self.var_network is None:
+            self.var_network = copy.deepcopy(network)
+        for param_n, param_m, param_v in zip(network.parameters(), self.network.parameters(), self.var_network.parameters()):
+            l2_network_meannetwork = (param_n.data - param_m.data) ** 2
+            param_v.data = (param_v.data * self.var_global_count + l2_network_meannetwork) / (1. + self.var_global_count)
+        self.var_global_count += 1
+
+    def create_stochastic_networks(self):
+        assert len(self.networks) == 0
+        for i in range(3):
+            network = copy.deepcopy(self.network)
+            for param_n, param_m, param_v in zip(network.parameters(), self.network.parameters(), self.var_network.parameters()):
+                param_n.data = torch.normal(
+                    mean=param_m.data,
+                    std=torch.sqrt(self.var_global_count/(self.var_global_count-1) * param_v.data)
+                    )
+                # param_n.data = param_m.data + * gaussian_noise
+            self.add_network(network)
 
     def add_network(self, network):
         self.networks.append(network)

@@ -32,7 +32,7 @@ def _get_args():
     parser.add_argument(
         '--what',
         nargs='+',
-        default=["diwa"])
+        default=[])
 
     inf_args = parser.parse_args()
     misc.print_args(inf_args)
@@ -109,14 +109,8 @@ def get_dict_folder_to_score(inf_args):
         raise ValueError(f"No folders found for: {inf_args}")
     return dict_folder_to_score
 
-def get_wa_results(
-    good_checkpoints, dataset, inf_args, data_names, data_splits, device
-):
-    wa_algorithm = algorithms_inference.DiWA(
-        dataset.input_shape,
-        dataset.num_classes,
-        len(dataset) - 1,
-    )
+
+def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="mean"):
     for folder in good_checkpoints:
         save_dict = torch.load(get_best_model(folder))
         train_args = save_dict["args"]
@@ -128,10 +122,28 @@ def get_wa_results(
             save_dict["model_hparams"]
         )
         algorithm.load_state_dict(save_dict["model_dict"], strict=False)
-        wa_algorithm.add_weights(algorithm.network)
-        if "netm" in inf_args.what:
+        if "mean" in action:
+            wa_algorithm.update_mean_network(algorithm.network)
+        if "netm" in action:
             wa_algorithm.add_network(algorithm.network)
+        if "var" in action:
+            wa_algorithm.update_var_network(algorithm.network)
         del algorithm
+    return train_args
+
+
+def get_wa_results(
+    good_checkpoints, dataset, inf_args, data_names, data_splits, device
+):
+    wa_algorithm = algorithms_inference.DiWA(
+        dataset.input_shape,
+        dataset.num_classes,
+        len(dataset) - 1,
+    )
+    train_args = load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action=["mean"] + inf_args.what)
+    if "var" in inf_args.what:
+        _ = load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action=["var"])
+        wa_algorithm.create_stochastic_networks()
 
     wa_algorithm.to(device)
     wa_algorithm.eval()
