@@ -95,7 +95,7 @@ class DiWA(algorithms.ERM):
                     dict_stats[key]["preds"].append(preds.cpu())
                     dict_stats[key]["correct"].append(preds.eq(y).float().cpu())
                     dict_stats[key]["tcp"].append(probs[:, torch.flatten(y)].flatten().cpu())
-                    if len(dict_stats[key]["tcp"] == 1):
+                    if len(dict_stats[key]["tcp"]) == 1:
                         print(dict_stats[key])
                     # dict_stats[key]["confs"].append(probs.max(dim=1)[0].cpu())
         for key0 in dict_stats:
