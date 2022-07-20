@@ -49,12 +49,13 @@ class DiWA(algorithms.ERM):
 
     def create_stochastic_networks(self):
         assert len(self.networks) == 0
+        multiplier = float(os.environ.get("VARM", 1.))
         for i in range(int(os.environ.get("MAXM", 3))):
             network = copy.deepcopy(self.network)
             for param_n, param_m, param_v in zip(network.parameters(), self.network.parameters(), self.var_network.parameters()):
                 param_n.data = torch.normal(
                     mean=param_m.data,
-                    std=torch.sqrt(self.var_global_count/(self.var_global_count-1) * param_v.data)
+                    std=multiplier * torch.sqrt(self.var_global_count/(self.var_global_count-1) * param_v.data)
                     )
                 # param_n.data = param_m.data + * gaussian_noise
             self.add_network(network)
