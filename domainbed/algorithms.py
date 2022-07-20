@@ -389,12 +389,12 @@ class DARE(ERM):
         idx = 0
         for i, (x, y) in enumerate(minibatches):
             features_i = all_features[idx:idx + x.shape[0]]
-            mean_features_i = torch.mean(features_i, dim=1)
+            mean_features_i = torch.mean(features_i, dim=0)
             self.mean_per_domain.data[i] = (
                 self.hparams['ema'] * self.mean_per_domain[i] + (1 - self.hparams['ema']) * mean_features_i
             )
             centered_features_i = features_i - self.mean_per_domain[i]
-            var_features_i = torch.mean(centered_features_i**2, dim=1)
+            var_features_i = torch.mean(centered_features_i**2, dim=0)
 
             self.var_per_domain.data[i] = (
                 self.hparams['ema'] * self.var_per_domain[i] +
@@ -428,7 +428,7 @@ class DARE(ERM):
         features = self.featurizer(x)
         dict_predictions[""] = self.classifier(features)
         centered_features =  features - torch.mean(self.mean_per_domain, dim=0)
-        var = 0.9 * torch.mean(self.var_per_domain, dim=1) + 0.1 * torch.ones_like(
+        var = 0.9 * torch.mean(self.var_per_domain, dim=0) + 0.1 * torch.ones_like(
                 self.var_per_domain[0]
             )
         normalized_features = centered_features * torch.pow(var, -1 / 2)
