@@ -234,7 +234,7 @@ def results_ensembling(algorithm, loader, device):
             [
                 dict_results[f"acc_net{key}"]
                 for key in range(
-                    min(len(algorithm.networks), os.environ.get("MAXM", 3)))
+                    min(len(algorithm.networks), int(os.environ.get("MAXM", 3))))
             ]
         )
 

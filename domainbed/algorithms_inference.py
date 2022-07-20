@@ -49,7 +49,7 @@ class DiWA(algorithms.ERM):
 
     def create_stochastic_networks(self):
         assert len(self.networks) == 0
-        for i in range(os.environ.get("MAXM", 3)):
+        for i in range(int(os.environ.get("MAXM", 3))):
             network = copy.deepcopy(self.network)
             for param_n, param_m, param_v in zip(network.parameters(), self.network.parameters(), self.var_network.parameters()):
                 param_n.data = torch.normal(
@@ -71,7 +71,7 @@ class DiWA(algorithms.ERM):
         for i, network in enumerate(self.networks):
             _logits_i = network(x)
             logits_ens.append(_logits_i)
-            if i < os.environ.get("MAXM", 3):
+            if i < int(os.environ.get("MAXM", 3)):
                 dict_predictions["net" + str(i)] = _logits_i
         dict_predictions["ens"] = torch.mean(torch.stack(logits_ens, dim=0), 0)
         return dict_predictions
@@ -129,7 +129,7 @@ class DiWA(algorithms.ERM):
 
     def get_dict_diversity(self, dict_stats, targets, device):
         dict_diversity = collections.defaultdict(list)
-        num_members = min(len(self.networks), os.environ.get("MAXM", 3))
+        num_members = min(len(self.networks), int(os.environ.get("MAXM", 3)))
         regexes = [("netm", f"net{i}_net{j}") for i in range(num_members) for j in range(i + 1, num_members)]
         for regexname, regex in [("waens", "wa_ens")] + regexes:
             key0, key1 = regex.split("_")
