@@ -374,8 +374,12 @@ class DARE(ERM):
         )
         self.register_buffer(
             "var_per_domain",
-            torch.zeros(self.num_domains, self.featurizer.n_outputs, self.featurizer.n_outputs)
+            torch.zeros(self.num_domains, self.featurizer.n_outputs)
         )
+        # self.register_buffer(
+        #     "cov_per_domain",
+        #     torch.zeros(self.num_domains, self.featurizer.n_outputs, self.featurizer.n_outputs)
+        # )
 
     def update(self, minibatches, unlabeled=None):
         self.update_count += 1
