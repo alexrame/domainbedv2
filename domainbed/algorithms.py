@@ -403,8 +403,11 @@ class DARE(ERM):
             var_domain = 0.9 * self.var_per_domain[i] + 0.1 * torch.ones_like(
                 self.var_per_domain[i]
             )
-
-            normalized_features_i = centered_features_i * torch.pow(var_domain, -1 / 2)
+            try:
+                normalized_features_i = centered_features_i * torch.pow(var_domain, -1 / 2)
+            except:
+                import pdb
+                pdb.set_trace()
 
             # for covariance: left todo
             # torch.diag_embed(
