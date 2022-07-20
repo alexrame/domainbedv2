@@ -65,6 +65,9 @@ def _hparams(algorithm, dataset, random_seed):
         _hparam('irm_lambda', 1e2, lambda r: 10**r.uniform(-1, 5))
         _hparam('irm_penalty_anneal_iters', 500,
                 lambda r: int(10**r.uniform(0, 4. if MAX_EPOCH_5000 else 3.5)))
+    elif algorithm == "DARE":
+        _hparam('lambda', 1, lambda r: 10**r.uniform(-2, 1))
+        _hparam('ema', 0.95, lambda r: r.uniform(0.90, 0.99))
 
     elif algorithm == "Mixup":
         _hparam('mixup_alpha', 0.2, lambda r: 10**r.uniform(-1, -1))

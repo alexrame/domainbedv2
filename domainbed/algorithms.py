@@ -20,7 +20,6 @@ from domainbed.lib.misc import (
     random_pairs_of_minibatches, ParamDict, MovingAverage, l2_between_dicts
 )
 
-
 ALGORITHMS = [
     'ERM',
     "MA",
@@ -32,13 +31,16 @@ ALGORITHMS = [
     'MMD',
     'VREx',
     "Fishr",
+    "DARE"
 ]
+
 
 def get_algorithm_class(algorithm_name):
     """Return the algorithm class with the given name."""
     if algorithm_name not in globals():
         raise NotImplementedError("Algorithm not found: {}".format(algorithm_name))
     return globals()[algorithm_name]
+
 
 class Algorithm(torch.nn.Module):
     """
@@ -47,6 +49,7 @@ class Algorithm(torch.nn.Module):
     - update()
     - predict()
     """
+
     def __init__(self, input_shape, num_classes, num_domains, hparams):
         super(Algorithm, self).__init__()
 
@@ -68,14 +71,22 @@ class Algorithm(torch.nn.Module):
     def predict(self, x):
         raise NotImplementedError
 
+
 class ERM(Algorithm):
     """
     Empirical Risk Minimization (ERM)
     """
 
-    def __init__(self, input_shape, num_classes, num_domains, hparams, train_only_classifier=False, path_for_init=None):
-        super(ERM, self).__init__(input_shape, num_classes, num_domains,
-                                  hparams)
+    def __init__(
+        self,
+        input_shape,
+        num_classes,
+        num_domains,
+        hparams,
+        train_only_classifier=False,
+        path_for_init=None
+    ):
+        super(ERM, self).__init__(input_shape, num_classes, num_domains, hparams)
 
         self._train_only_classifier = train_only_classifier
         self._load_network(path_for_init)
@@ -84,9 +95,8 @@ class ERM(Algorithm):
     def _load_network(self, path_for_init):
         self.featurizer = networks.Featurizer(self.input_shape, self.hparams)
         self.classifier = networks.Classifier(
-            self.featurizer.n_outputs,
-            self.num_classes,
-            self.hparams['nonlinear_classifier'])
+            self.featurizer.n_outputs, self.num_classes, self.hparams['nonlinear_classifier']
+        )
         self.network = nn.Sequential(self.featurizer, self.classifier)
 
         ## DiWA load shared initialization ##
@@ -113,8 +123,8 @@ class ERM(Algorithm):
         )
 
     def update(self, minibatches, unlabeled=None):
-        all_x = torch.cat([x for x,y in minibatches])
-        all_y = torch.cat([y for x,y in minibatches])
+        all_x = torch.cat([x for x, y in minibatches])
+        all_y = torch.cat([y for x, y in minibatches])
         all_features = self.featurizer(all_x)
         if self._train_only_classifier:
             all_features = all_features.detach()
@@ -141,6 +151,7 @@ class MA(ERM):
     Empirical Risk Minimization (ERM) with Moving Average (MA) prediction model
     from https://arxiv.org/abs/2110.10832
     """
+
     def __init__(self, *args, **kwargs):
         ERM.__init__(self, *args, **kwargs)
 
@@ -157,20 +168,18 @@ class MA(ERM):
 
     def predict(self, x):
         self.network_ma.eval()
-        return {
-            "ma": self.network_ma(x),
-            "": self.network(x)
-            }
+        return {"ma": self.network_ma(x), "": self.network(x)}
 
     def update_ma(self):
         self.global_iter += 1
-        if self.global_iter>= self.ma_start_iter:
+        if self.global_iter >= self.ma_start_iter:
             self.ma_count += 1
             for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
-                param_k.data = (param_k.data * self.ma_count + param_q.data)/(1.+self.ma_count)
+                param_k.data = (param_k.data * self.ma_count + param_q.data) / (1. + self.ma_count)
         else:
             for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
                 param_k.data = param_q.data
+
 
 class IRM(ERM):
     """Invariant Risk Minimization"""
@@ -192,13 +201,14 @@ class IRM(ERM):
 
     def update(self, minibatches, unlabeled=None):
         device = "cuda" if minibatches[0][0].is_cuda else "cpu"
-        penalty_weight = (self.hparams['irm_lambda'] if self.update_count
-                          >= self.hparams['irm_penalty_anneal_iters'] else
-                          1.0)
+        penalty_weight = (
+            self.hparams['irm_lambda']
+            if self.update_count >= self.hparams['irm_penalty_anneal_iters'] else 1.0
+        )
         nll = 0.
         penalty = 0.
 
-        all_x = torch.cat([x for x,y in minibatches])
+        all_x = torch.cat([x for x, y in minibatches])
         all_features = self.featurizer(all_x)
         if self._train_only_classifier:
             all_features = all_features.detach()
@@ -220,15 +230,15 @@ class IRM(ERM):
             self.optimizer = torch.optim.Adam(
                 self.network.parameters(),
                 lr=self.hparams["lr"],
-                weight_decay=self.hparams['weight_decay'])
+                weight_decay=self.hparams['weight_decay']
+            )
 
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
         self.update_count += 1
-        return {'loss': loss.item(), 'nll': nll.item(),
-            'penalty': penalty.item()}
+        return {'loss': loss.item(), 'nll': nll.item(), 'penalty': penalty.item()}
 
 
 class VREx(ERM):
@@ -261,7 +271,7 @@ class VREx(ERM):
             losses[i] = nll
 
         mean = losses.mean()
-        penalty = ((losses - mean) ** 2).mean()
+        penalty = ((losses - mean)**2).mean()
         loss = mean + penalty_weight * penalty
 
         if self.update_count == self.hparams['vrex_penalty_anneal_iters']:
@@ -270,15 +280,15 @@ class VREx(ERM):
             self.optimizer = torch.optim.Adam(
                 self.network.parameters(),
                 lr=self.hparams["lr"],
-                weight_decay=self.hparams['weight_decay'])
+                weight_decay=self.hparams['weight_decay']
+            )
 
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
         self.update_count += 1
-        return {'loss': loss.item(), 'nll': nll.item(),
-                'penalty': penalty.item()}
+        return {'loss': loss.item(), 'nll': nll.item(), 'penalty': penalty.item()}
 
 
 class Mixup(ERM):
@@ -292,8 +302,7 @@ class Mixup(ERM):
         objective = 0
 
         for (xi, yi), (xj, yj) in random_pairs_of_minibatches(minibatches):
-            lam = np.random.beta(self.hparams["mixup_alpha"],
-                                 self.hparams["mixup_alpha"])
+            lam = np.random.beta(self.hparams["mixup_alpha"], self.hparams["mixup_alpha"])
 
             x = lam * xi + (1 - lam) * xj
             features = self.featurizer(x)
@@ -350,7 +359,81 @@ class GroupDRO(ERM):
         return {'loss': loss.item()}
 
 
+class DARE(ERM):
+    """
+    Perform ERM while removing mean covariance
+    """
 
+    def __init__(self, *args, **kwargs):
+        ERM.__init__(self, *args, **kwargs)
+        assert self._train_only_classifier
+        self.register_buffer('update_count', torch.tensor([0]))
+
+        self.register_buffer(
+            "mean_per_domain", torch.zeros(self.num_domains, self.featurizer.n_outputs)
+        )
+        self.register_buffer(
+            "var_per_domain",
+            torch.zeros(self.num_domains, self.featurizer.n_outputs, self.featurizer.n_outputs)
+        )
+
+    def update(self, minibatches, unlabeled=None):
+        self.update_count += 1
+        all_x = torch.cat([x for x, y in minibatches])
+        all_features = self.featurizer(all_x)
+        if self._train_only_classifier:
+            all_features = all_features.detach()
+
+        nll = 0.
+        penalty = torch.tensor(0.)
+        idx = 0
+        for i, (x, y) in enumerate(minibatches):
+            features_i = all_features[idx:idx + x.shape[0]]
+            mean_features_i = torch.mean(features_i, dim=1)
+            self.mean_per_domain.data[i] = (
+                self.hparams['ema'] * self.mean_per_domain[i] + (1 - self.hparams['ema']) * mean_features_i
+            )
+            centered_features_i = features_i - self.mean_per_domain[i]
+            var_features_i = torch.mean(centered_features_i**2, dim=1)
+
+            self.var_per_domain.data[i] = (
+                self.hparams['ema'] * self.var_per_domain[i] +
+                (1 - self.hparams['ema']) * var_features_i
+            )
+            var_domain = 0.9 * self.var_per_domain[i] + 0.1 * torch.ones_like(
+                self.var_per_domain[i]
+            )
+
+            normalized_features_i = centered_features_i * torch.pow(var_domain, -1 / 2)
+
+            # for covariance: left todo
+            # torch.diag_embed(
+            # normalized_features_i = torch.matmul(centered_features_i, var_domain)
+            # transforms.Normalize(2, 0.5)(t)
+            logits_i = self.classifier(normalized_features_i)
+            idx += x.shape[0]
+            nll += F.cross_entropy(logits_i, y)
+
+        nll /= len(minibatches)
+
+        loss = nll + self.hparams['lambda'] * penalty
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        return {'loss': loss.item(), 'nll': nll.item(), 'penalty': penalty.item()}
+
+    def predict(self, x):
+        dict_predictions = {}
+        features = self.featurizer(x)
+        dict_predictions[""] = self.classifier(features)
+        centered_features =  features - torch.mean(self.mean_per_domain, dim=0)
+        var = 0.9 * torch.mean(self.var_per_domain, dim=1) + 0.1 * torch.ones_like(
+                self.var_per_domain[0]
+            )
+        normalized_features = centered_features * torch.pow(var, -1 / 2)
+        dict_predictions["norm"] = self.classifier(normalized_features)
+        return dict_predictions
 
 class AbstractMMD(ERM):
     """
@@ -369,13 +452,11 @@ class AbstractMMD(ERM):
     def my_cdist(self, x1, x2):
         x1_norm = x1.pow(2).sum(dim=-1, keepdim=True)
         x2_norm = x2.pow(2).sum(dim=-1, keepdim=True)
-        res = torch.addmm(x2_norm.transpose(-2, -1),
-                          x1,
-                          x2.transpose(-2, -1), alpha=-2).add_(x1_norm)
+        res = torch.addmm(x2_norm.transpose(-2, -1), x1, x2.transpose(-2, -1),
+                          alpha=-2).add_(x1_norm)
         return res.clamp_min_(1e-30)
 
-    def gaussian_kernel(self, x, y, gamma=[0.001, 0.01, 0.1, 1, 10, 100,
-                                           1000]):
+    def gaussian_kernel(self, x, y, gamma=[0.001, 0.01, 0.1, 1, 10, 100, 1000]):
         D = self.my_cdist(x, y)
         K = torch.zeros_like(D)
 
@@ -422,7 +503,7 @@ class AbstractMMD(ERM):
             penalty /= (nmb * (nmb - 1) / 2)
 
         self.optimizer.zero_grad()
-        (objective + (self.hparams['mmd_gamma']*penalty)).backward()
+        (objective + (self.hparams['mmd_gamma'] * penalty)).backward()
         self.optimizer.step()
 
         if torch.is_tensor(penalty):
@@ -435,12 +516,16 @@ class MMD(AbstractMMD):
     """
     MMD using Gaussian kernel
     """
+
     def __init__(self, *args, **kwargs):
         AbstractMMD.__init__(self, True, *args, **kwargs)
+
+
 class CORAL(AbstractMMD):
     """
     MMD using mean and covariance difference
     """
+
     def __init__(self, *args, **kwargs):
         AbstractMMD.__init__(self, False, *args, **kwargs)
 
@@ -457,8 +542,8 @@ class SD(ERM):
         self.sd_reg = self.hparams["sd_reg"]
 
     def update(self, minibatches, unlabeled=None):
-        all_x = torch.cat([x for x,y in minibatches])
-        all_y = torch.cat([y for x,y in minibatches])
+        all_x = torch.cat([x for x, y in minibatches])
+        all_y = torch.cat([y for x, y in minibatches])
 
         all_x = torch.cat([x for x, y in minibatches])
         all_features = self.featurizer(all_x)
@@ -467,7 +552,7 @@ class SD(ERM):
         all_p = self.classifier(all_features)
 
         loss = F.cross_entropy(all_p, all_y)
-        penalty = (all_p ** 2).mean()
+        penalty = (all_p**2).mean()
         objective = loss + self.sd_reg * penalty
 
         self.optimizer.zero_grad()
@@ -476,10 +561,19 @@ class SD(ERM):
 
         return {'loss': loss.item(), 'penalty': penalty.item()}
 
+
 class Fishr(Algorithm):
     "Invariant Gradients variances for Out-of-distribution Generalization"
 
-    def __init__(self, input_shape, num_classes, num_domains, hparams, train_only_classifier=False, path_for_init=None):
+    def __init__(
+        self,
+        input_shape,
+        num_classes,
+        num_domains,
+        hparams,
+        train_only_classifier=False,
+        path_for_init=None
+    ):
         assert backpack is not None, "Install backpack with: 'pip install backpack-for-pytorch==1.3.0'"
         super(Fishr, self).__init__(input_shape, num_classes, num_domains, hparams)
 
