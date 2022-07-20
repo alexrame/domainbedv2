@@ -82,10 +82,17 @@ class OracleSelectionMethod(SelectionMethod):
             len(r['args']['test_envs']) == 1)
         if not len(run_records):
             return None
+        keyacc = os.environ.get("KEYACC", "")
+        if keyacc:
+            keyacc = "_" + keyacc
         test_env = run_records[0]['args']['test_envs'][0]
-        test_out_acc_key = 'env{}_out_acc'.format(test_env) + os.environ.get("KEYACC", "")
-        test_in_acc_key = 'env{}_in_acc'.format(test_env) + os.environ.get("KEYACC", "")
+        test_out_acc_key = 'env{}_out_acc'.format(test_env) + keyacc
+        test_in_acc_key = 'env{}_in_acc'.format(test_env) + keyacc
         chosen_record = run_records.sorted(lambda r: r['step'])[-1]
+        if test_in_acc_key not in chosen_record:
+            print(chosen_record.keys())
+            raise ValueError(f"Key not found {test_in_acc_key}")
+
         return {
             'val_acc':  chosen_record[test_out_acc_key],
             'test_acc': chosen_record[test_in_acc_key]
@@ -100,12 +107,16 @@ class IIDAccuracySelectionMethod(SelectionMethod):
         """Given a single record, return a {val_acc, test_acc} dict."""
         test_env = record['args']['test_envs'][0]
         val_env_keys = []
+        keyacc = os.environ.get("KEYACC", "")
+        if keyacc:
+            keyacc = "_" + keyacc
+
         for i in itertools.count():
-            if f'env{i}_out_acc' + os.environ.get("KEYACC", "") not in record:
+            if f'env{i}_out_acc' + keyacc not in record:
                 break
             if i != test_env:
-                val_env_keys.append(f'env{i}_out_acc' + os.environ.get("KEYACC", ""))
-        test_in_acc_key = 'env{}_in_acc'.format(test_env) + os.environ.get("KEYACC", "")
+                val_env_keys.append(f'env{i}_out_acc' + keyacc)
+        test_in_acc_key = 'env{}_in_acc'.format(test_env) + keyacc
 
         if test_in_acc_key not in record:
             print(record.keys())
