@@ -106,6 +106,11 @@ class IIDAccuracySelectionMethod(SelectionMethod):
             if i != test_env:
                 val_env_keys.append(f'env{i}_out_acc' + os.environ.get("KEYACC", ""))
         test_in_acc_key = 'env{}_in_acc'.format(test_env) + os.environ.get("KEYACC", "")
+
+        if test_in_acc_key not in record:
+            print(record.keys())
+            raise ValueError(f"Key not found {test_in_acc_key}")
+
         return {
             'val_acc': np.mean([record[key] for key in val_env_keys]),
             'test_acc': record[test_in_acc_key]
