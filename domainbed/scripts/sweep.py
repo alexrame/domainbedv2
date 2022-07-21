@@ -157,7 +157,7 @@ if __name__ == "__main__":
     parser.add_argument('--hparams', type=str, default=None)
     parser.add_argument('--holdout_fraction', type=float, default=0.2)
     parser.add_argument('--single_test_envs', action='store_true')
-    parser.add_argument('--skip_confirmation', action='store_true')
+    parser.add_argument('--ask_confirmation', action='store_true')
     ## DiWA ##
     parser.add_argument('--test_env', type=int, default=None)
     parser.add_argument('--path_for_init', type=str, default=None)
@@ -197,14 +197,14 @@ if __name__ == "__main__":
     if args.command == 'launch':
         to_launch = [j for j in jobs if j.state == Job.NOT_LAUNCHED or j.state == Job.INCOMPLETE]
         print(f'About to launch {len(to_launch)} jobs.')
-        # if not args.skip_confirmation:
-        #     ask_for_confirmation()
+        if args.ask_confirmation:
+            ask_for_confirmation()
         launcher_fn = command_launchers.REGISTRY[args.command_launcher]
         Job.launch(to_launch, launcher_fn)
 
     elif args.command == 'delete_incomplete':
         to_delete = [j for j in jobs if j.state == Job.INCOMPLETE]
         print(f'About to delete {len(to_delete)} jobs.')
-        # if not args.skip_confirmation:
-        #     ask_for_confirmation()
+        if args.ask_confirmation:
+            ask_for_confirmation()
         Job.delete(to_delete)
