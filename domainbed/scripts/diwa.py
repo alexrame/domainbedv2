@@ -148,6 +148,10 @@ def get_wa_results(
     wa_algorithm.to(device)
     wa_algorithm.eval()
     if inf_args.path_for_save_weight:
+        if os.environ.get("RESET_CLASSIFIER"):
+            import pdb
+            pdb.set_trace()
+            wa_algorithm.network.layers[-1]. reset_parameters()
         wa_algorithm.save_path_for_future_init(inf_args.path_for_save_weight)
 
     random.seed(train_args["seed"])
