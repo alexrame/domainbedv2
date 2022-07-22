@@ -397,6 +397,7 @@ class DARE(ERM):
         list_normalized_features = []
         for i, (x, y) in enumerate(minibatches):
             features_i = all_features[idx:idx + x.shape[0]]
+            idx += x.shape[0]
             mean_features_i = torch.mean(features_i, dim=0)
             self.mean_per_domain.data[i] = (
                 self.hparams['ema'] * self.mean_per_domain[i] +
