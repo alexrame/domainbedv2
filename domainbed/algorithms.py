@@ -438,9 +438,9 @@ class DARE(ERM):
         self.optimizer.step()
 
         dict_output = {'loss': loss.item(), 'nll': nll.item(), 'penalty': penalty.item()}
-        cos = lambda m: F.normalize(m) @ F.normalize(m).t()
-        dict_output["cosine_var"] = cos(self.var_per_domain.data).flatten()
-        dict_output["cosine_mean"] = cos(self.mean_per_domain.data).flatten()
+        # cos = lambda m: F.normalize(m) @ F.normalize(m).t()
+        # dict_output["cosine_var"] = cos(self.var_per_domain.data).flatten()
+        # dict_output["cosine_mean"] = cos(self.mean_per_domain.data).flatten()
         return dict_output
 
     def predict(self, x):
