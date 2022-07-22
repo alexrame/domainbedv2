@@ -384,7 +384,6 @@ class DARE(ERM):
         # )
 
     def update(self, minibatches, unlabeled=None):
-        self.update_count += 1
         all_x = torch.cat([x for x, y in minibatches])
         all_features = self.featurizer(all_x)
         if self._train_only_classifier:
