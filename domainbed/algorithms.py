@@ -370,18 +370,17 @@ class DARE(ERM):
     def __init__(self, *args, **kwargs):
         ERM.__init__(self, *args, **kwargs)
         assert self._train_only_classifier
-        self.register_buffer('update_count', torch.tensor([0]))
 
         self.register_buffer(
             "mean_per_domain", torch.zeros(self.num_domains, self.featurizer.n_outputs)
         )
         self.register_buffer(
             "var_per_domain",
-            torch.zeros(self.num_domains, self.featurizer.n_outputs)
+            torch.ones(self.num_domains, self.featurizer.n_outputs)
         )
         # self.register_buffer(
         #     "cov_per_domain",
-        #     torch.zeros(self.num_domains, self.featurizer.n_outputs, self.featurizer.n_outputs)
+        #     torch.ones(self.num_domains, self.featurizer.n_outputs, self.featurizer.n_outputs)
         # )
 
     def update(self, minibatches, unlabeled=None):
@@ -398,23 +397,20 @@ class DARE(ERM):
             features_i = all_features[idx:idx + x.shape[0]]
             mean_features_i = torch.mean(features_i, dim=0)
             self.mean_per_domain.data[i] = (
-                self.hparams['ema'] * self.mean_per_domain[i] + (1 - self.hparams['ema']) * mean_features_i
+                self.hparams['ema'] * self.mean_per_domain[i] +
+                (1 - self.hparams['ema']) * mean_features_i.detach()
             )
             centered_features_i = features_i - self.mean_per_domain[i]
             var_features_i = torch.mean(centered_features_i**2, dim=0)
 
             self.var_per_domain.data[i] = (
                 self.hparams['ema'] * self.var_per_domain[i] +
-                (1 - self.hparams['ema']) * var_features_i
+                (1 - self.hparams['ema']) * var_features_i.detach()
             )
             var_domain = 0.9 * self.var_per_domain[i] + 0.1 * torch.ones_like(
                 self.var_per_domain[i]
             )
-            try:
-                normalized_features_i = centered_features_i * torch.pow(var_domain, -1 / 2)
-            except:
-                import pdb
-                pdb.set_trace()
+            normalized_features_i = centered_features_i * torch.pow(var_domain, -1 / 2)
 
             # for covariance: left todo
             # torch.diag_embed(
@@ -442,7 +438,7 @@ class DARE(ERM):
                 self.var_per_domain[0]
             )
         normalized_features = centered_features * torch.pow(var, -1 / 2)
-        dict_predictions["norm"] = self.classifier(normalized_features)
+        dict_predictions["dare"] = self.classifier(normalized_features)
         return dict_predictions
 
 class AbstractMMD(ERM):

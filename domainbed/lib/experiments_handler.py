@@ -79,12 +79,16 @@ def clean_metrics(metrics, output_format="float"):
     new_dict = {}
     for k, v in metrics.items():
         if isinstance(v, dict):
-            v = v["string"]
+            continue
+            # v = v["string"]
         if isinstance(v, str):
             if v.endswith("%"):
                 v = v[:-1]
         if output_format == "float":
-            v = float(v)
+            try:
+                v = float(v)
+            except:
+                continue
         new_dict[k] = v
     return new_dict
 
