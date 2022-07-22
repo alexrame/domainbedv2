@@ -7,6 +7,7 @@ import torch.autograd as autograd
 from torch.autograd import Variable
 import os
 import copy
+from torch.distributions.normal import Normal
 import numpy as np
 from collections import defaultdict, OrderedDict
 try:
@@ -31,7 +32,8 @@ ALGORITHMS = [
     'MMD',
     'VREx',
     "Fishr",
-    "DARE"
+    "DARE",
+    "DARESWAP"
 ]
 
 
@@ -366,7 +368,7 @@ class DARE(ERM):
     """
     Perform ERM while removing mean covariance
     """
-
+    norm_or_swap = "norm"
     def __init__(self, *args, **kwargs):
         ERM.__init__(self, *args, **kwargs)
         assert self._train_only_classifier
@@ -385,13 +387,14 @@ class DARE(ERM):
 
     def update(self, minibatches, unlabeled=None):
         all_x = torch.cat([x for x, y in minibatches])
+        all_y = torch.cat([y for x, y in minibatches])
         all_features = self.featurizer(all_x)
         if self._train_only_classifier:
             all_features = all_features.detach()
 
-        nll = 0.
         penalty = torch.tensor(0.)
         idx = 0
+        list_normalized_features = []
         for i, (x, y) in enumerate(minibatches):
             features_i = all_features[idx:idx + x.shape[0]]
             mean_features_i = torch.mean(features_i, dim=0)
@@ -411,15 +414,23 @@ class DARE(ERM):
             )
             normalized_features_i = centered_features_i * torch.pow(var_domain, -1 / 2)
 
+            list_normalized_features.append(normalized_features_i)
+
             # for covariance: left todo
             # torch.diag_embed(
             # normalized_features_i = torch.matmul(centered_features_i, var_domain)
             # transforms.Normalize(2, 0.5)(t)
-            logits_i = self.classifier(normalized_features_i)
-            idx += x.shape[0]
-            nll += F.cross_entropy(logits_i, y)
 
-        nll /= len(minibatches)
+        all_normalized_features = torch.cat(list_normalized_features)
+        if self.norm_or_swap == "swap":
+            dist = Normal(
+                torch.mean(self.mean_per_domain, dim=0),
+                scale = torch.pow(torch.mean(self.var_per_domain, dim=0), 1/2))
+            all_normalized_features = all_normalized_features + dist.sample(torch.Size([all_normalized_features.shape[0]]))
+
+        all_logits = self.classifier(all_normalized_features)
+
+        nll = F.cross_entropy(all_logits, all_y)
 
         loss = nll + self.hparams['lambda'] * penalty
         self.optimizer.zero_grad()
@@ -443,6 +454,10 @@ class DARE(ERM):
         normalized_features = centered_features * torch.pow(var, -1 / 2)
         dict_predictions["dare"] = self.classifier(normalized_features)
         return dict_predictions
+
+
+class DARESWAP(DARE):
+    norm_or_swap = "swap"
 
 class AbstractMMD(ERM):
     """
