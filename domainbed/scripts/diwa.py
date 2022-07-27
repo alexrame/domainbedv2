@@ -210,7 +210,7 @@ def main():
     # load data: test and optionally train_out for restricted weight selection
     data_splits, data_names = [], []
     dict_domain_to_filter = {"test": "full"}
-    if inf_args.weight_selection == "restricted":
+    if inf_args.weight_selection == "restricted" or os.environ.get("INCLUDE_TRAIN"):
         assert inf_args.trial_seed != -1
         dict_domain_to_filter["train"] = "out"
     for domain in dict_domain_to_filter:
