@@ -239,6 +239,9 @@ def main():
                 selected_checkpoints, dataset, inf_args, data_names, data_splits, device
             )
             ood_results["i"] = i
+            if inf_args.path_for_save_weight:
+                raise ValueError("Do not proceed when saving init")
+
             ## accept only if WA's accuracy is improved
             if ood_results["train_acc"] >= best_result:
                 dict_best_results = ood_results
