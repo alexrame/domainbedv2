@@ -41,7 +41,7 @@ def _get_args():
 
 def create_splits(domain, inf_args, dataset, _filter):
     splits = []
-
+    holdout_fraction = float(os.environ.get("HOLDOUT", 0.2))
     for env_i, env in enumerate(dataset):
         if domain == "test" and env_i != inf_args.test_env:
             continue
@@ -52,7 +52,7 @@ def create_splits(domain, inf_args, dataset, _filter):
             splits.append(env)
         else:
             out_, in_ = misc.split_dataset(
-                env, int(len(env) * 0.2), misc.seed_hash(inf_args.trial_seed, env_i)
+                env, int(len(env) * holdout_fraction), misc.seed_hash(inf_args.trial_seed, env_i)
             )
             if _filter == "in":
                 splits.append(in_)
@@ -240,8 +240,6 @@ def main():
                 selected_checkpoints, dataset, inf_args, data_names, data_splits, device
             )
             ood_results["i"] = i
-            if inf_args.path_for_save_weight:
-                raise ValueError("Do not proceed when saving init")
 
             ## accept only if WA's accuracy is improved
             if ood_results["train_acc"] >= best_result:
@@ -254,6 +252,9 @@ def main():
                 selected_indexes.pop(-1)
                 print(f"Skipping index {i}")
             print_results(ood_results)
+
+            if inf_args.path_for_save_weight:
+                raise ValueError("Do not proceed when saving init")
 
         ## print final scores
         dict_best_results["final"] = 1
