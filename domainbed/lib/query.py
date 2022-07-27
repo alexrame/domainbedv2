@@ -59,7 +59,11 @@ class Q(object):
         return len(self._list)
 
     def __getitem__(self, key):
-        return self._list[key]
+        try:
+            return self._list[key]
+        except:
+            print(self._list)
+            raise KeyError(key)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):

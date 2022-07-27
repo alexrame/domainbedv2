@@ -95,7 +95,8 @@ def get_dict_folder_to_score(inf_args):
         if train_args["dataset"] != inf_args.dataset:
             continue
         if train_args["test_envs"] != [inf_args.test_env]:
-            continue
+            if not os.environ.get("KEEP_ALL_ENV"):
+                continue
         if train_args["trial_seed"] != inf_args.trial_seed and inf_args.trial_seed != -1:
             continue
 
