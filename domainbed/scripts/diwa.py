@@ -43,7 +43,7 @@ def create_splits(domain, inf_args, dataset, _filter):
     splits = []
     holdout_fraction = float(os.environ.get("HOLDOUT", 0.2))
     for env_i, env in enumerate(dataset):
-        if domain == "test" and env_i != inf_args.test_env:
+        if domain.startswith("test") and env_i != inf_args.test_env:
             continue
         elif domain == "train" and env_i == inf_args.test_env:
             continue
@@ -210,9 +210,14 @@ def main():
     # load data: test and optionally train_out for restricted weight selection
     data_splits, data_names = [], []
     dict_domain_to_filter = {"test": "full"}
-    if inf_args.weight_selection == "restricted" or os.environ.get("INCLUDE_TRAIN"):
+    if inf_args.weight_selection == "restricted":
         assert inf_args.trial_seed != -1
         dict_domain_to_filter["train"] = "out"
+
+    if os.environ.get("INCLUDE_TRAIN"):
+        dict_domain_to_filter["test"] = "out"
+        dict_domain_to_filter["testin"] = "in"
+
     for domain in dict_domain_to_filter:
         _data_splits = create_splits(domain, inf_args, dataset, dict_domain_to_filter[domain])
         if domain == "train":
