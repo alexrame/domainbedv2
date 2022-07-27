@@ -97,7 +97,7 @@ def all_test_env_combinations(n):
 
 def make_args_list(
     n_trials, dataset_names, algorithms, n_hparams_from, n_hparams, steps, data_dir, task,
-    holdout_fraction, single_test_envs, hparams, force_test_env, **kwargs
+    holdout_fraction, single_test_envs, hparams, force_test_env, force_train_env, **kwargs
 ):
     args_list = []
     for trial_seed in range(n_trials):
@@ -105,6 +105,13 @@ def make_args_list(
             for algorithm in algorithms:
                 if force_test_env is not None:
                     all_test_envs = [force_test_env] ## DiWA ##
+                elif force_train_env is not None:
+                    all_test_envs = [
+                        [
+                            i for i in range(datasets.num_environments(dataset))
+                            if i != force_train_env
+                        ]
+                    ]
                 elif single_test_envs:
                     all_test_envs = [
                         [i] for i in range(datasets.num_environments(dataset))]
@@ -160,6 +167,7 @@ if __name__ == "__main__":
     parser.add_argument('--ask_confirmation', action='store_true')
     ## DiWA ##
     parser.add_argument('--test_env', type=int, default=None)
+    parser.add_argument('--train_env', type=int, default=None)
     parser.add_argument('--path_for_init', type=str, default=None)
     parser.add_argument('--train_only_classifier', type=str, default=None)
 
@@ -179,6 +187,7 @@ if __name__ == "__main__":
         hparams=args.hparams,
         ## DiWA ##
         force_test_env=args.test_env,
+        force_train_env=args.train_env,
         path_for_init=args.path_for_init,
         train_only_classifier=args.train_only_classifier
     )
