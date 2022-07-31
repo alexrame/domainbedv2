@@ -106,7 +106,7 @@ class ERM(Algorithm):
             if os.path.exists(path_for_init):
                 print(f"Load weights from {path_for_init}")
                 self.network.load_state_dict(torch.load(path_for_init))
-                if self._train_only_classifier == "reset":
+                if self._train_only_classifier == "reset" or os.environ.get("RESET_CLASSIFIER"):
                     print("Reset random classifier")
                     self.classifier.reset_parameters()
             else:

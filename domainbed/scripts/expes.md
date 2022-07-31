@@ -1,11 +1,12 @@
 # current
-(bias) [utr15kn@jean-zay1: home0707]$ scid
-     JOBID PARTITION                           NAME     USER ST       TIME  NODES NODELIST(REASON)
-   1515657   gpu_p13 home0_dareswapllr_lpdr_0722.sl  utr15kn PD       0:00      1 (Priority)
-   1514156   gpu_p13 home0_fishrllr_lpdr_0722.slurm  utr15kn  R    3:03:09      1 r12i1n3
-   1514153   gpu_p13    home0_ermllr_lpd_0722.slurm  utr15kn  R    3:03:31      1 r11i0n0
-   1514148   gpu_p13   home0_ermllr_lpdr_0722.slurm  utr15kn  R    3:03:55      1 r10i7n5
-   1515589   gpu_p13  home0_darellr_lpdr_0722.slurm  utr15kn  R       8:42      1 r11i4n7
+    JOBID PARTITION                           NAME     USER ST       TIME  NODES NODELIST(REASON)
+   1729309   gpu_p13 home0ontest_ermwnr_lpd_0731.sl  utr15kn PD       0:00      1 (Priority)
+   1729311   gpu_p13 home0ontest_ermwnr_lpe_0731.sl  utr15kn PD       0:00      1 (Priority)
+   1729312   gpu_p13 home0ontest8_ermwnr_lpd_0731.s  utr15kn PD       0:00      1 (Priority)
+   1729310   gpu_p13  home0ontest_ermwnr_0731.slurm  utr15kn PD       0:00      1 (Priority)
+   1729319   gpu_p13 home0ontest8_ermllr_lpdr_0731.  utr15kn PD       0:00      1 (Priority)
+   1729313   gpu_p13 home0ontest8_ermwnr_0731.slurm  utr15kn PD       0:00      1 (Priority)
+   1729341   gpu_p13 home0ontest8_ermwnr_lpe_0731.s  utr15kn PD       0:00      1 (None)
 
 ## WA peforms worse than ERM
 
