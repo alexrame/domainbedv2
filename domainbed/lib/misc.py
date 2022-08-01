@@ -25,10 +25,10 @@ def get_machine_name():
     return socket.gethostname()
 
 ## DiWA ##
-def get_score(results, test_envs, metric_key="acc"):
+def get_score(results, test_envs, metric_key="out_acc"):
     val_env_keys = []
     for i in itertools.count():
-        acc_key = f'env{i}_out_' + metric_key
+        acc_key = f'env{i}_' + metric_key
         if acc_key in results:
             if os.environ.get("INDOMAIN", "0") == "0":
                 if i not in test_envs:

@@ -107,7 +107,7 @@ def get_dict_folder_to_score(inf_args):
         dict_folder_to_score[folder] = misc.get_score(
             json.loads(save_dict["results"]),
             [inf_args.test_env],
-            metric_key=os.environ.get("KEYACC", "acc"))
+            metric_key=os.environ.get("KEYACC", "out_acc"))
 
     if len(dict_folder_to_score) == 0:
         raise ValueError(f"No folders found for: {inf_args}")
