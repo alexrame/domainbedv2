@@ -1,23 +1,9 @@
 # current
-    JOBID PARTITION                           NAME     USER ST       TIME  NODES NODELIST(REASON)
-   1729309   gpu_p13 home0ontest_ermwnr_lpd_0731.sl  utr15kn PD       0:00      1 (Priority)
-   1729311   gpu_p13 home0ontest_ermwnr_lpe_0731.sl  utr15kn PD       0:00      1 (Priority)
-   1729312   gpu_p13 home0ontest8_ermwnr_lpd_0731.s  utr15kn PD       0:00      1 (Priority)
-   1729310   gpu_p13  home0ontest_ermwnr_0731.slurm  utr15kn PD       0:00      1 (Priority)
-   1729319   gpu_p13 home0ontest8_ermllr_lpdr_0731.  utr15kn PD       0:00      1 (Priority)
-   1729313   gpu_p13 home0ontest8_ermwnr_0731.slurm  utr15kn PD       0:00      1 (Priority)
-   1729341   gpu_p13 home0ontest8_ermwnr_lpe_0731.s  utr15kn PD       0:00      1 (None)
-
-# Now
-     JOBID PARTITION                           NAME     USER ST       TIME  NODES NODELIST(REASON)
-   1736027   gpu_p13 home0ontest8_ermwnr_lpdr_0731.  utr15kn PD       0:00      1 (None)
-   1729309   gpu_p13 home0ontest_ermwnr_lpd_0731.sl  utr15kn  R    7:47:12      1 r11i1n3
-   1729310   gpu_p13  home0ontest_ermwnr_0731.slurm  utr15kn  R    7:47:12      1 r11i5n6
-   1729311   gpu_p13 home0ontest_ermwnr_lpe_0731.sl  utr15kn  R    7:47:12      1 r11i7n8
-   1729312   gpu_p13 home0ontest8_ermwnr_lpd_0731.s  utr15kn  R    7:47:12      1 r12i5n4
-   1729313   gpu_p13 home0ontest8_ermwnr_0731.slurm  utr15kn  R    7:47:12      1 r13i2n7
-   1729319   gpu_p13 home0ontest8_ermllr_lpdr_0731.  utr15kn  R    7:47:12      1 r13i3n1
-   1729341   gpu_p13 home0ontest8_ermwnr_lpe_0731.s  utr15kn  R    7:47:12      1 r14i0n7
+   1748886   gpu_p13 enshomeontest8_erm_lpdr_0731.s  utr15kn PD       0:00      1 (None)
+   1748864   gpu_p13 enshomeontest8_ermwnr_lp_0731.  utr15kn  R       0:53      1 r12i4n8
+   1748858   gpu_p13 enshomeontest_ermwnr_lp_0731.s  utr15kn  R       1:13      1 r11i4n7
+   1748859   gpu_p13   enshomeontest8_lp_0727.slurm  utr15kn  R       1:13      1 r11i4n7
+   1748855   gpu_p13    enshomeontest_lp_0727.slurm  utr15kn  R       1:27      1 r11i0n7
 ## WA peforms worse than ERM
 
 

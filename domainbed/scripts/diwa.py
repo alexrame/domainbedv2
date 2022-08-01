@@ -210,12 +210,12 @@ def main():
     # load individual folders and their corresponding scores on train_out
     dict_folder_to_score = get_dict_folder_to_score(inf_args)
     sorted_checkpoints = sorted(dict_folder_to_score.keys(), key=lambda x: dict_folder_to_score[x], reverse=True)
-    for checkpoint in sorted_checkpoints:
-        print("Found: ", checkpoint, " with score: ", dict_folder_to_score[checkpoint])
     if inf_args.topk != 0:
         rand_nums = sorted(random.sample(range(len(sorted_checkpoints)), inf_args.topk))
         sorted_checkpoints = [sorted_checkpoints[i] for i in rand_nums]
         dict_folder_to_score = {c: dict_folder_to_score[c] for c in sorted_checkpoints}
+    for checkpoint in sorted_checkpoints:
+        print("Found: ", checkpoint, " with score: ", dict_folder_to_score[checkpoint])
 
     # load data: test and optionally train_out for restricted weight selection
     data_splits, data_names = [], []
