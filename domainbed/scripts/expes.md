@@ -1,3 +1,15 @@
+# debug
+
+"env0_in_acc": 0.23892893923789907
+"env0_out_acc": 0.2618556701030928
+"env1_in_acc": 0.2571592210767468
+"env1_out_acc": 0.23367697594501718
+"env2_in_acc": 0.3761261261261261
+"env2_out_acc": 0.35851183765501693
+"env3_in_acc": 0.36058519793459554
+"env3_out_acc": 0.338691159586682,
+
+
 # current
    1748886   gpu_p13 enshomeontest8_erm_lpdr_0731.s  utr15kn PD       0:00      1 (None)
    1748864   gpu_p13 enshomeontest8_ermwnr_lp_0731.  utr15kn  R       0:53      1 r12i4n8

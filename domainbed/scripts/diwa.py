@@ -213,7 +213,8 @@ def main():
     if inf_args.dataset in vars(datasets):
         dataset_class = vars(datasets)[inf_args.dataset]
         dataset = dataset_class(
-            inf_args.data_dir, [inf_args.test_env], hparams={"data_augmentation": False}
+            inf_args.data_dir, [inf_args.test_env],
+            hparams={"data_augmentation": os.environ.get("DATAAUG", "0") == "1"}
         )
     else:
         raise NotImplementedError
