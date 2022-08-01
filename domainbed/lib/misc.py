@@ -30,8 +30,12 @@ def get_score(results, test_envs, metric_key="acc"):
     for i in itertools.count():
         acc_key = f'env{i}_out_' + metric_key
         if acc_key in results:
-            if i not in test_envs:
-                val_env_keys.append(acc_key)
+            if os.environ.get("INDOMAIN", "0") == "0":
+                if i not in test_envs:
+                    val_env_keys.append(acc_key)
+            else:
+                if i in test_envs:
+                    val_env_keys.append(acc_key)
         else:
             break
     assert i > 0, results
