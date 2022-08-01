@@ -109,7 +109,7 @@ def get_dict_folder_to_score(inf_args):
             continue
 
         if "results" not in save_dict:
-            score = 0
+            score = -1
         else:
             score = misc.get_score(
                 json.loads(save_dict["results"]), [inf_args.test_env],
