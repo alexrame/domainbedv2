@@ -9,8 +9,30 @@
 "env3_in_acc": 0.36058519793459554
 "env3_out_acc": 0.338691159586682,
 
+0.2389289392          0.2618556701          0.2545819015          0.2462772050          1                     0.2389289392
+
+env_0_in_acc          env_0_out_acc         env_1_in_acc          env_1_out_acc         env_2_in_acc          env_2_out_acc         env_3_in_acc          env_3_out_acc         length                testin_acc
+0.2389289392          0.2618556701          0.2545819015          0.2462772050          0.3786599099          0.3686583991          0.3749282846          0.3455797933          1                     0.2389289392
+
+
+
+
+# no data aug in training
+
+
+ env0_in_acc": 0.2481977342945417
+ env0_out_acc": 0.2804123711340206
+ env1_in_acc": 0.28150057273768614
+ env1_out_acc": 0.27376861397479957
+ env2_in_acc": 0.41469594594594594
+ env2_out_acc": 0.3945885005636979
+ env3_in_acc": 0.3984509466437177
+ env3_out_acc": 0.3811710677382319
+
+0.2481977343          0.2804123711          0.2815005727          0.2737686140          1                     0.2481977343
 
 # current
+
    1748886   gpu_p13 enshomeontest8_erm_lpdr_0731.s  utr15kn PD       0:00      1 (None)
    1748864   gpu_p13 enshomeontest8_ermwnr_lp_0731.  utr15kn  R       0:53      1 r12i4n8
    1748858   gpu_p13 enshomeontest_ermwnr_lp_0731.s  utr15kn  R       1:13      1 r11i4n7

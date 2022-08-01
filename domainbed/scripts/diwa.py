@@ -235,9 +235,6 @@ def main():
     if os.environ.get("INDOMAIN"):
         # (, "0"): != "0":
         dict_domain_to_filter = {"test": "out", "testin": "in"}
-    elif inf_args.topk == 1:
-        # TMP for debugging
-        dict_domain_to_filter = {"test": "out"}
     else:
         dict_domain_to_filter = {"test": "full"}
 
