@@ -95,7 +95,7 @@ def get_dict_folder_to_score(inf_args):
         if train_args["dataset"] != inf_args.dataset:
             continue
         if os.environ.get("INDOMAIN", "0") == "0":
-            if train_args["test_envs"] != [inf_args.test_env]:
+            if inf_args.test_env not in train_args["test_envs"]:
                 continue
         else:
             if inf_args.test_env in train_args["test_envs"]:
