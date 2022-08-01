@@ -65,10 +65,14 @@ def create_splits(domain, inf_args, dataset, _filter, holdout_fraction):
 
 
 def get_best_model(output_folder):
-    if "model_best.pkl" in os.listdir(output_folder):
-        return os.path.join(output_folder, "model_best.pkl")
-    if "best" in os.listdir(output_folder):
-        return os.path.join(output_folder, "best/model_with_weights.pkl")
+    if os.environ.get("WHICHMODEL", "best") == 'last':
+        if "model.pkl" in os.listdir(output_folder):
+            return os.path.join(output_folder, "model.pkl")
+    elif os.environ.get("WHICHMODEL", "best") == 'best':
+        if "model_best.pkl" in os.listdir(output_folder):
+            return os.path.join(output_folder, "model_best.pkl")
+        if "best" in os.listdir(output_folder):
+            return os.path.join(output_folder, "best/model_with_weights.pkl")
     return None
 
 def get_dict_folder_to_score(inf_args):
@@ -104,11 +108,15 @@ def get_dict_folder_to_score(inf_args):
         if train_args["trial_seed"] != inf_args.trial_seed and inf_args.trial_seed != -1:
             continue
 
-        dict_folder_to_score[folder] = misc.get_score(
-            json.loads(save_dict["results"]), [inf_args.test_env],
-            metric_key=os.environ.get("KEYACC", "out_acc"),
-            model_selection=os.environ.get("MODEL_SELECTION", "train")
-        )
+        if "results" not in save_dict:
+            score = 0
+        else:
+            score = misc.get_score(
+                json.loads(save_dict["results"]), [inf_args.test_env],
+                metric_key=os.environ.get("KEYACC", "out_acc"),
+                model_selection=os.environ.get("MODEL_SELECTION", "train")
+            )
+        dict_folder_to_score[folder] = score
 
     if len(dict_folder_to_score) == 0:
         raise ValueError(f"No folders found for: {inf_args}")
@@ -222,7 +230,7 @@ def main():
     data_splits, data_names = [], []
 
     if os.environ.get("INDOMAIN"):
-        dict_domain_to_filter = {"test": "out"} #, "testin": "in"}
+        dict_domain_to_filter = {"test": "out"} #, "testin": "in"} TMP
     elif inf_args.topk == 1:
         # TMP for debugging
         dict_domain_to_filter = {"test": "out"}

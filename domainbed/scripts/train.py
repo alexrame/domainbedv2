@@ -126,15 +126,18 @@ if __name__ == "__main__":
             misc.seed_hash(args.trial_seed, env_i))
 
         if env_i in args.test_envs:
-            uda, in_ = misc.split_dataset(in_,
-                int(len(in_)*args.uda_holdout_fraction),
-                misc.seed_hash(args.trial_seed, env_i))
+            if args.uda_holdout_fraction != 0:
+                uda, in_ = misc.split_dataset(in_,
+                    int(len(in_)*args.uda_holdout_fraction),
+                    misc.seed_hash(args.trial_seed, env_i))
 
         if hparams['class_balanced']:
             in_weights = misc.make_weights_for_balanced_classes(in_)
             out_weights = misc.make_weights_for_balanced_classes(out)
-            if uda is not None:
+            if args.uda_holdout_fraction != 0:
                 uda_weights = misc.make_weights_for_balanced_classes(uda)
+            else:
+                uda_weights = None
         else:
             in_weights, out_weights, uda_weights = None, None, None
         in_splits.append((in_, in_weights))
@@ -218,6 +221,8 @@ if __name__ == "__main__":
 
     best_score = -float("inf")
     last_results_keys = None
+    results = {}
+
     for step in range(0, n_steps):
         step_start_time = time.time()
         minibatches_device = [(x.to(device), y.to(device))
@@ -271,9 +276,9 @@ if __name__ == "__main__":
             ## DiWA ##
             current_score = misc.get_score(results, args.test_envs)
             if current_score > best_score:
+                best_score = current_score
                 results["best_score"] = best_score
                 results["best_step"] = step
-                best_score = current_score
                 if step != 0:
                     print(f"Saving new best score at step: {step} at path: model_best.pkl")
                     save_checkpoint(
@@ -291,7 +296,10 @@ if __name__ == "__main__":
     if args.init_step:
         assert args.train_only_classifier or n_steps == -1
         algorithm.save_path_for_future_init(args.path_for_init)
-    save_checkpoint('model.pkl')
+    save_checkpoint(
+        'model.pkl',
+        results=json.dumps(results, sort_keys=True),
+    )
 
     with open(os.path.join(args.output_dir, 'done'), 'w') as f:
         f.write('done')
