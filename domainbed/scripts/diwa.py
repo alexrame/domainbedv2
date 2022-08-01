@@ -40,9 +40,8 @@ def _get_args():
     return inf_args
 
 
-def create_splits(domain, inf_args, dataset, _filter):
+def create_splits(domain, inf_args, dataset, _filter, holdout_fraction):
     splits = []
-    holdout_fraction = float(os.environ.get("HOLDOUT", 0.2))
     for env_i, env in enumerate(dataset):
         if domain.startswith("test") and env_i != inf_args.test_env:
             continue
@@ -231,7 +230,14 @@ def main():
         dict_domain_to_filter["train"] = "out"
 
     for domain in dict_domain_to_filter:
-        _data_splits = create_splits(domain, inf_args, dataset, dict_domain_to_filter[domain])
+        holdout_fraction = float(os.environ.get("HOLDOUT", 0.2)) if domain.startswith("test") else 0.2
+        _data_splits = create_splits(
+            domain,
+            inf_args,
+            dataset,
+            dict_domain_to_filter[domain],
+            holdout_fraction=holdout_fraction
+        )
         if domain == "train":
             data_splits.append(misc.MergeDataset(_data_splits))
         else:
