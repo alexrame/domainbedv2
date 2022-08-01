@@ -100,7 +100,6 @@ def get_dict_folder_to_score(inf_args):
         if train_args["trial_seed"] != inf_args.trial_seed and inf_args.trial_seed != -1:
             continue
 
-        print(f"Found: {folder}")
         dict_folder_to_score[folder] = misc.get_score(
             json.loads(save_dict["results"]),
             [inf_args.test_env],
@@ -206,6 +205,9 @@ def main():
 
     # load individual folders and their corresponding scores on train_out
     dict_folder_to_score = get_dict_folder_to_score(inf_args)
+    sorted_checkpoints = sorted(dict_folder_to_score.keys(), key=lambda x: dict_folder_to_score[x], reverse=True)
+    for checkpoint in sorted_checkpoints:
+        print("Found: ", checkpoint, " with score: ", dict_folder_to_score[checkpoint])
 
     # load data: test and optionally train_out for restricted weight selection
     data_splits, data_names = [], []
@@ -232,7 +234,6 @@ def main():
         # Restricted weight selection
 
         ## sort individual members by decreasing accuracy on train_out
-        sorted_checkpoints = sorted(dict_folder_to_score.keys(), key=lambda x: dict_folder_to_score[x], reverse=True)
         selected_indexes = []
         best_result = -float("inf")
         dict_best_results = {}
