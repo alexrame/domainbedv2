@@ -80,7 +80,7 @@ def get_dict_folder_to_score(inf_args):
     output_folders = [
         output_folder for output_folder in _output_folders
         if os.path.isdir(output_folder)
-        and "done" in os.listdir(output_folder)
+        and (os.environ.get("DONEOPTIONAL") or "done" in os.listdir(output_folder))
         and get_best_model(output_folder)
     ]
     if len(output_folders) == 0:
@@ -247,7 +247,6 @@ def main():
         else:
             data_splits.append(_data_splits[0])
         data_names.append(domain)
-
 
     # compute score after weight averaging
     if inf_args.weight_selection == "restricted":
