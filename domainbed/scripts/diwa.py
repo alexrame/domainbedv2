@@ -229,7 +229,7 @@ def main():
     else:
         dict_domain_to_filter = {"test": "full"}
 
-    if inf_args.weight_selection == "restricted" or os.environ.get("INCLUDE_TRAIN"):
+    if inf_args.weight_selection == "restricted" or os.environ.get("INCLUDE_TRAIN", "0") != "0":
         assert inf_args.trial_seed != -1
         dict_domain_to_filter["train"] = "out"
 
