@@ -220,14 +220,15 @@ def main():
 
     # load data: test and optionally train_out for restricted weight selection
     data_splits, data_names = [], []
-    dict_domain_to_filter = {"test": "full"}
-    if inf_args.weight_selection == "restricted":
+
+    if os.environ.get("INDOMAIN"):
+        dict_domain_to_filter = {"test": "out", "testin": "in"}
+    else:
+        dict_domain_to_filter = {"test": "full"}
+
+    if inf_args.weight_selection == "restricted" or os.environ.get("INCLUDE_TRAIN"):
         assert inf_args.trial_seed != -1
         dict_domain_to_filter["train"] = "out"
-
-    if os.environ.get("INCLUDE_TRAIN"):
-        dict_domain_to_filter["test"] = "out"
-        dict_domain_to_filter["testin"] = "in"
 
     for domain in dict_domain_to_filter:
         _data_splits = create_splits(domain, inf_args, dataset, dict_domain_to_filter[domain])
