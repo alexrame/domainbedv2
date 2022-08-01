@@ -8,6 +8,16 @@
    1729313   gpu_p13 home0ontest8_ermwnr_0731.slurm  utr15kn PD       0:00      1 (Priority)
    1729341   gpu_p13 home0ontest8_ermwnr_lpe_0731.s  utr15kn PD       0:00      1 (None)
 
+# Now
+     JOBID PARTITION                           NAME     USER ST       TIME  NODES NODELIST(REASON)
+   1736027   gpu_p13 home0ontest8_ermwnr_lpdr_0731.  utr15kn PD       0:00      1 (None)
+   1729309   gpu_p13 home0ontest_ermwnr_lpd_0731.sl  utr15kn  R    7:47:12      1 r11i1n3
+   1729310   gpu_p13  home0ontest_ermwnr_0731.slurm  utr15kn  R    7:47:12      1 r11i5n6
+   1729311   gpu_p13 home0ontest_ermwnr_lpe_0731.sl  utr15kn  R    7:47:12      1 r11i7n8
+   1729312   gpu_p13 home0ontest8_ermwnr_lpd_0731.s  utr15kn  R    7:47:12      1 r12i5n4
+   1729313   gpu_p13 home0ontest8_ermwnr_0731.slurm  utr15kn  R    7:47:12      1 r13i2n7
+   1729319   gpu_p13 home0ontest8_ermllr_lpdr_0731.  utr15kn  R    7:47:12      1 r13i3n1
+   1729341   gpu_p13 home0ontest8_ermwnr_lpe_0731.s  utr15kn  R    7:47:12      1 r14i0n7
 ## WA peforms worse than ERM
 
 
@@ -73,3 +83,26 @@ RESET_CLASSIFIER=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --da
 KEYACC=Accuracies/acc_net CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --what netm --path_for_save_weight /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_0722_lp_diwa2
 KEYACC=Accuracies/acc_net CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home --trial_seed 1 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --what netm --path_for_save_weight /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_0722_lp_diwa2
 KEYACC=Accuracies/acc_net CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home --trial_seed 2 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --what netm --path_for_save_weight /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_0722_lp_diwa2
+
+
+
+
+INCLUDE_TRAIN=1 HOLDOUT=0.2 KEEP_ALL_ENV=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest_ermwnr_lpd_0731 --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
+INCLUDE_TRAIN=1 HOLDOUT=0.2 KEEP_ALL_ENV=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest_ermwnr_lpd_0731 --trial_seed 1 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
+INCLUDE_TRAIN=1 HOLDOUT=0.2 KEEP_ALL_ENV=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest_ermwnr_lpd_0731 --trial_seed 2 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
+
+INCLUDE_TRAIN=1 HOLDOUT=0.2 KEEP_ALL_ENV=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest_ermwnr_lpe_0731 --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
+INCLUDE_TRAIN=1 HOLDOUT=0.2 KEEP_ALL_ENV=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest_ermwnr_lpe_0731 --trial_seed 1 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
+INCLUDE_TRAIN=1 HOLDOUT=0.2 KEEP_ALL_ENV=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest_ermwnr_lpe_0731 --trial_seed 2 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
+
+INCLUDE_TRAIN=1 HOLDOUT=0.2 KEEP_ALL_ENV=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest_ermwnr_0731 --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
+INCLUDE_TRAIN=1 HOLDOUT=0.2 KEEP_ALL_ENV=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest_ermwnr_0731 --trial_seed 1 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
+INCLUDE_TRAIN=1 HOLDOUT=0.2 KEEP_ALL_ENV=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest_ermwnr_0731 --trial_seed 2 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
+
+
+
+/gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/
+
+/gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/
+
+

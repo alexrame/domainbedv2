@@ -62,7 +62,8 @@ class Q(object):
         try:
             return self._list[key]
         except:
-            print(self._list)
+            print(f"Missing: {key} in self._list")
+            import pdb; pdb.set_trace()
             raise KeyError(key)
 
     def __eq__(self, other):
