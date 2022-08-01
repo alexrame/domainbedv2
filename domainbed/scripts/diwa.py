@@ -245,7 +245,7 @@ def main():
         dict_domain_to_filter["train"] = "out"
 
     if os.environ.get("INCLUDE_UPTO", "0") != "0":
-        for env_i in range(0, float(os.environ.get("INCLUDE_UPTO", "0"))):
+        for env_i in range(0, int(os.environ.get("INCLUDE_UPTO", "0"))):
             dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
             dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
 
