@@ -29,6 +29,7 @@ def _get_args():
         help='Trial number (used for seeding split_dataset and random_hparams).'
     )
     parser.add_argument('--path_for_save_weight', type=str, default=None)
+    parser.add_argument('--topk', type=int, default=0)
     parser.add_argument(
         '--what',
         nargs='+',
@@ -208,6 +209,10 @@ def main():
     sorted_checkpoints = sorted(dict_folder_to_score.keys(), key=lambda x: dict_folder_to_score[x], reverse=True)
     for checkpoint in sorted_checkpoints:
         print("Found: ", checkpoint, " with score: ", dict_folder_to_score[checkpoint])
+    if inf_args.topk != 0:
+        rand_nums = sorted(random.sample(range(len(sorted_checkpoints)), inf_args.topk))
+        sorted_checkpoints = [sorted_checkpoints[i] for i in rand_nums]
+        dict_folder_to_score = {c: dict_folder_to_score[c] for c in sorted_checkpoints}
 
     # load data: test and optionally train_out for restricted weight selection
     data_splits, data_names = [], []
