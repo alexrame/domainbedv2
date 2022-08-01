@@ -47,6 +47,8 @@ def create_splits(domain, inf_args, dataset, _filter, holdout_fraction):
             continue
         elif domain == "train" and env_i == inf_args.test_env:
             continue
+        elif domain.startswith("env") and env_i != int(domain.split("_")[1]):
+            continue
 
         if _filter == "full":
             splits.append(env)
@@ -241,6 +243,11 @@ def main():
     if inf_args.weight_selection == "restricted" or os.environ.get("INCLUDE_TRAIN", "0") != "0":
         assert inf_args.trial_seed != -1
         dict_domain_to_filter["train"] = "out"
+
+    if os.environ.get("INCLUDE_UPTO", "0") != "0":
+        for env_i in range(0, float(os.environ.get("INCLUDE_UPTO", "0"))):
+            dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
+            dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
 
     for domain in dict_domain_to_filter:
         holdout_fraction = float(os.environ.get("HOLDOUT", 0.2)) if domain.startswith("test") else 0.2
