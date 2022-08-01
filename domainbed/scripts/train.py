@@ -114,7 +114,7 @@ if __name__ == "__main__":
     # args.task == "domain_adaptation". If we are interested in comparing
     # domain generalization and domain adaptation results, then domain
     # generalization algorithms should create the same 'uda-splits', which will
-    # be discared at training.
+    # be discarded at training.
     in_splits = []
     out_splits = []
     uda_splits = []
@@ -182,6 +182,7 @@ if __name__ == "__main__":
 
     if args.train_only_classifier == "0":
         args.train_only_classifier = None
+
     algorithm = algorithms.get_algorithm_class(args.algorithm)(
         dataset.input_shape,
         dataset.num_classes,
@@ -190,7 +191,6 @@ if __name__ == "__main__":
         train_only_classifier=args.train_only_classifier,
         path_for_init=args.path_for_init
     )
-
 
     algorithm.to(device)
 
@@ -274,7 +274,7 @@ if __name__ == "__main__":
                 f.write(json.dumps(results, sort_keys=True) + "\n")
 
             ## DiWA ##
-            current_score = misc.get_score(results, args.test_envs)
+            current_score = misc.get_score(results, args.test_envs, model_selection="train")
             if current_score > best_score:
                 best_score = current_score
                 results["best_score"] = best_score

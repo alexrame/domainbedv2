@@ -230,6 +230,7 @@ def main():
     data_splits, data_names = [], []
 
     if os.environ.get("INDOMAIN"):
+        # (, "0"): != "0":
         dict_domain_to_filter = {"test": "out", "testin": "in"}
     elif inf_args.topk == 1:
         # TMP for debugging
