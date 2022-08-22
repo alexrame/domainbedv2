@@ -1,13 +1,10 @@
-# debug
-
-enshomeontest8_lp_0727.slurm
-enshomeontest_lp_0727.slurm
-
 # current
 
-   1748886   gpu_p13 enshomeontest8_erm_lpdr_0731.s  utr15kn PD       0:00      1 (None)
-   1748864   gpu_p13 enshomeontest8_ermwnr_lp_0731.  utr15kn  R       0:53      1 r12i4n8
-   1748858   gpu_p13 enshomeontest_ermwnr_lp_0731.s  utr15kn  R       1:13      1 r11i4n7
+home0ontest8_ermwnr_saveall_lpd_0822.slurm
+
+
+
+# backup
 ## WA peforms worse than ERM
 
 

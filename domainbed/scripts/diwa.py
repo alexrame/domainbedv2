@@ -68,13 +68,17 @@ def create_splits(domain, inf_args, dataset, _filter, holdout_fraction):
 
 def get_best_model(output_folder):
     if os.environ.get("WHICHMODEL", "best") == 'last':
-        if "model.pkl" in os.listdir(output_folder):
-            return os.path.join(output_folder, "model.pkl")
+        name = "model.pkl"
     elif os.environ.get("WHICHMODEL", "best") == 'best':
         if "model_best.pkl" in os.listdir(output_folder):
-            return os.path.join(output_folder, "model_best.pkl")
-        if "best" in os.listdir(output_folder):
-            return os.path.join(output_folder, "best/model_with_weights.pkl")
+            name = "model_best.pkl"
+        else:
+            name = "best/model_with_weights.pkl"
+    else:
+        name = "model_" + os.environ.get("WHICHMODEL")
+
+    if name in os.listdir(output_folder):
+        return os.path.join(output_folder, name)
     return None
 
 def get_dict_folder_to_score(inf_args):
