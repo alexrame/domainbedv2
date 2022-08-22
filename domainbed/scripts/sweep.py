@@ -170,6 +170,7 @@ if __name__ == "__main__":
     parser.add_argument('--train_env', type=int, default=None)
     parser.add_argument('--path_for_init', type=str, default=None)
     parser.add_argument('--train_only_classifier', type=str, default=None)
+    parser.add_argument('--save_model_every_checkpoint', type=str, default=None)
 
     args = parser.parse_args()
 

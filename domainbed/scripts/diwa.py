@@ -100,7 +100,7 @@ def get_dict_folder_to_score(inf_args):
 
         if train_args["dataset"] != inf_args.dataset:
             continue
-        if os.environ.get("INDOMAIN", "0") == "0":
+        if misc.is_not_none(os.environ.get("INDOMAIN")):
             if inf_args.test_env not in train_args["test_envs"]:
                 continue
         else:
@@ -236,13 +236,12 @@ def main():
     # load data: test and optionally train_out for restricted weight selection
     data_splits, data_names = [], []
 
-    if os.environ.get("INDOMAIN"):
-        # (, "0"): != "0":
+    if misc.is_not_none(os.environ.get("INDOMAIN")):
         dict_domain_to_filter = {"test": "out", "testin": "in"}
     else:
         dict_domain_to_filter = {"test": "full"}
 
-    if inf_args.weight_selection == "restricted" or os.environ.get("INCLUDE_TRAIN", "0") != "0":
+    if inf_args.weight_selection == "restricted" or misc.is_not_none(os.environ.get("INCLUDE_TRAIN")):
         assert inf_args.trial_seed != -1
         dict_domain_to_filter["train"] = "out"
 

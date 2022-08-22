@@ -48,7 +48,7 @@ if __name__ == "__main__":
     parser.add_argument('--uda_holdout_fraction', type=float, default=0,
         help="For domain adaptation, % of test to use unlabeled for training.")
     parser.add_argument('--skip_model_save', action='store_true')
-    parser.add_argument('--save_model_every_checkpoint', action='store_true')
+    parser.add_argument('--save_model_every_checkpoint', type=str, default=None)
     ## DiWA ##
     parser.add_argument('--train_only_classifier', type=str, default=None)
     parser.add_argument('--init_step', action='store_true')
@@ -237,8 +237,10 @@ if __name__ == "__main__":
 
         for key, val in step_vals.items():
             checkpoint_vals[key].append(val)
-
-        if (step % checkpoint_freq == 0) or (step == n_steps - 1):
+        do_inference_at_this_step = (step % checkpoint_freq == 0) or (step == n_steps - 1) or (
+            step < checkpoint_freq and step % os.environ.get("START_CHKPT_FREQ", checkpoint_freq) == 0
+        )
+        if do_inference_at_this_step:
             results = {
                 'step': step,
                 'epoch': step / steps_per_epoch,
@@ -289,7 +291,7 @@ if __name__ == "__main__":
 
             checkpoint_vals = collections.defaultdict(lambda: [])
 
-            if args.save_model_every_checkpoint:
+            if misc.is_not_none(args.save_model_every_checkpoint):
                 save_checkpoint(f'model_step{step}.pkl', results=json.dumps(results, sort_keys=True))
 
     ## DiWA ##
