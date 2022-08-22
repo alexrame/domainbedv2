@@ -15,7 +15,7 @@ def set_mlflow_experiment(experiment_name):
 
 
 def set_experiment_name(args):
-    MLFLOWEXPES_VERSION = os.environ.get("MLFLOW_TRACKING_URI", "v0")
+    MLFLOWEXPES_VERSION = os.environ.get("MLFLOWEXPES_VERSION", "v0")
     test_env = args["test_envs"][0]
     return args["dataset"] + str(test_env) + MLFLOWEXPES_VERSION
     # cli:
