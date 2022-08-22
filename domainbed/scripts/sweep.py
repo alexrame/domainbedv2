@@ -190,7 +190,8 @@ if __name__ == "__main__":
         force_test_env=args.test_env,
         force_train_env=args.train_env,
         path_for_init=args.path_for_init,
-        train_only_classifier=args.train_only_classifier
+        train_only_classifier=args.train_only_classifier,
+        save_model_every_checkpoint=args.save_model_every_checkpoint
     )
 
     jobs = [Job(train_args, args.output_dir) for train_args in args_list]
