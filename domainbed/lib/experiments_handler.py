@@ -14,10 +14,10 @@ def set_mlflow_experiment(experiment_name):
     assert mlflow.get_tracking_uri() == TRACKING_URI
 
 
-VERSION = "v0"
 def set_experiment_name(args):
+    MLFLOWEXPES_VERSION = os.environ.get("MLFLOW_TRACKING_URI", "v0")
     test_env = args["test_envs"][0]
-    return args["dataset"] + str(test_env) + VERSION
+    return args["dataset"] + str(test_env) + MLFLOWEXPES_VERSION
     # cli:
     #   & mlflow experiments create -n ColoredMNISTte2v8
     # python:

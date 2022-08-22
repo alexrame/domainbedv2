@@ -177,9 +177,6 @@ if __name__ == "__main__":
     eval_loader_names += ['env{}_uda'.format(i)
         for i in range(len(uda_splits))]
 
-    if "{trial_seed}" in args.path_for_init:
-        args.path_for_init = args.path_for_init.format(trial_seed=args.trial_seed)
-
     if args.train_only_classifier == "0":
         args.train_only_classifier = None
 

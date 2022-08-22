@@ -33,12 +33,24 @@ class Job:
     DONE = 'Done'
 
     def __init__(self, train_args, sweep_output_dir):
-        args_str = json.dumps(train_args, sort_keys=True)
+        hashable_args = {k: v for k, v in train_args.items() if k not in NOT_HASHABLE_KEYS}
+        args_str = json.dumps(hashable_args, sort_keys=True)
         args_hash = hashlib.md5(args_str.encode('utf-8')).hexdigest()
         self.output_dir = os.path.join(sweep_output_dir, args_hash)
 
         self.train_args = copy.deepcopy(train_args)
         self.train_args['output_dir'] = self.output_dir
+
+        if "path_for_init" in self.train_args:
+            if "{trial_seed}" in self.train_args["path_for_init"]:
+                self.train_args["path_for_init"] = self.train_args["path_for_init"].format(
+                    trial_seed=self.train_args["trial_seed"]
+                )
+            if "{hash}" in self.train_args["path_for_init"]:
+                self.train_args["path_for_init"] = self.train_args["path_for_init"].format(
+                    hash=args_hash
+                )
+
         command = ['python', '-m', 'domainbed.scripts.train']
         for k, v in sorted(self.train_args.items()):
             if isinstance(v, list):
@@ -146,6 +158,7 @@ def ask_for_confirmation():
         exit(0)
 
 DATASETS = [d for d in datasets.DATASETS if "Debug" not in d]
+NOT_HASHABLE_KEYS = ["path_for_init", "train_only_classifier", "save_model_every_checkpoint"]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run a sweep')

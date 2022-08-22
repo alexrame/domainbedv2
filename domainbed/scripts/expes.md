@@ -2,7 +2,11 @@
 
 home0ontest8_ermwnr_saveall_lpd_0822.slurm
 
+# toluanch
 
+CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.train --algorithm ERM --dataset OfficeHome --test_env 0 --init_step --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_0822 --steps -1 --seed 822
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m domainbed.scripts.sweep launch --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --output_dir=/gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0_ermll_saveall_si_0822 --command_launcher multi_gpu --datasets OfficeHome --algorithms ERM --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_0822 --n_hparams 20 --n_trials 1 --train_only_classifier 1 --test_env 0 --save_model_every_checkpoint 1
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m domainbed.scripts.sweep launch --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --output_dir=/gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0_erm_alp_0822 --command_launcher multi_gpu --datasets OfficeHome --algorithms ERM --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0_ermll_saveall_si_0822/{hash}/model.pkl --n_hparams 20 --n_trials 1 --train_only_classifier 0 --test_env 0
 
 # backup
 ## WA peforms worse than ERM
