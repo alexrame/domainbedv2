@@ -238,7 +238,7 @@ if __name__ == "__main__":
         for key, val in step_vals.items():
             checkpoint_vals[key].append(val)
         do_inference_at_this_step = (step % checkpoint_freq == 0) or (step == n_steps - 1) or (
-            step < checkpoint_freq and step % os.environ.get("START_CHKPT_FREQ", checkpoint_freq) == 0
+            step < checkpoint_freq and step % int(os.environ.get("START_CHKPT_FREQ", checkpoint_freq)) == 0
         )
         if do_inference_at_this_step:
             results = {
