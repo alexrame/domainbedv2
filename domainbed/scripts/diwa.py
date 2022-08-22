@@ -75,7 +75,7 @@ def get_best_model(output_folder):
         else:
             name = "best/model_with_weights.pkl"
     else:
-        name = "model_" + os.environ.get("WHICHMODEL")
+        name = "model_" + os.environ.get("WHICHMODEL") + ".pkl"
 
     if name in os.listdir(output_folder):
         return os.path.join(output_folder, name)

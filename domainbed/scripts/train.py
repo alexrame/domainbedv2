@@ -291,10 +291,7 @@ if __name__ == "__main__":
             if misc.is_not_none(args.save_model_every_checkpoint):
                 save_checkpoint(f'model_step{step}.pkl', results=json.dumps(results, sort_keys=True))
 
-    ## DiWA ##
-    if args.init_step:
-        assert args.train_only_classifier or n_steps == -1
-        algorithm.save_path_for_future_init(args.path_for_init)
+
     save_checkpoint(
         'model.pkl',
         results=json.dumps(results, sort_keys=True),
@@ -303,10 +300,15 @@ if __name__ == "__main__":
     with open(os.path.join(args.output_dir, 'done'), 'w') as f:
         f.write('done')
 
-    experiments_handler.main_mlflow(
-        experiments_handler.get_run_name(args.__dict__, hparams=hparams),
-        results,
-        args=args.__dict__,
-        output_dir=args.output_dir,
-        hparams=hparams,
-    )
+    ## DiWA ##
+    if args.init_step:
+        assert args.train_only_classifier or n_steps == -1
+        algorithm.save_path_for_future_init(args.path_for_init)
+    else:
+        experiments_handler.main_mlflow(
+            experiments_handler.get_run_name(args.__dict__, hparams=hparams),
+            results,
+            args=args.__dict__,
+            output_dir=args.output_dir,
+            hparams=hparams,
+        )
