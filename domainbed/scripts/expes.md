@@ -4,6 +4,7 @@
     326398   gpu_p13           home0_erm_0822.slurm  utr15kn PD       0:00      1 (Priority)
     326431   gpu_p13 enshomeontest8_ermwnr_saveall_  utr15kn PD       0:00      1 (Priority)
 
+0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500, 3600, 3700, 3800, 3900, 4000, 4100, 4200, 4300, 4400, 4500, 4600, 4700, 4800, 4900, 4999
 # toluanch
 
 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.train --algorithm ERM --dataset OfficeHome --test_env 0 --init_step --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_0822 --steps -1 --seed 822
@@ -12,18 +13,9 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m domainbed.scripts.sweep launch --data_di
 
 
 INCLUDE_TRAIN=1 WHICHMODEL=step10 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
-INCLUDE_TRAIN=1 WHICHMODEL=step20 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
-INCLUDE_TRAIN=1 WHICHMODEL=step50 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
-INCLUDE_TRAIN=1 WHICHMODEL=step80 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
-INCLUDE_TRAIN=1 WHICHMODEL=step100 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
-INCLUDE_TRAIN=1 WHICHMODEL=step200 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
-INCLUDE_TRAIN=1 WHICHMODEL=step300 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
-INCLUDE_TRAIN=1 WHICHMODEL=step400 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
-INCLUDE_TRAIN=1 WHICHMODEL=step500 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
-INCLUDE_TRAIN=1 WHICHMODEL=step600 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
-INCLUDE_TRAIN=1 WHICHMODEL=step800 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
-INCLUDE_TRAIN=1 WHICHMODEL=step1000 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
-INCLUDE_TRAIN=1 WHICHMODEL=step2000 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed
+
+
+
 
 
 # backup
