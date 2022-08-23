@@ -136,7 +136,7 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
     train_args = None
     model_hparams = None
 
-    for checkpoint, checkpoint_weight in good_checkpoints.items():
+    for checkpoint, checkpoint_weight in good_checkpoints:
         save_dict = torch.load(checkpoint)
         if train_args is None:
             train_args = save_dict["args"]
