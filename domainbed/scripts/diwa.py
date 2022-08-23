@@ -205,11 +205,17 @@ def get_wa_results(
             new_key = name + "_" + key if name != "test" else key
             dict_results[new_key] = value
 
+    # some hacky queries to enrich dict_results
     dict_results["length"] = len(good_checkpoints)
     if "VARM" in os.environ:
         dict_results["varm"] = float(os.environ["VARM"])
     if "MAXM" in os.environ:
         dict_results["maxm"] = int(os.environ["MAXM"])
+    if "WHICHMODEL" in os.environ:
+        dict_results["which"] = str(os.environ["WHICHMODEL"])
+    if inf_args.checkpoints:
+        dict_results["ckpts"] = inf_args.checkpoints[0][-1]
+
     return dict_results
 
 
