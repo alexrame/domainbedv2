@@ -24,6 +24,7 @@ def _get_args():
         type=int,
         help='Trial number (used for seeding split_dataset and random_hparams).'
     )
+    parser.add_argument("--checkpoints", nargs=2, action="append", default=[])
 
     # select which checkpoints
     parser.add_argument('--weight_selection', type=str, default="uniform") # or "restricted"
@@ -35,6 +36,9 @@ def _get_args():
         default=[])
 
     inf_args = parser.parse_args()
+    if inf_args.checkpoints:
+        inf_args.checkpoints = [(str(key), float(val)) for (key, val) in inf_args.checkpoints]
+
     misc.print_args(inf_args)
     return inf_args
 
@@ -80,7 +84,7 @@ def get_best_model(output_folder):
         return os.path.join(output_folder, name)
     return None
 
-def get_dict_folder_to_score(inf_args):
+def get_dict_checkpoint_to_score(inf_args):
     _output_folders = [
         os.path.join(output_dir, path)
         for output_dir in inf_args.output_dir.split(",")
@@ -95,7 +99,7 @@ def get_dict_folder_to_score(inf_args):
     if len(output_folders) == 0:
         raise ValueError(f"No done folders found for: {inf_args}")
 
-    dict_folder_to_score = {}
+    dict_checkpoint_to_score = {}
     for folder in output_folders:
         model_path = get_best_model(folder)
         save_dict = torch.load(model_path)
@@ -121,16 +125,16 @@ def get_dict_folder_to_score(inf_args):
                 metric_key=os.environ.get("KEYACC", "out_acc"),
                 model_selection=os.environ.get("MODEL_SELECTION", "train")
             )
-        dict_folder_to_score[folder] = score
+        dict_checkpoint_to_score[model_path] = score
 
-    if len(dict_folder_to_score) == 0:
+    if len(dict_checkpoint_to_score) == 0:
         raise ValueError(f"No folders found for: {inf_args}")
-    return dict_folder_to_score
+    return dict_checkpoint_to_score
 
 
 def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="mean"):
-    for folder in good_checkpoints:
-        save_dict = torch.load(get_best_model(folder))
+    for checkpoint, checkpoint_weight in good_checkpoints.items():
+        save_dict = torch.load(checkpoint)
         train_args = save_dict["args"]
 
         # load individual weights
@@ -141,7 +145,7 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
         )
         algorithm.load_state_dict(save_dict["model_dict"], strict=False)
         if "mean" in action:
-            wa_algorithm.update_mean_network(algorithm.network)
+            wa_algorithm.update_mean_network(algorithm.network, weight=checkpoint_weight)
         if "netm" in action:
             wa_algorithm.add_network(algorithm.network)
         if "var" in action:
@@ -223,8 +227,8 @@ def main():
         raise NotImplementedError
 
     # load individual folders and their corresponding scores on train_out
-    dict_folder_to_score = get_dict_folder_to_score(inf_args)
-    sorted_checkpoints = sorted(dict_folder_to_score.keys(), key=lambda x: dict_folder_to_score[x], reverse=True)
+    dict_checkpoint_to_score = get_dict_checkpoint_to_score(inf_args)
+    sorted_checkpoints = sorted(dict_checkpoint_to_score.keys(), key=lambda x: dict_checkpoint_to_score[x], reverse=True)
     if inf_args.topk != 0:
         if inf_args.topk > 0:
             rand_nums = sorted(random.sample(range(len(sorted_checkpoints)), inf_args.topk))
@@ -232,9 +236,8 @@ def main():
             # select best according to metrics
             rand_nums = range(0, - inf_args.topk)
         sorted_checkpoints = [sorted_checkpoints[i] for i in rand_nums]
-        dict_folder_to_score = {c: dict_folder_to_score[c] for c in sorted_checkpoints}
     for checkpoint in sorted_checkpoints:
-        print("Found: ", checkpoint, " with score: ", dict_folder_to_score[checkpoint])
+        print("Found: ", checkpoint, " with score: ", dict_checkpoint_to_score[checkpoint])
 
     # load data: test and optionally train_out for restricted weight selection
     data_splits, data_names = [], []
@@ -271,6 +274,7 @@ def main():
     # compute score after weight averaging
     if inf_args.weight_selection == "restricted":
         # Restricted weight selection
+        assert len(inf_args.checkpoints) == 0
 
         ## sort individual members by decreasing accuracy on train_out
         selected_indexes = []
@@ -279,7 +283,7 @@ def main():
         ## incrementally add them to the WA
         for i in range(0, len(sorted_checkpoints)):
             selected_indexes.append(i)
-            selected_checkpoints = [sorted_checkpoints[index] for index in selected_indexes]
+            selected_checkpoints = [(sorted_checkpoints[index], 1.) for index in selected_indexes]
 
             ood_results = get_wa_results(
                 selected_checkpoints, dataset, inf_args, data_names, data_splits, device
@@ -306,8 +310,13 @@ def main():
         print_results(dict_best_results)
 
     elif inf_args.weight_selection == "uniform":
+        selected_checkpoints = [(checkpoint, 1.) for checkpoint in sorted_checkpoints]
+        if inf_args.checkpoints:
+            print(f"Extending inf_args.checkpoints: {inf_args.checkpoints}")
+            selected_checkpoints.extend(inf_args.checkpoints)
+
         dict_results = get_wa_results(
-            list(dict_folder_to_score.keys()), dataset, inf_args, data_names, data_splits, device
+            selected_checkpoints, dataset, inf_args, data_names, data_splits, device
         )
         print_results(dict_results)
 

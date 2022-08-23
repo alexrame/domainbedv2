@@ -31,13 +31,14 @@ class DiWA(algorithms.ERM):
         self.global_count = 0
         self.var_global_count = 0
 
-    def update_mean_network(self, network):
+    def update_mean_network(self, network, weight=1.):
         if self.network is None:
             self.network = copy.deepcopy(network)
-        else:
-            for param_n, param_m in zip(network.parameters(), self.network.parameters()):
-                param_m.data = (param_m.data * self.global_count + param_n.data) / (1. + self.global_count)
-        self.global_count += 1
+
+        for param_n, param_m in zip(network.parameters(), self.network.parameters()):
+            param_m.data = (param_m.data * self.global_count +
+                            param_n.data * weight) / (weight + self.global_count)
+        self.global_count += weight
 
     def update_var_network(self, network):
         if self.var_network is None:
