@@ -59,12 +59,7 @@ class Q(object):
         return len(self._list)
 
     def __getitem__(self, key):
-        try:
-            return self._list[key]
-        except:
-            print(f"Missing: {key} in self._list")
-            import pdb; pdb.set_trace()
-            raise KeyError(key)
+        return self._list[key]
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
