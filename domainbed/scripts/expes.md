@@ -4,11 +4,20 @@
 
 # current
 
-    326397   gpu_p13       home0_erm_alp_0822.slurm  utr15kn PD       0:00      1 (Resources)
-    326398   gpu_p13           home0_erm_0822.slurm  utr15kn PD       0:00      1 (Priority)
-    326431   gpu_p13 enshomeontest8_ermwnr_saveall_  utr15kn PD       0:00      1 (Priority)
+     JOBID PARTITION                           NAME     USER ST       TIME  NODES NODELIST(REASON)
+    356250   gpu_p13       home0_erm_alp_0822.slurm  utr15kn PD       0:00      1 (Priority)
+    353629   gpu_p13           home0_erm_0823.slurm  utr15kn  R      49:59      1 r11i6n8
+    355887   gpu_p13 enshomeontest8_ermwnr_saveall_  utr15kn  R      30:14      1 r10i1n2
+    355883   gpu_p13 enshomeontest8_ermwnr_saveall_  utr15kn  R      30:53      1 r10i7n1
+    355884   gpu_p13 enshomeontest8_ermwnr_saveall_  utr15kn  R      30:53      1 r11i0n1
+    355896   gpu_p13 enshomeontest8_ermwnr_saveall_  utr15kn  R      29:39      1 r10i0n2
+    356100   gpu_p13 enshomeontest8_ermllr_saveall_  utr15kn  R      21:06      1 r10i7n4
+    356101   gpu_p13 enshomeontest8_ermllr_saveall_  utr15kn  R      21:06      1 r11i0n8
+    356113   gpu_p13 enshomeontest8_ermllr_saveall_  utr15kn  R      20:06      1 r10i2n6
+    356115   gpu_p13 enshomeontest8_ermllr_saveall_  utr15kn  R      20:06      1 r10i5n5
+    356597   gpu_p13      enshome_erm_lp_0406.slurm  utr15kn  R       0:09      1 r7i7n7
+    356606   gpu_p13 enshomeontest8_ermwnr_saveall_  utr15kn  R       0:09      1 r10i5n1
 
-0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500, 3600, 3700, 3800, 3900, 4000, 4100, 4200, 4300, 4400, 4500, 4600, 4700, 4800, 4900, 4999
 # toluanch
 
 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.train --algorithm ERM --dataset OfficeHome --test_env 0 --init_step --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_0822 --steps -1 --seed 822
@@ -33,3 +42,15 @@ MODEL_SELECTION=oracle WHICHMODEL=step100 INCLUDE_TRAIN=1 HOLDOUT=0.8 INDOMAIN=1
 
 
 home0ontest8_ermwnr_saveall_lpd_0822
+
+
+INCLUDE_TRAIN=1 MODEL_SELECTION=oracle KEYACC=out_Accuracies/acc_net CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_lp_0401 1
+INCLUDE_TRAIN=1 MODEL_SELECTION=oracle KEYACC=out_Accuracies/acc_net CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_lp_0401 5
+INCLUDE_TRAIN=1 MODEL_SELECTION=oracle KEYACC=out_Accuracies/acc_net CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_lp_0401 10
+INCLUDE_TRAIN=1 MODEL_SELECTION=oracle KEYACC=out_Accuracies/acc_net CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_lp_0401 15
+INCLUDE_TRAIN=1 MODEL_SELECTION=oracle KEYACC=out_Accuracies/acc_net CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_lp_0401 20
+INCLUDE_TRAIN=1 MODEL_SELECTION=oracle KEYACC=out_Accuracies/acc_net CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_lp_0401 25
+INCLUDE_TRAIN=1 MODEL_SELECTION=oracle KEYACC=out_Accuracies/acc_net CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_lp_0401 30
+INCLUDE_TRAIN=1 MODEL_SELECTION=oracle KEYACC=out_Accuracies/acc_net CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_lp_0401 40
+
+
