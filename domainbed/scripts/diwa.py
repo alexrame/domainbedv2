@@ -19,16 +19,15 @@ def _get_args():
 
     parser.add_argument('--output_dir', type=str)
     parser.add_argument('--data_dir', type=str)
-
-    # select which checkpoints
-    parser.add_argument('--weight_selection', type=str, default="uniform") # or "restricted"
     parser.add_argument(
         '--trial_seed',
         type=int,
-        default="-1",
         help='Trial number (used for seeding split_dataset and random_hparams).'
     )
-    parser.add_argument('--path_for_save_weight', type=str, default=None)
+
+    # select which checkpoints
+    parser.add_argument('--weight_selection', type=str, default="uniform") # or "restricted"
+    parser.add_argument('--path_for_init', type=str, default=None)
     parser.add_argument('--topk', type=int, default=0)
     parser.add_argument(
         '--what',
@@ -166,8 +165,8 @@ def get_wa_results(
 
     wa_algorithm.to(device)
     wa_algorithm.eval()
-    if inf_args.path_for_save_weight:
-        wa_algorithm.save_path_for_future_init(inf_args.path_for_save_weight)
+    if inf_args.path_for_init:
+        wa_algorithm.save_path_for_future_init(inf_args.path_for_init)
 
     random.seed(train_args["seed"])
     np.random.seed(train_args["seed"])
@@ -299,7 +298,7 @@ def main():
                 print(f"Skipping index {i}")
             print_results(ood_results)
 
-            if inf_args.path_for_save_weight:
+            if inf_args.path_for_init:
                 raise ValueError("Do not proceed when saving init")
 
         ## print final scores

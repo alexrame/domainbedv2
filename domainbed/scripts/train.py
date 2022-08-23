@@ -220,23 +220,26 @@ if __name__ == "__main__":
     last_results_keys = None
     results = {}
 
-    for step in range(0, n_steps):
-        step_start_time = time.time()
-        minibatches_device = [(x.to(device), y.to(device))
-            for x,y in next(train_minibatches_iterator)]
-        if args.task == "domain_adaptation":
-            uda_device = [x.to(device)
-                for x,_ in next(uda_minibatches_iterator)]
-        else:
-            uda_device = None
-        step_vals = algorithm.update(minibatches_device, uda_device)
-        checkpoint_vals['step_time'].append(time.time() - step_start_time)
+    for step in range(-1, n_steps):
+        if step != -1:
+            step_start_time = time.time()
+            minibatches_device = [(x.to(device), y.to(device))
+                for x,y in next(train_minibatches_iterator)]
+            if args.task == "domain_adaptation":
+                uda_device = [x.to(device)
+                    for x,_ in next(uda_minibatches_iterator)]
+            else:
+                uda_device = None
+            step_vals = algorithm.update(minibatches_device, uda_device)
+            checkpoint_vals['step_time'].append(time.time() - step_start_time)
 
-        for key, val in step_vals.items():
-            checkpoint_vals[key].append(val)
-        do_inference_at_this_step = (step % checkpoint_freq == 0) or (step == n_steps - 1) or (
+            for key, val in step_vals.items():
+                checkpoint_vals[key].append(val)
+
+        do_inference_at_this_step = (step % checkpoint_freq == 0) or (step > 0 and step == n_steps - 1) or (
             step < checkpoint_freq and step % int(os.environ.get("START_CHKPT_FREQ", checkpoint_freq)) == 0
-        )
+        ) or (step == -1 and os.environ.get("START_CHKPT_FREQ"))
+
         if do_inference_at_this_step:
             results = {
                 'step': step,
