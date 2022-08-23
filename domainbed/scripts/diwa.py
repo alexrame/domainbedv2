@@ -133,17 +133,26 @@ def get_dict_checkpoint_to_score(inf_args):
 
 
 def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="mean"):
+    train_args = None
+    model_hparams = None
+
     for checkpoint, checkpoint_weight in good_checkpoints.items():
         save_dict = torch.load(checkpoint)
-        train_args = save_dict["args"]
+        if train_args is None:
+            train_args = save_dict["args"]
+            model_hparams = save_dict["model_hparams"]
 
         # load individual weights
         algorithm = algorithms_inference.ERM(
             dataset.input_shape, dataset.num_classes,
             len(dataset) - 1,
-            save_dict["model_hparams"]
+            model_hparams
         )
-        algorithm.load_state_dict(save_dict["model_dict"], strict=False)
+        if "model_dict" in save_dict:
+            algorithm.load_state_dict(save_dict["model_dict"], strict=False)
+        else:
+            algorithm.network.load_state_dict(save_dict)
+
         if "mean" in action:
             wa_algorithm.update_mean_network(algorithm.network, weight=checkpoint_weight)
         if "netm" in action:

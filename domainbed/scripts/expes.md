@@ -18,6 +18,17 @@ INCLUDE_TRAIN=1 WHICHMODEL=step10 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 
 
 
 
+#
+MODEL_SELECTION=oracle WHICHMODEL=step100 INCLUDE_TRAIN=1 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_0406_lp_diwa0 0
+MODEL_SELECTION=oracle WHICHMODEL=step100 INCLUDE_TRAIN=1 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_0406_lp_diwa0 1
+MODEL_SELECTION=oracle WHICHMODEL=step100 INCLUDE_TRAIN=1 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_0406_lp_diwa0 10
+MODEL_SELECTION=oracle WHICHMODEL=step100 INCLUDE_TRAIN=1 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_0406_lp_diwa0 20
+MODEL_SELECTION=oracle WHICHMODEL=step100 INCLUDE_TRAIN=1 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lpd_0822/ --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_0406_lp_diwa0 1000000
+
+
+
+
+
 # backup
 ## WA peforms worse than ERM
 
