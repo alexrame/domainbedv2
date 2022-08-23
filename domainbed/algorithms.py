@@ -18,7 +18,7 @@ except:
 
 from domainbed import networks
 from domainbed.lib.misc import (
-    random_pairs_of_minibatches, ParamDict, MovingAverage, l2_between_dicts
+    random_pairs_of_minibatches, ParamDict, MovingAverage, l2_between_dicts, is_not_none
 )
 
 ALGORITHMS = [
@@ -102,10 +102,14 @@ class ERM(Algorithm):
         self.network = nn.Sequential(self.featurizer, self.classifier)
 
         ## DiWA load shared initialization ##
-        if path_for_init not in [None, ""]:
+        if is_not_none(path_for_init):
             if os.path.exists(path_for_init):
                 print(f"Load weights from {path_for_init}")
-                self.network.load_state_dict(torch.load(path_for_init))
+                saved_dict = torch.load(path_for_init)
+                if "model_dict" in saved_dict:
+                    self.load_state_dict(saved_dict["model_dict"])
+                else:
+                    self.network.load_state_dict(saved_dict)
                 if self._train_only_classifier == "reset" or os.environ.get("RESET_CLASSIFIER"):
                     print("Reset random classifier")
                     self.classifier.reset_parameters()
