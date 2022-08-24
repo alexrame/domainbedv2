@@ -26,6 +26,8 @@ def _get_args():
     )
     parser.add_argument("--checkpoints", nargs=2, action="append", default=[])
 
+    parser.add_argument('--weighting', type=str, default=None)
+
     # select which checkpoints
     parser.add_argument('--weight_selection', type=str, default="uniform") # or "restricted"
     parser.add_argument('--path_for_init', type=str, default=None)
@@ -221,6 +223,16 @@ def get_wa_results(
 
 
 
+def weighting_checkpoint(checkpoint, weighting, dict_checkpoint_to_score):
+    if weighting in [None, "uniform"]:
+        return 1.
+    if weighting in ["linear"]:
+        return dict_checkpoint_to_score[checkpoint]
+    if weighting in ["quadratic"]:
+        return dict_checkpoint_to_score[checkpoint] ** 2
+    raise ValueError(weighting)
+
+
 def print_results(dict_results):
     results_keys = sorted(list(dict_results.keys()))
     misc.print_row(results_keys, colwidth=20)
@@ -299,7 +311,16 @@ def main():
         ## incrementally add them to the WA
         for i in range(0, len(sorted_checkpoints)):
             selected_indexes.append(i)
-            selected_checkpoints = [(sorted_checkpoints[index], 1.) for index in selected_indexes]
+            selected_checkpoints = [
+                sorted_checkpoints[index]
+                for index in selected_indexes
+            ]
+            selected_checkpoints = [
+                (
+                    checkpoint,
+                    weighting_checkpoint(checkpoint, inf_args.weighting, dict_checkpoint_to_score)
+                ) for checkpoint in selected_checkpoints
+            ]
 
             ood_results = get_wa_results(
                 selected_checkpoints, dataset, inf_args, data_names, data_splits, device
@@ -326,7 +347,12 @@ def main():
         print_results(dict_best_results)
 
     elif inf_args.weight_selection == "uniform":
-        selected_checkpoints = [(checkpoint, 1.) for checkpoint in sorted_checkpoints]
+        selected_checkpoints = [
+            (
+                checkpoint,
+                weighting_checkpoint(checkpoint, inf_args.weighting, dict_checkpoint_to_score)
+            ) for checkpoint in sorted_checkpoints
+        ]
         if inf_args.checkpoints:
             print(f"Extending inf_args.checkpoints: {inf_args.checkpoints}")
             selected_checkpoints.extend(inf_args.checkpoints)
@@ -338,6 +364,8 @@ def main():
 
     else:
         raise ValueError(inf_args.weight_selection)
+
+
 
 
 if __name__ == "__main__":

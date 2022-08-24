@@ -29,6 +29,8 @@ INCLUDE_TRAIN=1 WHICHMODEL=step10 HOLDOUT=0.8 INDOMAIN=1 CUDA_VISIBLE_DEVICES=0 
 
 
 
+/gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed//f19375e0cf49c050d25b7132b1c9a4d1
+
 
 
 #
