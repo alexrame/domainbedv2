@@ -220,25 +220,24 @@ if __name__ == "__main__":
     last_results_keys = None
     results = {}
 
-    for step in range(-1, n_steps):
-        if step != -1:
-            step_start_time = time.time()
-            minibatches_device = [(x.to(device), y.to(device))
-                for x,y in next(train_minibatches_iterator)]
-            if args.task == "domain_adaptation":
-                uda_device = [x.to(device)
-                    for x,_ in next(uda_minibatches_iterator)]
-            else:
-                uda_device = None
-            step_vals = algorithm.update(minibatches_device, uda_device)
-            checkpoint_vals['step_time'].append(time.time() - step_start_time)
+    for step in range(0, n_steps):
+        step_start_time = time.time()
+        minibatches_device = [(x.to(device), y.to(device))
+            for x,y in next(train_minibatches_iterator)]
+        if args.task == "domain_adaptation":
+            uda_device = [x.to(device)
+                for x,_ in next(uda_minibatches_iterator)]
+        else:
+            uda_device = None
+        step_vals = algorithm.update(minibatches_device, uda_device)
+        checkpoint_vals['step_time'].append(time.time() - step_start_time)
 
-            for key, val in step_vals.items():
-                checkpoint_vals[key].append(val)
+        for key, val in step_vals.items():
+            checkpoint_vals[key].append(val)
 
         do_inference_at_this_step = (step % checkpoint_freq == 0) or (step > 0 and step == n_steps - 1) or (
             step < checkpoint_freq and step % int(os.environ.get("START_CHKPT_FREQ", checkpoint_freq)) == 0
-        ) or (step == -1 and os.environ.get("START_CHKPT_FREQ"))
+        )
 
         if do_inference_at_this_step:
             results = {
@@ -308,10 +307,13 @@ if __name__ == "__main__":
         assert args.train_only_classifier or n_steps == -1
         algorithm.save_path_for_future_init(args.path_for_init)
     else:
-        experiments_handler.main_mlflow(
-            experiments_handler.get_run_name(args.__dict__, hparams=hparams),
-            results,
-            args=args.__dict__,
-            output_dir=args.output_dir,
-            hparams=hparams,
-        )
+        if os.environ.get("MLFLOWEXPES_VERSION", "v0") == "nomlflow":
+            pass
+        else:
+            experiments_handler.main_mlflow(
+                experiments_handler.get_run_name(args.__dict__, hparams=hparams),
+                results,
+                args=args.__dict__,
+                output_dir=args.output_dir,
+                hparams=hparams,
+            )

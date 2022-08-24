@@ -68,7 +68,7 @@ def todo_rename(records, selection_method, latex):
                 table[i][-1] = "{:.1f}".format(sum(means) / len(means))
 
         col_labels = [
-            "Algorithm", 
+            "Algorithm",
             *datasets.get_dataset_class(dataset).ENVIRONMENTS,
             "Avg"
         ]
@@ -111,9 +111,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Domain generalization testbed")
     parser.add_argument("--input_dir", required=True)
-    parser.add_argument('--dataset', required=True)
-    parser.add_argument('--algorithm', required=True)
-    parser.add_argument('--test_env', type=int, required=True)
+    parser.add_argument('--dataset', default="OfficeHome")
+    parser.add_argument('--algorithm', default="ERM")
+    parser.add_argument('--test_env', type=int, default=0)
     args = parser.parse_args()
 
     records = reporting.load_records(args.input_dir)
@@ -129,8 +129,8 @@ if __name__ == "__main__":
 
     SELECTION_METHODS = [
         model_selection.IIDAccuracySelectionMethod,
-        model_selection.LeaveOneOutSelectionMethod,
-        model_selection.OracleSelectionMethod,
+        # model_selection.LeaveOneOutSelectionMethod,
+        # model_selection.OracleSelectionMethod,
     ]
 
     for selection_method in SELECTION_METHODS:
