@@ -38,9 +38,6 @@ def _get_args():
         default=[])
 
     inf_args = parser.parse_args()
-    if inf_args.checkpoints:
-        inf_args.checkpoints = [(str(key), float(val)) for (key, val) in inf_args.checkpoints]
-
     misc.print_args(inf_args)
     return inf_args
 
@@ -222,7 +219,7 @@ def get_wa_results(
     if "WHICHMODEL" in os.environ:
         dict_results["which"] = str(os.environ["WHICHMODEL"])
     if inf_args.checkpoints:
-        dict_results["ckpts"] = inf_args.checkpoints[0][-1]
+        dict_results["robust"] = float(inf_args.checkpoints[0][-1])/20
 
     return dict_results
 
@@ -359,6 +356,10 @@ def main():
             ) for checkpoint in sorted_checkpoints
         ]
         if inf_args.checkpoints:
+            inf_args.checkpoints = [
+                (str(key), float(val) * len(selected_checkpoints)/20)
+                for (key, val) in inf_args.checkpoints
+            ]
             print(f"Extending inf_args.checkpoints: {inf_args.checkpoints}")
             selected_checkpoints.extend(inf_args.checkpoints)
 
