@@ -71,7 +71,7 @@ def create_splits(domain, inf_args, dataset, _filter, holdout_fraction):
     return splits
 
 
-def get_best_model(output_folder):
+def get_checkpoint_from_folder(output_folder):
     name = None
     if os.environ.get("WHICHMODEL", "best") == 'best':
         if "model_best.pkl" in os.listdir(output_folder):
@@ -82,7 +82,9 @@ def get_best_model(output_folder):
 
     if name is None:
         if os.environ.get("WHICHMODEL", "last") == 'last':
-            name = "model.pkl"
+            name = "model_with_weights.pkl"
+            if name not in os.listdir(output_folder):
+                name = "model.pkl"
         elif os.environ.get("WHICHMODEL") != 'best':
             name = "model_" + os.environ.get("WHICHMODEL") + ".pkl"
 
@@ -100,15 +102,15 @@ def get_dict_checkpoint_to_score(inf_args):
         output_folder for output_folder in _output_folders
         if os.path.isdir(output_folder)
         and (os.environ.get("DONEOPTIONAL") or "done" in os.listdir(output_folder))
-        and get_best_model(output_folder)
+        and get_checkpoint_from_folder(output_folder)
     ]
     if len(output_folders) == 0:
         raise ValueError(f"No done folders found for: {inf_args}")
 
     dict_checkpoint_to_score = {}
     for folder in output_folders:
-        model_path = get_best_model(folder)
-        save_dict = torch.load(model_path)
+        checkpoint = get_checkpoint_from_folder(folder)
+        save_dict = torch.load(checkpoint)
         train_args = save_dict["args"]
 
         if train_args["dataset"] != inf_args.dataset:
@@ -131,7 +133,7 @@ def get_dict_checkpoint_to_score(inf_args):
                 metric_key=os.environ.get("KEYACC", "out_acc"),
                 model_selection=os.environ.get("MODEL_SELECTION", "train")
             )
-        dict_checkpoint_to_score[model_path] = score
+        dict_checkpoint_to_score[checkpoint] = score
 
     if len(dict_checkpoint_to_score) == 0:
         raise ValueError(f"No folders found for: {inf_args}")
