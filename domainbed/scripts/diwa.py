@@ -261,10 +261,12 @@ def main():
     sorted_checkpoints = sorted(dict_checkpoint_to_score.keys(), key=lambda x: dict_checkpoint_to_score[x], reverse=True)
     if inf_args.topk != 0:
         if inf_args.topk > 0:
-            rand_nums = sorted(random.sample(range(len(sorted_checkpoints)), inf_args.topk))
-        else:
             # select best according to metrics
-            rand_nums = range(0, - inf_args.topk)
+            rand_nums = range(0, inf_args.topk)
+        else:
+            # select k randomly
+            rand_nums = sorted(random.sample(range(len(sorted_checkpoints)), - inf_args.topk))
+
         sorted_checkpoints = [sorted_checkpoints[i] for i in rand_nums]
     for checkpoint in sorted_checkpoints:
         print("Found: ", checkpoint, " with score: ", dict_checkpoint_to_score[checkpoint])

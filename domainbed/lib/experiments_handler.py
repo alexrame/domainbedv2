@@ -32,7 +32,6 @@ def get_run_name(args, hparams):
         "algorithm",
     ]])
     keys = sorted(hparams.keys())
-    # keys.extend(list(hp.keys()))
     keys = list(dict.fromkeys(keys))
 
     def params_to_str(param):

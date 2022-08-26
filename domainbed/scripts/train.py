@@ -55,11 +55,7 @@ if __name__ == "__main__":
     parser.add_argument('--path_for_init', type=str, default="")
     args = parser.parse_args()
 
-    os.makedirs(args.output_dir, exist_ok=True)
-    sys.stdout = misc.Tee(os.path.join(args.output_dir, 'out.txt'))
-    sys.stderr = misc.Tee(os.path.join(args.output_dir, 'err.txt'))
 
-    writer = SummaryWriter(log_dir=args.output_dir)
 
     print("Environment:")
     print("\tPython: {}".format(sys.version.split(" ")[0]))
@@ -81,6 +77,21 @@ if __name__ == "__main__":
             misc.seed_hash(args.hparams_seed, args.trial_seed))
     if args.hparams:
         hparams.update(json.loads(args.hparams))
+
+    if args.output_dir == "default+name":
+        run_name = experiments_handler.get_run_name(args.__dict__, hparams)
+        if "DATA" in os.environ:
+            args.output_dir = os.path.join(
+                os.environ["DATA"], f"experiments/domainbed/singleruns/{args.dataset}", run_name
+            )
+        else:
+            args.output_dir = os.path.join(f"logs/singleruns/{args.dataset}", run_name)
+
+    os.makedirs(args.output_dir, exist_ok=True)
+    sys.stdout = misc.Tee(os.path.join(args.output_dir, 'out.txt'))
+    sys.stderr = misc.Tee(os.path.join(args.output_dir, 'err.txt'))
+
+    writer = SummaryWriter(log_dir=args.output_dir)
 
     print('HParams:')
     for k, v in sorted(hparams.items()):
