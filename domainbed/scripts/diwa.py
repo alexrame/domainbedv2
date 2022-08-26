@@ -356,12 +356,12 @@ def main():
             ) for checkpoint in sorted_checkpoints
         ]
         if inf_args.checkpoints:
-            inf_args.checkpoints = [
+            checkpoints = [
                 (str(key), float(val) * len(selected_checkpoints)/20)
                 for (key, val) in inf_args.checkpoints
             ]
-            print(f"Extending inf_args.checkpoints: {inf_args.checkpoints}")
-            selected_checkpoints.extend(inf_args.checkpoints)
+            print(f"Extending inf_args.checkpoints: {checkpoints}")
+            selected_checkpoints.extend(checkpoints)
 
         dict_results = get_wa_results(
             selected_checkpoints, dataset, inf_args, data_names, data_splits, device
