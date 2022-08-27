@@ -23,7 +23,7 @@ from collections import Counter
 
 
 def is_none(arg):
-    return arg in [None, "none", "None", "0", "False", "false", False]
+    return arg in [None, "none", "None", "0", "False", "false", False, 0]
 
 def is_not_none(arg):
     return not is_none(arg)

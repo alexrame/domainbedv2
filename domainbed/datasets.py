@@ -240,6 +240,7 @@ class PACS(MultipleEnvironmentImageFolder):
 
 class DomainNet(MultipleEnvironmentImageFolder):
     CHECKPOINT_FREQ = 500 ## DiWA ##
+    N_STEPS = 15000
     ENVIRONMENTS = ["clip", "info", "paint", "quick", "real", "sketch"]
     def __init__(self, root, test_envs, hparams):
         self.dir = os.path.join(root, "domain_net/")

@@ -42,14 +42,15 @@ class Job:
         self.train_args['output_dir'] = self.output_dir
 
         if "path_for_init" in self.train_args:
-            if "{trial_seed}" in self.train_args["path_for_init"]:
-                self.train_args["path_for_init"] = self.train_args["path_for_init"].format(
-                    trial_seed=self.train_args["trial_seed"]
-                )
-            if "{hash}" in self.train_args["path_for_init"]:
-                self.train_args["path_for_init"] = self.train_args["path_for_init"].format(
-                    hash=args_hash
-                )
+            if self.train_args["path_for_init"] is not None:
+                if "{trial_seed}" in self.train_args["path_for_init"]:
+                    self.train_args["path_for_init"] = self.train_args["path_for_init"].format(
+                        trial_seed=self.train_args["trial_seed"]
+                    )
+                if "{hash}" in self.train_args["path_for_init"]:
+                    self.train_args["path_for_init"] = self.train_args["path_for_init"].format(
+                        hash=args_hash
+                    )
 
         command = ['python', '-m', 'domainbed.scripts.train']
         for k, v in sorted(self.train_args.items()):
