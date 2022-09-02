@@ -259,7 +259,7 @@ def main():
     # load individual folders and their corresponding scores on train_out
 
     dict_checkpoint_to_score = {}
-    for i, output_dir in inf_args.output_dir:
+    for i, output_dir in enumerate(inf_args.output_dir):
         dict_checkpoint_to_score_i = get_dict_checkpoint_to_score(output_dir, inf_args)
         sorted_checkpoints = sorted(dict_checkpoint_to_score_i.keys(), key=lambda x: dict_checkpoint_to_score_i[x], reverse=True)
         if inf_args.topk != 0:
