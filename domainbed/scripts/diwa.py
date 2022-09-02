@@ -259,21 +259,23 @@ def main():
     # load individual folders and their corresponding scores on train_out
 
     dict_checkpoint_to_score = {}
+    sorted_checkpoints = []
     for i, output_dir in enumerate(inf_args.output_dir):
         dict_checkpoint_to_score_i = get_dict_checkpoint_to_score(output_dir, inf_args)
-        sorted_checkpoints = sorted(dict_checkpoint_to_score_i.keys(), key=lambda x: dict_checkpoint_to_score_i[x], reverse=True)
+        sorted_checkpoints_i = sorted(dict_checkpoint_to_score_i.keys(), key=lambda x: dict_checkpoint_to_score_i[x], reverse=True)
         if inf_args.topk != 0:
             if inf_args.topk > 0:
                 # select best according to metrics
                 rand_nums = range(0, inf_args.topk)
             else:
                 # select k randomly
-                rand_nums = sorted(random.sample(range(len(sorted_checkpoints)), - inf_args.topk))
+                rand_nums = sorted(random.sample(range(len(sorted_checkpoints_i)), -inf_args.topk))
 
-            sorted_checkpoints = [sorted_checkpoints[i] for i in rand_nums]
-        for checkpoint in sorted_checkpoints:
+            sorted_checkpoints_i = [sorted_checkpoints_i[i] for i in rand_nums]
+        for checkpoint in sorted_checkpoints_i:
             print("Found: ", checkpoint, " with score: ", dict_checkpoint_to_score_i[checkpoint])
         dict_checkpoint_to_score.update(dict_checkpoint_to_score_i)
+        sorted_checkpoints.extend(sorted_checkpoints_i)
 
     # load data: test and optionally train_out for restricted weight selection
     data_splits, data_names = [], []
@@ -364,7 +366,7 @@ def main():
         if inf_args.checkpoints:
             checkpoints = [
                 (str(key), float(val) * len(selected_checkpoints)/20)
-                for (key, val) in inf_args.checkpoints
+                for (key, val) in inf_args.checkpoints if float(val) != 0
             ]
             print(f"Extending inf_args.checkpoints: {checkpoints}")
             selected_checkpoints.extend(checkpoints)
