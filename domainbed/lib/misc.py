@@ -250,6 +250,9 @@ def results_ensembling(algorithm, loader, device):
                     min(len(algorithm.networks), int(os.environ.get("MAXM", 3))))
             ]
         )
+        if os.environ.get("DELETE_NETM"):
+            for key in range(min(len(algorithm.networks), int(os.environ.get("MAXM", 3)))):
+                del dict_results[f"acc_net{key}"]
 
     targets = torch.cat(batch_classes).cpu().numpy()
     print("Compute diversity across different networks")
