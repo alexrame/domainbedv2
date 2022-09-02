@@ -16,7 +16,7 @@ def _get_args():
 
     parser.add_argument('--dataset', type=str)
     parser.add_argument('--test_env', type=int)
-    parser.add_argument('--train_envs', nargs="+", default=None)
+    parser.add_argument('--train_envs', nargs="+", type=int, default=None)
     parser.add_argument('--output_dir', type=str)
     parser.add_argument('--data_dir', type=str)
     parser.add_argument(
