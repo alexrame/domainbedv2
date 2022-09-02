@@ -115,6 +115,8 @@ def get_dict_checkpoint_to_score(inf_args):
         if misc.is_none(os.environ.get("INDOMAIN")):
             if inf_args.test_env not in train_args["test_envs"]:
                 continue
+            if inf_args.train_envs and any(train_env in train_args["test_envs"] for train_env in inf_args.train_envs):
+                continue
         else:
             if inf_args.test_env in train_args["test_envs"]:
                 continue
