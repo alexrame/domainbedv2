@@ -17,7 +17,7 @@ def _get_args():
     parser.add_argument('--dataset', type=str)
     parser.add_argument('--test_env', type=int)
     parser.add_argument('--train_envs', nargs="+", type=int, default=None)
-    parser.add_argument('--output_dir', type=str)
+    parser.add_argument('--output_dir', nargs="+", type=str, default=None)
     parser.add_argument('--data_dir', type=str)
     parser.add_argument(
         '--trial_seed',
@@ -25,7 +25,6 @@ def _get_args():
         help='Trial number (used for seeding split_dataset and random_hparams).'
     )
     parser.add_argument("--checkpoints", nargs=2, action="append", default=[])
-
     parser.add_argument('--weighting', type=str, default=None)
 
     # select which checkpoints
@@ -89,10 +88,9 @@ def get_checkpoint_from_folder(output_folder):
         return os.path.join(output_folder, name)
     return None
 
-def get_dict_checkpoint_to_score(inf_args):
+def get_dict_checkpoint_to_score(output_dir, inf_args):
     _output_folders = [
         os.path.join(output_dir, path)
-        for output_dir in inf_args.output_dir.split(",")
         for path in os.listdir(output_dir)
     ]
     output_folders = [
@@ -259,19 +257,23 @@ def main():
         raise NotImplementedError
 
     # load individual folders and their corresponding scores on train_out
-    dict_checkpoint_to_score = get_dict_checkpoint_to_score(inf_args)
-    sorted_checkpoints = sorted(dict_checkpoint_to_score.keys(), key=lambda x: dict_checkpoint_to_score[x], reverse=True)
-    if inf_args.topk != 0:
-        if inf_args.topk > 0:
-            # select best according to metrics
-            rand_nums = range(0, inf_args.topk)
-        else:
-            # select k randomly
-            rand_nums = sorted(random.sample(range(len(sorted_checkpoints)), - inf_args.topk))
 
-        sorted_checkpoints = [sorted_checkpoints[i] for i in rand_nums]
-    for checkpoint in sorted_checkpoints:
-        print("Found: ", checkpoint, " with score: ", dict_checkpoint_to_score[checkpoint])
+    dict_checkpoint_to_score = {}
+    for output_dir in inf_args.output_dir:
+        dict_checkpoint_to_score_i = get_dict_checkpoint_to_score(output_dir, inf_args)
+        sorted_checkpoints = sorted(dict_checkpoint_to_score_i.keys(), key=lambda x: dict_checkpoint_to_score_i[x], reverse=True)
+        if inf_args.topk != 0:
+            if inf_args.topk > 0:
+                # select best according to metrics
+                rand_nums = range(0, inf_args.topk)
+            else:
+                # select k randomly
+                rand_nums = sorted(random.sample(range(len(sorted_checkpoints)), - inf_args.topk))
+
+            sorted_checkpoints = [sorted_checkpoints[i] for i in rand_nums]
+        for checkpoint in sorted_checkpoints:
+            print("Found: ", checkpoint, " with score: ", dict_checkpoint_to_score_i[checkpoint])
+        dict_checkpoint_to_score.update(dict_checkpoint_to_score_i)
 
     # load data: test and optionally train_out for restricted weight selection
     data_splits, data_names = [], []
