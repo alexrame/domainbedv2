@@ -88,7 +88,7 @@ def get_checkpoint_from_folder(output_folder):
         return os.path.join(output_folder, name)
     return None
 
-def get_dict_checkpoint_to_score(output_dir, inf_args):
+def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None):
     _output_folders = [
         os.path.join(output_dir, path)
         for path in os.listdir(output_dir)
@@ -113,7 +113,7 @@ def get_dict_checkpoint_to_score(output_dir, inf_args):
         if misc.is_none(os.environ.get("INDOMAIN")):
             if inf_args.test_env not in train_args["test_envs"]:
                 continue
-            if inf_args.train_envs and any(train_env in train_args["test_envs"] for train_env in inf_args.train_envs):
+            if train_envs and any(train_env in train_args["test_envs"] for train_env in train_envs):
                 continue
         else:
             if inf_args.test_env in train_args["test_envs"]:
@@ -260,22 +260,42 @@ def main():
 
     dict_checkpoint_to_score = {}
     sorted_checkpoints = []
-    for i, output_dir in enumerate(inf_args.output_dir):
-        dict_checkpoint_to_score_i = get_dict_checkpoint_to_score(output_dir, inf_args)
-        sorted_checkpoints_i = sorted(dict_checkpoint_to_score_i.keys(), key=lambda x: dict_checkpoint_to_score_i[x], reverse=True)
-        if inf_args.topk != 0:
-            if inf_args.topk > 0:
-                # select best according to metrics
-                rand_nums = range(0, inf_args.topk)
-            else:
-                # select k randomly
-                rand_nums = sorted(random.sample(range(len(sorted_checkpoints_i)), -inf_args.topk))
+    if not os.environ.get("PERD"):
+        for i, output_dir in enumerate(inf_args.output_dir):
+            dict_checkpoint_to_score_i = get_dict_checkpoint_to_score(
+                output_dir, inf_args, train_envs=inf_args.train_envs
+            )
+            sorted_checkpoints_i = sorted(dict_checkpoint_to_score_i.keys(), key=lambda x: dict_checkpoint_to_score_i[x], reverse=True)
+            if inf_args.topk != 0:
+                if inf_args.topk > 0:
+                    # select best according to metrics
+                    rand_nums = range(0, inf_args.topk)
+                else:
+                    # select k randomly
+                    rand_nums = sorted(random.sample(range(len(sorted_checkpoints_i)), -inf_args.topk))
 
-            sorted_checkpoints_i = [sorted_checkpoints_i[i] for i in rand_nums]
-        for checkpoint in sorted_checkpoints_i:
-            print("Found: ", checkpoint, " with score: ", dict_checkpoint_to_score_i[checkpoint])
-        dict_checkpoint_to_score.update(dict_checkpoint_to_score_i)
-        sorted_checkpoints.extend(sorted_checkpoints_i)
+                sorted_checkpoints_i = [sorted_checkpoints_i[i] for i in rand_nums]
+            for checkpoint in sorted_checkpoints_i:
+                print("Found: ", checkpoint, " with score: ", dict_checkpoint_to_score_i[checkpoint])
+            dict_checkpoint_to_score.update(dict_checkpoint_to_score_i)
+            sorted_checkpoints.extend(sorted_checkpoints_i)
+    else:
+        for i in [1, 2, 3]:
+            dict_checkpoint_to_score_i = get_dict_checkpoint_to_score(inf_args.output_dir[0], inf_args, train_envs=[i])
+            sorted_checkpoints_i = sorted(dict_checkpoint_to_score_i.keys(), key=lambda x: dict_checkpoint_to_score_i[x], reverse=True)
+            if inf_args.topk != 0:
+                if inf_args.topk > 0:
+                    # select best according to metrics
+                    rand_nums = range(0, inf_args.topk)
+                else:
+                    # select k randomly
+                    rand_nums = sorted(random.sample(range(len(sorted_checkpoints_i)), -inf_args.topk))
+
+                sorted_checkpoints_i = [sorted_checkpoints_i[i] for i in rand_nums]
+            for checkpoint in sorted_checkpoints_i:
+                print("Found: ", checkpoint, " with score: ", dict_checkpoint_to_score_i[checkpoint])
+            dict_checkpoint_to_score.update(dict_checkpoint_to_score_i)
+            sorted_checkpoints.extend(sorted_checkpoints_i)
 
     # load data: test and optionally train_out for restricted weight selection
     data_splits, data_names = [], []

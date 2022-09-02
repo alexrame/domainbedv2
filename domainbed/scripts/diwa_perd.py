@@ -250,6 +250,8 @@ def main():
     # load individual folders and their corresponding scores on train_out
 
     dict_checkpoint_to_score = {}
+
+
     for i in [1, 2, 3]:
         dict_checkpoint_to_score_i = get_dict_checkpoint_to_score(inf_args.output_dir[0], inf_args, train_envs=[i])
         sorted_checkpoints = sorted(
