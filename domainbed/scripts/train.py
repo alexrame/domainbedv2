@@ -51,10 +51,9 @@ if __name__ == "__main__":
     parser.add_argument('--save_model_every_checkpoint', type=str, default=None)
     ## DiWA ##
     parser.add_argument('--train_only_classifier', type=str, default=None)
-    parser.add_argument('--init_step', action='store_true')
     parser.add_argument('--path_for_init', type=str, default="")
+    parser.add_argument('--path_for_save', type=str, default="")
     args = parser.parse_args()
-
 
 
     print("Environment:")
@@ -315,9 +314,9 @@ if __name__ == "__main__":
         f.write('done')
 
     ## DiWA ##
-    if args.init_step:
+    if args.path_for_save:
         assert args.train_only_classifier or n_steps == -1
-        algorithm.save_path_for_future_init(args.path_for_init)
+        algorithm.save_path_for_future_init(args.path_for_save)
     else:
         if os.environ.get("MLFLOWEXPES_VERSION", "v0") == "nomlflow":
             pass

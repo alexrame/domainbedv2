@@ -103,18 +103,18 @@ class ERM(Algorithm):
 
         ## DiWA load shared initialization ##
         if is_not_none(path_for_init):
-            if os.path.exists(path_for_init):
-                print(f"Load weights from {path_for_init}")
-                saved_dict = torch.load(path_for_init)
-                if "model_dict" in saved_dict:
-                    self.load_state_dict(saved_dict["model_dict"])
-                else:
-                    self.network.load_state_dict(saved_dict)
-                if self._train_only_classifier == "reset" or os.environ.get("RESET_CLASSIFIER"):
-                    print("Reset random classifier")
-                    self.classifier.reset_parameters()
+            if not os.path.exists(path_for_init):
+                raise ValueError(f"Your initialization {path_for_init} has not been saved yet")
+
+            print(f"Load weights from {path_for_init}")
+            saved_dict = torch.load(path_for_init)
+            if "model_dict" in saved_dict:
+                self.load_state_dict(saved_dict["model_dict"])
             else:
-                assert self._train_only_classifier, "Your initialization has not been saved yet"
+                self.network.load_state_dict(saved_dict)
+            if self._train_only_classifier == "reset" or os.environ.get("RESET_CLASSIFIER"):
+                print("Reset random classifier")
+                self.classifier.reset_parameters()
 
     def _init_optimizer(self):
         ## DiWA choose weights to be optimized ##
@@ -149,9 +149,9 @@ class ERM(Algorithm):
         return {"": self.network(x)}
 
     ## DiWA for saving initialization ##
-    def save_path_for_future_init(self, path_for_init):
-        assert not os.path.exists(path_for_init), "The initialization has already been saved"
-        torch.save(self.network.state_dict(), path_for_init)
+    def save_path_for_future_init(self, path_for_save):
+        assert not os.path.exists(path_for_save), "The initialization has already been saved"
+        torch.save(self.network.state_dict(), path_for_save)
 
 
 ## DiWA to reproduce moving average baseline ##
