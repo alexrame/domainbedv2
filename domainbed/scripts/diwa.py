@@ -306,6 +306,9 @@ def main():
         for env_i in range(0, int(os.environ.get("INCLUDE_UPTO", "0"))):
             dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
             dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
+    if os.environ.get("INCLUDEVAL_UPTO", "0") != "0":
+        for env_i in range(0, int(os.environ.get("INCLUDEVAL_UPTO", "0"))):
+            dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
 
     for domain in dict_domain_to_filter:
         holdout_fraction = float(os.environ.get("HOLDOUT", 0.2)
