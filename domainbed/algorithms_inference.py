@@ -39,7 +39,7 @@ class DiWA(algorithms.ERM):
         if ma:
             if self.network is None:
                 self.network_ma = copy.deepcopy(network)
-            self.network_ma = self.network
+            self_network = self.network_ma
             g = self.global_count_ma
         else:
             if self.network is None:
