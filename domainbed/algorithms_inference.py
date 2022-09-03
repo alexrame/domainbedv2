@@ -37,7 +37,7 @@ class DiWA(algorithms.ERM):
     def update_mean_network(self, network, weight=1., ma=False):
 
         if ma:
-            if self.network is None:
+            if self.network_ma is None:
                 self.network_ma = copy.deepcopy(network)
             self_network = self.network_ma
             g = self.global_count_ma
