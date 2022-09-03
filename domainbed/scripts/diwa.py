@@ -16,7 +16,7 @@ def _get_args():
 
     parser.add_argument('--dataset', type=str)
     parser.add_argument('--test_env', type=int)
-    parser.add_argument('--train_envs', nargs="+", type=int, default=None)
+    parser.add_argument('--train_envs', nargs="+", type=int, default=[])
     parser.add_argument('--output_dir', nargs="+", type=str, default=None)
     parser.add_argument('--data_dir', type=str)
     parser.add_argument(
@@ -112,6 +112,7 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None):
         else:
             if inf_args.test_env in train_args["test_envs"]:
                 continue
+            assert len(train_envs) == 0
 
         if train_args["trial_seed"] != inf_args.trial_seed and inf_args.trial_seed != -1:
             continue
@@ -267,7 +268,7 @@ def main():
             )
 
     dict_checkpoint_to_score = {}
-    sorted_checkpoints = []
+    notsorted_checkpoints = []
     for dict_checkpoint_to_score_i in list_dict_checkpoint_to_score_i:
         sorted_checkpoints_i = sorted(
             dict_checkpoint_to_score_i.keys(),
@@ -286,7 +287,11 @@ def main():
         for checkpoint in sorted_checkpoints_i:
             print("Found: ", checkpoint, " with score: ", dict_checkpoint_to_score_i[checkpoint])
         dict_checkpoint_to_score.update(dict_checkpoint_to_score_i)
-        sorted_checkpoints.extend(sorted_checkpoints_i)
+        notsorted_checkpoints.extend(sorted_checkpoints_i)
+
+    sorted_checkpoints = sorted(
+        notsorted_checkpoints, key=lambda x: dict_checkpoint_to_score[x], reverse=True
+    )
 
     # load data: test and optionally train_out for restricted weight selection
     data_splits, data_names = [], []

@@ -1,4 +1,5 @@
-✓ done
+/ ana
+@ pending
 + doing
 ! todo
 & later
@@ -11,11 +12,18 @@
 
 ### top1
 
-enshome0_erm1_lp_0901_r0_top1.slurm
-enshome0_erm2_lp_0901_r0_top1.slurm
-enshome0_erm3_lp_0901_r0_top1.slurm
+enshome0_erm1_lp_0901_r0_top1.slurm /
+enshome0_erm2_lp_0901_r0_top1.slurm /
+enshome0_erm3_lp_0901_r0_top1.slurm /
 vs.
-enshome0_erm123_lp_0901_r0_top1.slurm
+enshome0_erm123_lp_0901_r0_top1.slurm /
+
+### top1 with ma
+
+todo ?
+### top1 with robust
+
+todo ?
 
 ### m=20
 enshome0_erm1_lp_0901_r0.slurm
@@ -26,7 +34,9 @@ enshome0_erm3_lp_0901_r0.slurm
 enshome0_erm1_lp_0901_r0_ma.slurm
 
 ### m=20 with robust
-enshome0_erm2_lp_0901_r20.slurm
+enshome0_erm0_lp_0901_r20.slurm done
+enshome0_erm1_lp_0901_r20.slurm done
+enshome0_erm2_lp_0901_r20.slurm done
 
 ## compare avg of 3 vs ERM 3 domains
 
@@ -48,29 +58,24 @@ enshome0_ermt123_lp_0901_r0_ma_top1.slurm
 ## compare avg of 20 * 3 runs vs diwa
 
 
-enshome0_erm123_lp_0822_r0.slurm_890762.out
-
-vs.
-
-enshome0_ermt123_lp_0901_r0.slurm_892403.out
-
-vs.
-enshome0_ermt123_lp_0901_r0_top-7.slurm doing
+enshome0_erm123_lp_0822_r0.slurm_890762.out /
+enshome0_ermt123_lp_0901_r0.slurm_892403.out /
+enshome0_ermt123_lp_0901_r0_top-7.slurm +
 
 
 ### combined with robust fine tuning ?
 
 enshome0_erm123_lp_0822_r20.slurm
 vs.
-enshome0_ermt123_lp_0901_r20.slurm doing
+enshome0_ermt123_lp_0901_r20.slurm +
 
 ## all combined
 
-enshome0_erm123t123_lp_0901_r0.slurm doing
-enshome0_erm123t123_lp_0901_r80.slurm doing
+enshome0_erm123t123_lp_0901_r0.slurm +
+enshome0_erm123t123_lp_0901_r20.slurm +
 
-enshome0_erm123t123_lp_0901_r0_top1.slurm doing
-enshome0_erm123t123_lp_0901_r4_top1.slurm doing
+enshome0_erm123t123_lp_0901_r0_top1.slurm +
+enshome0_erm123t123_lp_0901_r20_top1.slurm +
 
 
 ## retraining
