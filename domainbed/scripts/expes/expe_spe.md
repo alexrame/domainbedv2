@@ -26,17 +26,22 @@ todo ?
 todo ?
 
 ### m=20
-enshome0_erm1_lp_0901_r0.slurm
-enshome0_erm2_lp_0901_r0.slurm
-enshome0_erm3_lp_0901_r0.slurm
+enshome0_erm1_lp_0901_r0.slurm /
+enshome0_erm2_lp_0901_r0.slurm /
+enshome0_erm3_lp_0901_r0.slurm /
 
-### m=20 with ma
-enshome0_erm1_lp_0901_r0_ma.slurm
 
 ### m=20 with robust
-enshome0_erm0_lp_0901_r20.slurm done
-enshome0_erm1_lp_0901_r20.slurm done
-enshome0_erm2_lp_0901_r20.slurm done
+enshome0_erm0_lp_0901_r20.slurm /
+enshome0_erm1_lp_0901_r20.slurm /
+enshome0_erm2_lp_0901_r20.slurm /
+
+### m=20 with ma
+enshome0_erm1_lp_0901_r0_ma.slurm doing
+enshome0_erm2_lp_0901_r0_ma.slurm doing
+enshome0_erm3_lp_0901_r0_ma.slurm doing
+
+
 
 ## compare avg of 3 vs ERM 3 domains
 

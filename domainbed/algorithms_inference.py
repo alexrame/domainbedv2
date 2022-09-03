@@ -80,11 +80,13 @@ class DiWA(algorithms.ERM):
         self.networks.append(network)
 
     def predict(self, x):
-        dict_predictions = {"": self.network(x)}
+        if self.network_ma is not None:
+            dict_predictions = {"": self.network_ma(x)}
+        else:
+            dict_predictions = {"": self.network(x)}
+
         if len(self.networks) == 0:
             return dict_predictions
-        if self.network_ma is not None:
-            dict_predictions["ma"] = self.network_ma(x)
 
         logits_ens = []
         for i, network in enumerate(self.networks):
