@@ -18,6 +18,7 @@ class ERM(algorithms.ERM):
         )
         self.num_classes = num_classes
         self.network = nn.Sequential(self.featurizer, self.classifier)
+        self.network_ma = copy.deepcopy(self.network)
 
 class DiWA(algorithms.ERM):
 
@@ -26,19 +27,33 @@ class DiWA(algorithms.ERM):
         """
         algorithms.Algorithm.__init__(self, input_shape, num_classes, num_domains, hparams={})
         self.network = None
+        self.network_ma = None
         self.var_network = None
         self.networks = []
         self.global_count = 0
+        self.global_count_ma = 0
         self.var_global_count = 0
 
-    def update_mean_network(self, network, weight=1.):
-        if self.network is None:
-            self.network = copy.deepcopy(network)
+    def update_mean_network(self, network, weight=1., ma=False):
 
-        for param_n, param_m in zip(network.parameters(), self.network.parameters()):
-            param_m.data = (param_m.data * self.global_count +
-                            param_n.data * weight) / (weight + self.global_count)
-        self.global_count += weight
+        if ma:
+            if self.network is None:
+                self.network_ma = copy.deepcopy(network)
+            self.network_ma = self.network
+            g = self.global_count_ma
+        else:
+            if self.network is None:
+                self.network = copy.deepcopy(network)
+            self_network = self.network
+            g = self.global_count
+
+        for param_n, param_m in zip(network.parameters(), self_network.parameters()):
+            param_m.data = (param_m.data * g + param_n.data * weight) / (weight + g)
+
+        if ma:
+            self.global_count_ma += weight
+        else:
+            self.global_count += weight
 
     def update_var_network(self, network):
         if self.var_network is None:
@@ -68,6 +83,8 @@ class DiWA(algorithms.ERM):
         dict_predictions = {"": self.network(x)}
         if len(self.networks) == 0:
             return dict_predictions
+        if self.network_ma is not None:
+            dict_predictions["ma"] = self.network_ma(x)
 
         logits_ens = []
         for i, network in enumerate(self.networks):
