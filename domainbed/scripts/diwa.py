@@ -161,7 +161,7 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
         if "mean" in action:
             wa_algorithm.update_mean_network(algorithm.network, weight=checkpoint_weight)
         if "ma" in action:
-            wa_algorithm.update_mean_network(algorithm.network_ma, weight=checkpoint_weight)
+            wa_algorithm.update_mean_network(algorithm.network_ma, weight=checkpoint_weight, ma=1)
         if "netm" in action:
             wa_algorithm.add_network(algorithm.network)
         if "var" in action:
