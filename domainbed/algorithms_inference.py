@@ -151,8 +151,10 @@ class DiWA(algorithms.ERM):
     def get_dict_diversity(self, dict_stats, targets, device):
         dict_diversity = collections.defaultdict(list)
         num_members = min(len(self.networks), int(os.environ.get("MAXM", 3)))
-        regexes = [("netm", f"net{i}_net{j}") for i in range(num_members) for j in range(i + 1, num_members)]
-        for regexname, regex in [("waens", "wa_ens")] + regexes:
+        # regexes = [("waens", "wa_ens")]
+        regexes = []
+        regexes += [("netm", f"net{i}_net{j}") for i in range(num_members) for j in range(i + 1, num_members)]
+        for regexname, regex in regexes:
             key0, key1 = regex.split("_")
 
             if key0 not in dict_stats:
@@ -171,13 +173,13 @@ class DiWA(algorithms.ERM):
             dict_diversity[f"divr_{regexname}"].append(diversity_metrics.ratio_errors(
                 targets, preds0, preds1
             ))
-            dict_diversity[f"divq_{regexname}"].append(diversity_metrics.Q_statistic(
-                targets, preds0, preds1
-            ))
+            # dict_diversity[f"divq_{regexname}"].append(diversity_metrics.Q_statistic(
+            #     targets, preds0, preds1
+            # ))
 
         dict_results = {key: np.mean(value) for key, value in dict_diversity.items()}
 
-        if num_members > 0:
+        if num_members > 0 and False:
             # cf https://arxiv.org/abs/2110.13786
             tcps = [dict_stats[f"net{i}"]["tcp"].numpy() for i in range(num_members)]
             tcps = np.stack(tcps, axis=1)
