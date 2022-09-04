@@ -66,7 +66,7 @@ def create_splits(domain, inf_args, dataset, _filter, holdout_fraction):
 
 def get_checkpoint_from_folder(output_folder):
     name = None
-    if os.environ.get("WHICHMODEL", "best") == 'best':
+    if os.environ.get("WHICHMODEL", "best") in ['best', "stepbest"]:
         if "model_best.pkl" in os.listdir(output_folder):
             name = "model_best.pkl"
         elif "best" in os.listdir(output_folder):
@@ -263,7 +263,8 @@ def main():
             list_dict_checkpoint_to_score_i.append(
                 get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=inf_args.train_envs)
             )
-        for i in [1, 2, 3]:
+        list_i = [1, 2, 3] if os.environ.get("PERD") == "1" else [int(p) for p in os.environ.get("PERD").split(",")]
+        for i in list_i:
             list_dict_checkpoint_to_score_i.append(
                 get_dict_checkpoint_to_score(inf_args.output_dir[0], inf_args, train_envs=[i])
             )
