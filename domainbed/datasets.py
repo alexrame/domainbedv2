@@ -424,16 +424,13 @@ class WaterbirdsDataset(torch.utils.data.Dataset):
         self.y = df["y"].tolist()
         # self.g = df["a"].tolist()
 
+    # def __getitem__(self, i):
+    #     return self.transform(self.x[i]), self.y[i]
+    #     #, self.g[i]
     def __getitem__(self, i):
-        return self.transform(self.x[i]), self.y[i]
-        #, self.g[i]
-
-    def __getitem__(self, i):
-        x = self.transform(self.x[i])
-        y = torch.tensor(self.y[i])
-        #, dtype=torch.long )
-        # g = torch.tensor(self.g[i], dtype=torch.long)
-        return x, y
+        image = self.transform(self.x[i])
+        label = self.y[i]
+        return image, label
 
     def __len__(self):
         return len(self.x)
@@ -468,6 +465,7 @@ class Waterbirds(MultipleDomainDataset):
 
         transform = transforms.Compose(
             [
+                torchvision.transforms.Lambda(lambda x: Image.open(x).convert("RGB")),
                 transforms.Resize((
                     int(224 * (256 / 224)),
                     int(224 * (256 / 224)),
