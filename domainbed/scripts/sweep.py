@@ -116,15 +116,15 @@ def make_args_list(
     for trial_seed in range(n_trials):
         for dataset in dataset_names:
             for algorithm in algorithms:
-                if force_test_env is not None:
-                    all_test_envs = [force_test_env] ## DiWA ##
-                elif force_train_env is not None:
+                if force_train_env is not None:
                     all_test_envs = [
                         [
                             i for i in range(datasets.num_environments(dataset))
                             if i != force_train_env
                         ]
                     ]
+                elif force_test_env is not None:
+                    all_test_envs = [force_test_env] ## DiWA ##
                 elif single_test_envs:
                     all_test_envs = [
                         [i] for i in range(datasets.num_environments(dataset))]
