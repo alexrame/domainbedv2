@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/Users/alexandrerame/anaconda3/envs/pytorch/lib/python3.6/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/Users/alexandrerame/anaconda3/envs/pytorch/lib/python3.6/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/Users/alexandrerame/code_repository/codedev/domainbedv2/domainbed/scripts/train.py", line 113, in <module>
+    args.test_envs, hparams)
+  File "/Users/alexandrerame/code_repository/codedev/domainbedv2/domainbed/datasets.py", line 482, in __init__
+    self.datasets.append(WaterbirdsDataset(df=dfenv, root=self.dir, transform=transform))
+  File "/Users/alexandrerame/code_repository/codedev/domainbedv2/domainbed/datasets.py", line 422, in __init__
+    self.x = df["filename"].astype(str).map(lambda x: os.path.join(root, x)).tolist()
+  File "/Users/alexandrerame/code_repository/codedev/domainbedv2/domainbed/datasets.py", line 422, in __init__
+    self.x = df["filename"].astype(str).map(lambda x: os.path.join(root, x)).tolist()
+  File "/Users/alexandrerame/anaconda3/envs/pytorch/lib/python3.6/bdb.py", line 51, in trace_dispatch
+    return self.dispatch_line(frame)
+  File "/Users/alexandrerame/anaconda3/envs/pytorch/lib/python3.6/bdb.py", line 70, in dispatch_line
+    if self.quitting: raise BdbQuit
+bdb.BdbQuit

@@ -38,6 +38,7 @@ DATASETS = [
     "WILDSFMoW",
     # correlation shift
     "CelebA_Blond",
+    "Waterbirds"
 ]
 
 def get_dataset_class(dataset_name):
@@ -411,6 +412,75 @@ class CelebA(torch.utils.data.Dataset):
         if self.transform:
             image = self.transform(image)
         return image, label
+
+
+class WaterbirdsDataset(torch.utils.data.Dataset):
+    def __init__(self, df, root, transform):
+        self.df = df
+        self.transform = transform
+        # import pdb; pdb.set_trace()
+
+        self.x = df["filename"].astype(str).map(lambda x: os.path.join(root, x)).tolist()
+        self.y = df["y"].tolist()
+        # self.g = df["a"].tolist()
+
+    def __getitem__(self, i):
+        return self.transform(self.x[i]), self.y[i]
+        #, self.g[i]
+
+    def __getitem__(self, i):
+        x = self.transform(self.x[i])
+        y = torch.tensor(self.y[i])
+        #, dtype=torch.long )
+        # g = torch.tensor(self.g[i], dtype=torch.long)
+        return x, y
+
+    def __len__(self):
+        return len(self.x)
+
+
+class Waterbirds(MultipleDomainDataset):
+    ENVIRONMENTS = ["att0", "att1", "balanced"]
+    N_STEPS = 2001
+    CHECKPOINT_FREQ = 200
+
+    def __init__(self, root, test_envs, hparams):
+        super().__init__()
+        environments = self.ENVIRONMENTS
+        print(environments)
+
+        self.input_shape = (
+            3,
+            224,
+            224,
+        )
+        self.num_classes = 2  # seabird or not
+
+        self.dir = os.path.join(root, "waterbirds/waterbird_complete95_forest2water2/")
+        metadata = os.path.join(root, "metadata_waterbirds.csv")
+
+        df = pd.read_csv(metadata)
+        dftr = df[df["split"] == ({"tr": 0, "va": 1, "te": 2}["tr"])]
+        dftr0 = dftr[dftr["a"] == 0]
+        dftr1 = dftr[dftr["a"] == 1]
+
+        dfte = df[df["split"] == ({"tr": 0, "va": 1, "te": 2}["te"])]
+
+        transform = transforms.Compose(
+            [
+                transforms.Resize((
+                    int(224 * (256 / 224)),
+                    int(224 * (256 / 224)),
+                )),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+            ]
+        )
+
+        self.datasets = []
+        for dfenv in [dftr0, dftr1, dfte]:
+            self.datasets.append(WaterbirdsDataset(df=dfenv, root=self.dir, transform=transform))
 
 
 class CelebA_Blond(MultipleDomainDataset):

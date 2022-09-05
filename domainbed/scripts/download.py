@@ -10,9 +10,10 @@ import gdown
 import uuid
 import json
 import os
+import pandas as pd
 
-from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
-from wilds.datasets.fmow_dataset import FMoWDataset
+# from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
+# from wilds.datasets.fmow_dataset import FMoWDataset
 
 
 # utils #######################################################################
@@ -245,6 +246,26 @@ def download_terra_incognita(data_dir):
     os.remove(annotations_file)
 
 
+def download_waterbirds(data_path):
+    print("Downloading Waterbirds")
+    water_birds_dir = os.path.join(data_path, "waterbirds")
+    os.makedirs(water_birds_dir, exist_ok=True)
+    water_birds_dir_tar = os.path.join(water_birds_dir, "waterbirds.tar.gz")
+    download_and_extract(
+        "https://nlp.stanford.edu/data/dro/waterbird_complete95_forest2water2.tar.gz",
+        water_birds_dir_tar,
+    )
+    generate_metadata_waterbirds(data_path)
+
+
+def generate_metadata_waterbirds(data_path):
+    print("Generating metadata for waterbirds")
+    df = pd.read_csv(os.path.join(data_path, "waterbirds/waterbird_complete95_forest2water2/metadata.csv"))
+    df = df.rename(columns={"img_id": "id", "img_filename": "filename", "place": "a"})
+    df[["id", "filename", "split", "y", "a"]].to_csv(
+        os.path.join(data_path, "metadata_waterbirds.csv"), index=False
+    )
+
 # SVIRO #################################################################
 
 def download_sviro(data_dir):
@@ -268,7 +289,8 @@ if __name__ == "__main__":
     # download_office_home(args.data_dir)
     # download_domain_net(args.data_dir)
     # download_vlcs(args.data_dir)
-    download_terra_incognita(args.data_dir)
+    download_waterbirds(args.data_dir)
+    # download_terra_incognita(args.data_dir)
     # download_sviro(args.data_dir)
     # Camelyon17Dataset(root_dir=args.data_dir, download=True)
     # FMoWDataset(root_dir=args.data_dir, download=True)

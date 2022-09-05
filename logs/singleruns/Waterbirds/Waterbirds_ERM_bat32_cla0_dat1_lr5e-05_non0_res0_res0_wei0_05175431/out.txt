@@ -1,0 +1,37 @@
+HParams:
+	batch_size: 32
+	class_balanced: False
+	data_augmentation: True
+	lr: 5e-05
+	nonlinear_classifier: False
+	resnet18: False
+	resnet_dropout: 0.0
+	weight_decay: 0
+['att0', 'att1', 'balanced']
+Traceback (most recent call last):
+  File "/Users/alexandrerame/anaconda3/envs/pytorch/lib/python3.6/site-packages/pandas/core/indexes/base.py", line 2898, in get_loc
+    return self._engine.get_loc(casted_key)
+  File "pandas/_libs/index.pyx", line 70, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/index.pyx", line 101, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/hashtable_class_helper.pxi", line 1675, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas/_libs/hashtable_class_helper.pxi", line 1683, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'img_filename'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/alexandrerame/anaconda3/envs/pytorch/lib/python3.6/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/Users/alexandrerame/anaconda3/envs/pytorch/lib/python3.6/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/Users/alexandrerame/code_repository/codedev/domainbedv2/domainbed/scripts/train.py", line 113, in <module>
+    args.test_envs, hparams)
+  File "/Users/alexandrerame/code_repository/codedev/domainbedv2/domainbed/datasets.py", line 476, in __init__
+    self.datasets.append(WaterbirdsDataset(df=dfenv, root=self.dir, transform=transform))
+  File "/Users/alexandrerame/code_repository/codedev/domainbedv2/domainbed/datasets.py", line 421, in __init__
+    self.x = df["img_filename"].astype(str).map(
+  File "/Users/alexandrerame/anaconda3/envs/pytorch/lib/python3.6/site-packages/pandas/core/frame.py", line 2906, in __getitem__
+    indexer = self.columns.get_loc(key)
+  File "/Users/alexandrerame/anaconda3/envs/pytorch/lib/python3.6/site-packages/pandas/core/indexes/base.py", line 2900, in get_loc
+    raise KeyError(key) from err
+KeyError: 'img_filename'

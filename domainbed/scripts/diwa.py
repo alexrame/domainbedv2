@@ -231,6 +231,7 @@ def weighting_checkpoint(checkpoint, weighting, dict_checkpoint_to_score):
 
 def print_results(dict_results):
     results_keys = sorted(list(dict_results.keys()))
+    print("printres: ", {_key: dict_results[_key] for _key in results_keys})
     misc.print_row(results_keys, colwidth=20)
     misc.print_row([dict_results[key] for key in results_keys], colwidth=20)
 
@@ -318,8 +319,8 @@ def main():
             dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
 
     for domain in dict_domain_to_filter:
-        holdout_fraction = float(os.environ.get("HOLDOUT", 0.2)
-                                ) if domain.startswith("test") else 0.2
+        holdout_fraction = float(os.environ.get("HOLDOUT", 0.2))
+        # if domain.startswith("test") else 0.2
         _data_splits = create_splits(
             domain,
             inf_args,
