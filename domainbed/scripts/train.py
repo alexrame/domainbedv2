@@ -317,14 +317,14 @@ if __name__ == "__main__":
     if args.path_for_save:
         assert args.train_only_classifier or n_steps == -1
         algorithm.save_path_for_future_init(args.path_for_save)
-    else:
-        if os.environ.get("MLFLOWEXPES_VERSION", "v0") == "nomlflow":
-            pass
-        else:
-            experiments_handler.main_mlflow(
-                experiments_handler.get_run_name(args.__dict__, hparams=hparams),
-                results,
-                args=args.__dict__,
-                output_dir=args.output_dir,
-                hparams=hparams,
-            )
+    # else:
+    #     if os.environ.get("MLFLOWEXPES_VERSION", "v0") == "nomlflow":
+    #         pass
+    #     else:
+    #         experiments_handler.main_mlflow(
+    #             experiments_handler.get_run_name(args.__dict__, hparams=hparams),
+    #             results,
+    #             args=args.__dict__,
+    #             output_dir=args.output_dir,
+    #             hparams=hparams,
+    #         )

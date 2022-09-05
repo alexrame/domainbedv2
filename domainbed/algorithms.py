@@ -629,7 +629,7 @@ class Fishr(Algorithm):
         self.network = nn.Sequential(self.featurizer, self.classifier)
 
         ## DiWA load shared initialization ##
-        if path_for_init is not None:
+        if is_not_none(path_for_init):
             if os.path.exists(path_for_init):
                 print(f"Load weights from {path_for_init}")
                 self.network.load_state_dict(torch.load(path_for_init))
