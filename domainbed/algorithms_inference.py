@@ -129,15 +129,15 @@ class DiWA(algorithms.ERM):
             def get_conf(logits, power=-1):
                 probs = torch.softmax(logits, dim=1)
                 ent = torch.sum(-probs * torch.log(probs), dim=1)
-                conf = torch.reshape(torch.pow(ent, -1), (-1, 1))
+                conf = torch.reshape(torch.pow(ent, power), (-1, 1))
                 return conf
 
             for i, classifier in enumerate(self.classifiers):
                 _logits_i = classifier(features)
                 logits_enscla.append(_logits_i)
                 dict_predictions["cla" + str(i)] = _logits_i
-                conflogits_enscla_minus1.append(get_conf(_logits_i, -1) * _logits_i)
-                conflogits_enscla_minus2.append(get_conf(_logits_i, -2) * _logits_i)
+                conflogits_enscla_minus1.append(get_conf(_logits_i, power=-1) * _logits_i)
+                conflogits_enscla_minus2.append(get_conf(_logits_i, power=-2) * _logits_i)
 
             dict_predictions["ensclaminus1"] = torch.mean(
                 torch.stack(conflogits_enscla_minus1, dim=0), 0
@@ -152,11 +152,15 @@ class DiWA(algorithms.ERM):
         algorithms.ERM.train(self, *args)
         for network in self.networks:
             network.train(*args)
+        for classifier in self.classifiers:
+            classifier.train(*args)
 
     def to(self, device):
         algorithms.ERM.to(self, device)
         for network in self.networks:
             network.to(device)
+        for classifier in self.classifiers:
+            classifier.to(device)
 
     def get_dict_prediction_stats(
         self,
