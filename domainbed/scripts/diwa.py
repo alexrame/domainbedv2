@@ -159,7 +159,8 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
             wa_algorithm.update_mean_network_ma(algorithm.network_ma, weight=checkpoint_weight)
 
         if "cla" in action:
-            wa_algorithm.update_mean_featurizer(algorithm.classifier, weight=checkpoint_weight)
+            wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight)
+
             wa_algorithm.add_classifier(algorithm.classifier)
 
         if "netm" in action:
