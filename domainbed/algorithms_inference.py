@@ -8,6 +8,7 @@ import collections
 from domainbed import networks, algorithms
 from domainbed.lib import diversity_metrics
 
+
 class ERM(algorithms.ERM):
 
     def __init__(self, input_shape, num_classes, num_domains, hparams):
@@ -19,6 +20,7 @@ class ERM(algorithms.ERM):
         self.num_classes = num_classes
         self.network = nn.Sequential(self.featurizer, self.classifier)
         self.network_ma = copy.deepcopy(self.network)
+
 
 class DiWA(algorithms.ERM):
 
@@ -73,9 +75,12 @@ class DiWA(algorithms.ERM):
     def update_var_network(self, network):
         if self.var_network is None:
             self.var_network = copy.deepcopy(network)
-        for param_n, param_m, param_v in zip(network.parameters(), self.network.parameters(), self.var_network.parameters()):
-            l2_network_meannetwork = (param_n.data - param_m.data) ** 2
-            param_v.data = (param_v.data * self.var_global_count + l2_network_meannetwork) / (1. + self.var_global_count)
+        for param_n, param_m, param_v in zip(
+            network.parameters(), self.network.parameters(), self.var_network.parameters()
+        ):
+            l2_network_meannetwork = (param_n.data - param_m.data)**2
+            param_v.data = (param_v.data * self.var_global_count +
+                            l2_network_meannetwork) / (1. + self.var_global_count)
         self.var_global_count += 1
 
     def create_stochastic_networks(self):
@@ -83,11 +88,14 @@ class DiWA(algorithms.ERM):
         multiplier = float(os.environ.get("VARM", 1.))
         for i in range(int(os.environ.get("MAXM", 3))):
             network = copy.deepcopy(self.network)
-            for param_n, param_m, param_v in zip(network.parameters(), self.network.parameters(), self.var_network.parameters()):
+            for param_n, param_m, param_v in zip(
+                network.parameters(), self.network.parameters(), self.var_network.parameters()
+            ):
                 param_n.data = torch.normal(
                     mean=param_m.data,
-                    std=multiplier * torch.sqrt(self.var_global_count/(self.var_global_count-1) * param_v.data)
-                    )
+                    std=multiplier *
+                    torch.sqrt(self.var_global_count / (self.var_global_count - 1) * param_v.data)
+                )
                 # param_n.data = param_m.data + * gaussian_noise
             self.add_network(network)
 
@@ -114,12 +122,29 @@ class DiWA(algorithms.ERM):
 
         if len(self.classifiers) != 0:
             logits_enscla = []
+            conflogits_enscla_minus1 = []
+            conflogits_enscla_minus2 = []
             features = self.featurizer(x)
+
+            def get_conf(logits, power=-1):
+                probs = torch.softmax(logits, dim=1)
+                ent = torch.sum(-probs * torch.log(probs), dim=1)
+                conf = torch.reshape(torch.pow(ent, -1), (-1, 1))
+                return conf
+
             for i, classifier in enumerate(self.classifiers):
                 _logits_i = classifier(features)
                 logits_enscla.append(_logits_i)
                 dict_predictions["cla" + str(i)] = _logits_i
-            dict_predictions["enscla"] = torch.mean(torch.stack(logits_enscla, dim=0), 0)
+                conflogits_enscla_minus1.append(get_conf(_logits_i, -1) * _logits_i)
+                conflogits_enscla_minus2.append(get_conf(_logits_i, -2) * _logits_i)
+
+            dict_predictions["ensclaminus1"] = torch.mean(
+                torch.stack(conflogits_enscla_minus1, dim=0), 0
+            )
+            dict_predictions["ensclaminus2"] = torch.mean(
+                torch.stack(conflogits_enscla_minus2, dim=0), 0
+            )
 
         return dict_predictions
 
@@ -178,8 +203,7 @@ class DiWA(algorithms.ERM):
         dict_diversity = collections.defaultdict(list)
         num_members = min(len(self.networks), float(os.environ.get("MAXM", math.inf)))
         # regexes = [("waens", "wa_ens")]
-        regexes = [("netcla0", "net0_cla0"), ("enscla", "ens_enscla")]
-        regexes += [("netcla1", "net1_cla1"), ("netcla2", "net2_cla2")]
+        regexes = [("netcla0", "net0_cla0"), ("netcla1", "net1_cla1"), ("netcla2", "net2_cla2")]
         # regexes += [("netm", f"net{i}_net{j}") for i in range(num_members) for j in range(i + 1, num_members)]
         for regexname, regex in regexes:
             key0, key1 = regex.split("_")
@@ -197,9 +221,9 @@ class DiWA(algorithms.ERM):
 
             preds0 = dict_stats[key0]["preds"].numpy()
             preds1 = dict_stats[key1]["preds"].numpy()
-            dict_diversity[f"divr_{regexname}"].append(diversity_metrics.ratio_errors(
-                targets, preds0, preds1
-            ))
+            dict_diversity[f"divr_{regexname}"].append(
+                diversity_metrics.ratio_errors(targets, preds0, preds1)
+            )
             # dict_diversity[f"divq_{regexname}"].append(diversity_metrics.Q_statistic(
             #     targets, preds0, preds1
             # ))
@@ -213,8 +237,9 @@ class DiWA(algorithms.ERM):
 
             def div_pac(row):
                 max_row = np.max(row)
-                normalized_row = [r/(math.sqrt(2) * max_row + 1e-7) for r in row]
+                normalized_row = [r / (math.sqrt(2) * max_row + 1e-7) for r in row]
                 return np.var(normalized_row)
+
             dict_results["divp_netm"] = np.mean(np.apply_along_axis(div_pac, 1, tcps))
 
         return dict_results

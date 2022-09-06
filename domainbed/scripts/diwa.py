@@ -265,6 +265,9 @@ def merge_checkpoints(inf_args, list_dict_checkpoint_to_score_i):
         dict_checkpoint_to_score.update(dict_checkpoint_to_score_i)
         notsorted_checkpoints.extend(sorted_checkpoints_i)
 
+    if inf_args.weight_selection != "restricted":
+        return dict_checkpoint_to_score, notsorted_checkpoints
+
     sorted_checkpoints = sorted(
         notsorted_checkpoints, key=lambda x: dict_checkpoint_to_score[x], reverse=True
     )
