@@ -179,7 +179,7 @@ class DiWA(algorithms.ERM):
         num_members = min(len(self.networks), float(os.environ.get("MAXM", math.inf)))
         # regexes = [("waens", "wa_ens")]
         regexes = [("netcla0", "net0_cla0"), ("enscla", "ens_enscla")]
-        regexes = +[("netcla1", "net1_cla1"), ("netcla2", "net2_cla2")]
+        regexes += [("netcla1", "net1_cla1"), ("netcla2", "net2_cla2")]
         # regexes += [("netm", f"net{i}_net{j}") for i in range(num_members) for j in range(i + 1, num_members)]
         for regexname, regex in regexes:
             key0, key1 = regex.split("_")
