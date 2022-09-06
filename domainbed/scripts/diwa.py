@@ -160,7 +160,6 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
 
         if "cla" in action:
             wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight)
-
             wa_algorithm.add_classifier(algorithm.classifier)
 
         if "netm" in action:
@@ -242,39 +241,7 @@ def print_results(dict_results):
     misc.print_row([dict_results[key] for key in results_keys], colwidth=20)
 
 
-def main():
-    inf_args = _get_args()
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-
-    print(f"Begin DiWA for: {inf_args} with device: {device}")
-
-    if inf_args.dataset in vars(datasets):
-        dataset_class = vars(datasets)[inf_args.dataset]
-        dataset = dataset_class(
-            inf_args.data_dir, [inf_args.test_env],
-            hparams={"data_augmentation": os.environ.get("DATAAUG", "0") == "1"}
-        )
-    else:
-        raise NotImplementedError
-
-    # load individual folders and their corresponding scores on train_out
-
-    list_dict_checkpoint_to_score_i = []
-    if not os.environ.get("PERD"):
-        for output_dir in inf_args.output_dir:
-            list_dict_checkpoint_to_score_i.append(
-                get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=inf_args.train_envs)
-            )
-    else:
-        for output_dir in inf_args.output_dir[1:]:
-            list_dict_checkpoint_to_score_i.append(
-                get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=inf_args.train_envs)
-            )
-        list_i = [1, 2, 3] if os.environ.get("PERD") == "1" else [int(p) for p in os.environ.get("PERD").split(",")]
-        for i in list_i:
-            list_dict_checkpoint_to_score_i.append(
-                get_dict_checkpoint_to_score(inf_args.output_dir[0], inf_args, train_envs=[i])
-            )
+def merge_checkpoints(inf_args, list_dict_checkpoint_to_score_i):
 
     dict_checkpoint_to_score = {}
     notsorted_checkpoints = []
@@ -301,7 +268,9 @@ def main():
     sorted_checkpoints = sorted(
         notsorted_checkpoints, key=lambda x: dict_checkpoint_to_score[x], reverse=True
     )
+    return dict_checkpoint_to_score, sorted_checkpoints
 
+def create_data_splits(inf_args, dataset):
     # load data: test and optionally train_out for restricted weight selection
     data_splits, data_names = [], []
 
@@ -339,6 +308,49 @@ def main():
         else:
             data_splits.append(_data_splits[0])
         data_names.append(domain)
+    return data_splits, data_names
+
+
+def main():
+    inf_args = _get_args()
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    print(f"Begin DiWA for: {inf_args} with device: {device}")
+
+    if inf_args.dataset in vars(datasets):
+        dataset_class = vars(datasets)[inf_args.dataset]
+        dataset = dataset_class(
+            inf_args.data_dir, [inf_args.test_env],
+            hparams={"data_augmentation": os.environ.get("DATAAUG", "0") == "1"}
+        )
+    else:
+        raise NotImplementedError
+
+    # load individual folders and their corresponding scores on train_out
+    list_dict_checkpoint_to_score_i = []
+    if inf_args.output_dir[0] == "no":
+        assert len(inf_args.output_dir) == 1
+        print("Only from checkpoints with explicit name")
+    elif not os.environ.get("PERD"):
+        for output_dir in inf_args.output_dir:
+            list_dict_checkpoint_to_score_i.append(
+                get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=inf_args.train_envs)
+            )
+    else:
+        for output_dir in inf_args.output_dir[1:]:
+            list_dict_checkpoint_to_score_i.append(
+                get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=inf_args.train_envs)
+            )
+        list_i = [1, 2, 3] if os.environ.get("PERD") == "1" else [int(p) for p in os.environ.get("PERD").split(",")]
+        for i in list_i:
+            list_dict_checkpoint_to_score_i.append(
+                get_dict_checkpoint_to_score(inf_args.output_dir[0], inf_args, train_envs=[i])
+            )
+
+    dict_checkpoint_to_score, sorted_checkpoints = merge_checkpoints(
+        inf_args, list_dict_checkpoint_to_score_i
+    )
+    data_splits, data_names = create_data_splits(inf_args, dataset)
 
     # compute score after weight averaging
     if inf_args.weight_selection == "restricted":

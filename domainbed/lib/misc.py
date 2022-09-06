@@ -248,11 +248,11 @@ def results_ensembling(algorithm, loader, device):
             [
                 dict_results[f"acc_net{key}"]
                 for key in range(
-                    min(len(algorithm.networks), int(os.environ.get("MAXM", math.inf))))
+                    int(min(len(algorithm.networks), float(os.environ.get("MAXM", math.inf)))))
             ]
         )
         if os.environ.get("DELETE_NETM"):
-            for key in range(min(len(algorithm.networks), int(os.environ.get("MAXM", math.inf)))):
+            for key in range(int(min(len(algorithm.networks), float(os.environ.get("MAXM", math.inf))))):
                 del dict_results[f"acc_net{key}"]
 
     targets = torch.cat(batch_classes).cpu().numpy()
