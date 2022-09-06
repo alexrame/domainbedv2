@@ -28,32 +28,47 @@ class DiWA(algorithms.ERM):
         algorithms.Algorithm.__init__(self, input_shape, num_classes, num_domains, hparams={})
         self.network = None
         self.network_ma = None
+        self.featurizer = None
         self.var_network = None
         self.networks = []
+        self.classifiers = []
         self.global_count = 0
+        self.global_count_feat = 0
         self.global_count_ma = 0
         self.var_global_count = 0
 
-    def update_mean_network(self, network, weight=1., ma=False):
+    def update_mean_featurizer(self, featurizer, weight=1.):
 
-        if ma:
-            if self.network_ma is None:
-                self.network_ma = copy.deepcopy(network)
-            self_network = self.network_ma
-            g = self.global_count_ma
-        else:
-            if self.network is None:
-                self.network = copy.deepcopy(network)
-            self_network = self.network
-            g = self.global_count
+        if self.featurizer is None:
+            self.featurizer = copy.deepcopy(featurizer)
 
-        for param_n, param_m in zip(network.parameters(), self_network.parameters()):
-            param_m.data = (param_m.data * g + param_n.data * weight) / (weight + g)
+        for param_n, param_m in zip(featurizer.parameters(), self.featurizer.parameters()):
+            param_m.data = (param_m.data * self.global_count_feat +
+                            param_n.data * weight) / (weight + self.global_count_feat)
 
-        if ma:
-            self.global_count_ma += weight
-        else:
-            self.global_count += weight
+        self.global_count_feat += weight
+
+    def update_mean_network(self, network, weight=1.):
+
+        if self.network is None:
+            self.network = copy.deepcopy(network)
+
+        for param_n, param_m in zip(network.parameters(), self.network.parameters()):
+            param_m.data = (param_m.data * self.global_count +
+                            param_n.data * weight) / (weight + self.global_count)
+
+        self.global_count += weight
+
+    def update_mean_network_ma(self, network, weight=1.):
+
+        if self.network_ma is None:
+            self.network_ma = copy.deepcopy(network)
+
+        for param_n, param_m in zip(network.parameters(), self.network_ma.parameters()):
+            param_m.data = (param_m.data * self.global_count_ma +
+                            param_n.data * weight) / (weight + self.global_count_ma)
+
+        self.global_count_ma += weight
 
     def update_var_network(self, network):
         if self.var_network is None:
@@ -66,7 +81,7 @@ class DiWA(algorithms.ERM):
     def create_stochastic_networks(self):
         assert len(self.networks) == 0
         multiplier = float(os.environ.get("VARM", 1.))
-        for i in range(int(os.environ.get("MAXM", 3))):
+        for i in range(int(os.environ.get("MAXM", math.inf))):
             network = copy.deepcopy(self.network)
             for param_n, param_m, param_v in zip(network.parameters(), self.network.parameters(), self.var_network.parameters()):
                 param_n.data = torch.normal(
@@ -79,22 +94,33 @@ class DiWA(algorithms.ERM):
     def add_network(self, network):
         self.networks.append(network)
 
+    def add_classifier(self, classifier):
+        self.classifiers.append(classifier)
+
     def predict(self, x):
         if self.network_ma is not None:
             dict_predictions = {"": self.network_ma(x)}
         else:
             dict_predictions = {"": self.network(x)}
 
-        if len(self.networks) == 0:
-            return dict_predictions
+        if len(self.networks) != 0:
+            logits_ens = []
+            for i, network in enumerate(self.networks):
+                _logits_i = network(x)
+                logits_ens.append(_logits_i)
+                if i < int(os.environ.get("MAXM", math.inf)):
+                    dict_predictions["net" + str(i)] = _logits_i
+            dict_predictions["ens"] = torch.mean(torch.stack(logits_ens, dim=0), 0)
 
-        logits_ens = []
-        for i, network in enumerate(self.networks):
-            _logits_i = network(x)
-            logits_ens.append(_logits_i)
-            if i < int(os.environ.get("MAXM", 3)):
-                dict_predictions["net" + str(i)] = _logits_i
-        dict_predictions["ens"] = torch.mean(torch.stack(logits_ens, dim=0), 0)
+        if len(self.classifiers) != 0:
+            logits_enscla = []
+            features = self.featurizer(x)
+            for i, classifier in enumerate(self.classifiers):
+                _logits_i = classifier(features)
+                logits_enscla.append(_logits_i)
+                dict_predictions["cla" + str(i)] = _logits_i
+            dict_predictions["enscla"] = torch.mean(torch.stack(logits_enscla, dim=0), 0)
+
         return dict_predictions
 
     def train(self, *args):
@@ -150,10 +176,11 @@ class DiWA(algorithms.ERM):
 
     def get_dict_diversity(self, dict_stats, targets, device):
         dict_diversity = collections.defaultdict(list)
-        num_members = min(len(self.networks), int(os.environ.get("MAXM", 3)))
+        num_members = min(len(self.networks), int(os.environ.get("MAXM", math.inf)))
         # regexes = [("waens", "wa_ens")]
-        regexes = []
-        regexes += [("netm", f"net{i}_net{j}") for i in range(num_members) for j in range(i + 1, num_members)]
+        regexes = [("netcla0", "net0_cla0"), ("enscla", "ens_enscla")]
+        regexes = +[("netcla1", "net1_cla1"), ("netcla2", "net2_cla2")]
+        # regexes += [("netm", f"net{i}_net{j}") for i in range(num_members) for j in range(i + 1, num_members)]
         for regexname, regex in regexes:
             key0, key1 = regex.split("_")
 

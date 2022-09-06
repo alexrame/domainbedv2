@@ -6,6 +6,7 @@ Things that don't belong anywhere else
 
 import hashlib
 import json
+import math
 import os
 import copy
 import itertools
@@ -247,11 +248,11 @@ def results_ensembling(algorithm, loader, device):
             [
                 dict_results[f"acc_net{key}"]
                 for key in range(
-                    min(len(algorithm.networks), int(os.environ.get("MAXM", 3))))
+                    min(len(algorithm.networks), int(os.environ.get("MAXM", math.inf))))
             ]
         )
         if os.environ.get("DELETE_NETM"):
-            for key in range(min(len(algorithm.networks), int(os.environ.get("MAXM", 3)))):
+            for key in range(min(len(algorithm.networks), int(os.environ.get("MAXM", math.inf)))):
                 del dict_results[f"acc_net{key}"]
 
     targets = torch.cat(batch_classes).cpu().numpy()

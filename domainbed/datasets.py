@@ -438,6 +438,7 @@ class WaterbirdsDataset(torch.utils.data.Dataset):
 
 class Waterbirds(MultipleDomainDataset):
     ENVIRONMENTS = ["att0", "att1", "balanced"]
+    #, "wg0", "wg1"]
     N_STEPS = 2001
     CHECKPOINT_FREQ = 200
 
@@ -463,6 +464,9 @@ class Waterbirds(MultipleDomainDataset):
 
         dfte = df[df["split"] == ({"tr": 0, "va": 1, "te": 2}["te"])]
 
+        # dfte0 = dfte[dfte["a"] == 0]
+        # dfte1 = dfte[dfte["a"] == 1]
+
         transform = transforms.Compose(
             [
                 torchvision.transforms.Lambda(lambda x: Image.open(x).convert("RGB")),
@@ -478,6 +482,7 @@ class Waterbirds(MultipleDomainDataset):
 
         self.datasets = []
         for dfenv in [dftr0, dftr1, dfte]:
+            # , dfte0, dfte1]:
             self.datasets.append(WaterbirdsDataset(df=dfenv, root=self.dir, transform=transform))
 
 
