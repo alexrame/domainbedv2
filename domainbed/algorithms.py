@@ -112,7 +112,8 @@ class ERM(Algorithm):
                 self.load_state_dict(saved_dict["model_dict"])
             else:
                 self.network.load_state_dict(saved_dict)
-            if self._train_only_classifier == "reset" or os.environ.get("RESET_CLASSIFIER"):
+            if self._train_only_classifier == "reset":
+                # or os.environ.get("RESET_CLASSIFIER"):
                 print("Reset random classifier")
                 self.classifier.reset_parameters()
 

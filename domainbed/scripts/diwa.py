@@ -333,7 +333,9 @@ def main():
     list_dict_checkpoint_to_score_i = []
     if inf_args.output_dir[0] == "no":
         assert len(inf_args.output_dir) == 1
+        assert len(inf_args.checkpoints) != 0
         print("Only from checkpoints with explicit name")
+
     elif not os.environ.get("PERD"):
         for output_dir in inf_args.output_dir:
             list_dict_checkpoint_to_score_i.append(
@@ -407,8 +409,9 @@ def main():
             ) for checkpoint in sorted_checkpoints
         ]
         if inf_args.checkpoints:
+            normalizer = len(selected_checkpoints)/20 if len(selected_checkpoints) else 1.
             checkpoints = [
-                (str(key), float(val) * len(selected_checkpoints) / 20)
+                (str(key), float(val) * normalizer)
                 for (key, val) in inf_args.checkpoints
                 if float(val) != 0
             ]
