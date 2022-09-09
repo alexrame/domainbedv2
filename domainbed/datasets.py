@@ -13,7 +13,6 @@ from torch.utils.data import TensorDataset, Subset
 from torchvision.datasets import MNIST, ImageFolder
 from torchvision.transforms.functional import rotate
 
-
 # from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
 # from wilds.datasets.fmow_dataset import FMoWDataset
 
@@ -26,6 +25,7 @@ DATASETS = [
     # Small images
     "ColoredMNIST",
     "RotatedMNIST",
+    "ColoredRotatedMNIST",
     # Big images
     "VLCS",
     "PACS",
@@ -41,6 +41,7 @@ DATASETS = [
     "Waterbirds"
 ]
 
+
 def get_dataset_class(dataset_name):
     """Return the dataset class with the given name."""
     if dataset_name not in globals():
@@ -53,11 +54,11 @@ def num_environments(dataset_name):
 
 
 class MultipleDomainDataset:
-    N_STEPS = 5001           # Default, subclasses may override
-    CHECKPOINT_FREQ = 100    # Default, subclasses may override
-    N_WORKERS = 8            # Default, subclasses may override
-    ENVIRONMENTS = None      # Subclasses should override
-    INPUT_SHAPE = None       # Subclasses should override
+    N_STEPS = 5001  # Default, subclasses may override
+    CHECKPOINT_FREQ = 100  # Default, subclasses may override
+    N_WORKERS = 8  # Default, subclasses may override
+    ENVIRONMENTS = None  # Subclasses should override
+    INPUT_SHAPE = None  # Subclasses should override
 
     def __getitem__(self, index):
         return self.datasets[index]
@@ -67,6 +68,7 @@ class MultipleDomainDataset:
 
 
 class Debug(MultipleDomainDataset):
+
     def __init__(self, root, test_envs, hparams):
         super().__init__()
         self.input_shape = self.INPUT_SHAPE
@@ -75,14 +77,15 @@ class Debug(MultipleDomainDataset):
         for _ in [0, 1, 2]:
             self.datasets.append(
                 TensorDataset(
-                    torch.randn(16, *self.INPUT_SHAPE),
-                    torch.randint(0, self.num_classes, (16,))
+                    torch.randn(16, *self.INPUT_SHAPE), torch.randint(0, self.num_classes, (16,))
                 )
             )
+
 
 class Debug28(Debug):
     INPUT_SHAPE = (3, 28, 28)
     ENVIRONMENTS = ['0', '1', '2']
+
 
 class Debug224(Debug):
     INPUT_SHAPE = (3, 224, 224)
@@ -90,8 +93,8 @@ class Debug224(Debug):
 
 
 class MultipleEnvironmentMNIST(MultipleDomainDataset):
-    def __init__(self, root, environments, dataset_transform, input_shape,
-                 num_classes):
+
+    def __init__(self, root, environments, dataset_transform, input_shape, num_classes):
         super().__init__()
         if root is None:
             raise ValueError('Data directory not specified!')
@@ -99,11 +102,9 @@ class MultipleEnvironmentMNIST(MultipleDomainDataset):
         original_dataset_tr = MNIST(root, train=True, download=True)
         original_dataset_te = MNIST(root, train=False, download=True)
 
-        original_images = torch.cat((original_dataset_tr.data,
-                                     original_dataset_te.data))
+        original_images = torch.cat((original_dataset_tr.data, original_dataset_te.data))
 
-        original_labels = torch.cat((original_dataset_tr.targets,
-                                     original_dataset_te.targets))
+        original_labels = torch.cat((original_dataset_tr.targets, original_dataset_te.targets))
 
         shuffle = torch.randperm(len(original_images))
 
@@ -123,13 +124,15 @@ class MultipleEnvironmentMNIST(MultipleDomainDataset):
 
 class ColoredMNIST(MultipleEnvironmentMNIST):
     ENVIRONMENTS = ['+90%', '+80%', '-90%']
-    CHECKPOINT_FREQ = 100 ## DiWA ##
-    def __init__(self, root, test_envs, hparams):
-        super(ColoredMNIST, self).__init__(root, [0.1, 0.2, 0.9],
-                                         self.color_dataset, (2, 28, 28,), 2)
+    CHECKPOINT_FREQ = 100  ## DiWA ##
 
-        self.input_shape = (2, 28, 28,)
-        self.num_classes = 2
+    def __init__(self, root, test_envs, hparams):
+        super(ColoredMNIST,
+              self).__init__(root, [0.1, 0.2, 0.9], self.color_dataset, (
+                  2,
+                  28,
+                  28,
+              ), 2)
 
     def color_dataset(self, images, labels, environment):
         # # Subsample 2x for computational convenience
@@ -137,17 +140,13 @@ class ColoredMNIST(MultipleEnvironmentMNIST):
         # Assign a binary label based on the digit
         labels = (labels < 5).float()
         # Flip label with probability 0.25
-        labels = self.torch_xor_(labels,
-                                 self.torch_bernoulli_(0.25, len(labels)))
+        labels = self.torch_xor_(labels, self.torch_bernoulli_(0.25, len(labels)))
 
         # Assign a color based on the label; flip the color with probability e
-        colors = self.torch_xor_(labels,
-                                 self.torch_bernoulli_(environment,
-                                                       len(labels)))
+        colors = self.torch_xor_(labels, self.torch_bernoulli_(environment, len(labels)))
         images = torch.stack([images, images], dim=1)
         # Apply the color to the image by zeroing out the other color channel
-        images[torch.tensor(range(len(images))), (
-            1 - colors).long(), :, :] *= 0
+        images[torch.tensor(range(len(images))), (1 - colors).long(), :, :] *= 0
 
         x = images.float().div_(255.0)
         y = labels.view(-1).long()
@@ -161,19 +160,98 @@ class ColoredMNIST(MultipleEnvironmentMNIST):
         return (a - b).abs()
 
 
+class ColoredRotatedMNIST(ColoredMNIST):
+    ENVIRONMENTS = ['raw', 'rotation', 'color', 'test']
+    CHECKPOINT_FREQ = 100  ## DiWA ##
+    NOISE = 0.25
+    N_WORKERS = 0
+
+    def __init__(self, root, test_envs, hparams):
+        environments = [
+            (0.9, 0.9),
+            (0.5, 0.9),
+            (0.9, 0.5),
+            (0.5, 0.5),
+        ]
+        super(ColoredMNIST,
+              self).__init__(root, environments, self.color_rotate_dataset, (
+                  2,
+                  28,
+                  28,
+              ), 2)
+
+    def color_rotate_dataset(self, images, labels, environment):
+        environment_color = environment[0]
+        environment_rotation = environment[1]
+        # # Subsample 2x for computational convenience
+        # images = images.reshape((-1, 28, 28))[:, ::2, ::2]
+        # Assign a binary label based on the digit
+        labels = (labels < 5).float()
+        # Flip label with probability self.NOISE
+        labels = self.torch_xor_(labels, self.torch_bernoulli_(self.NOISE, len(labels)))
+
+        # first change rotation
+        apply_rotations = self.torch_xor_(
+            labels, self.torch_bernoulli_(environment_rotation, len(labels))
+        )
+        images_rotated = torch.zeros(len(images), 28, 28)
+        for i, apply_rotation in enumerate(apply_rotations):
+            angle = 0 if not apply_rotation else 60
+            rotation = transforms.Compose(
+                [
+                    transforms.ToPILImage(),
+                    transforms.Lambda(
+                        lambda x: rotate(
+                            x,
+                            angle,
+                            fill=(0,),
+                            interpolation=torchvision.transforms.InterpolationMode.BILINEAR
+                        )
+                    ),
+                    transforms.ToTensor()
+                ]
+            )
+            image_i_rotated = rotation(images[i].reshape(1, 28, 28))[0]
+            images_rotated[i] = image_i_rotated
+
+        # Assign a color based on the label; flip the color with probability e
+        colors = self.torch_xor_(labels, self.torch_bernoulli_(environment_color, len(labels)))
+        images_colored = torch.stack([images_rotated, images_rotated], dim=1)
+        # Apply the color to the image by zeroing out the other color channel
+        images_colored[torch.tensor(range(len(images_colored))), (1 - colors).long(), :, :] *= 0
+
+        x = images_colored.float().div_(255.0)
+        y = labels.view(-1).long()
+
+        return TensorDataset(x, y)
+
+
 class RotatedMNIST(MultipleEnvironmentMNIST):
     ENVIRONMENTS = ['0', '15', '30', '45', '60', '75']
 
     def __init__(self, root, test_envs, hparams):
-        super(RotatedMNIST, self).__init__(root, [0, 15, 30, 45, 60, 75],
-                                           self.rotate_dataset, (1, 28, 28,), 10)
+        super(RotatedMNIST,
+              self).__init__(root, [0, 15, 30, 45, 60, 75], self.rotate_dataset, (
+                  1,
+                  28,
+                  28,
+              ), 10)
 
     def rotate_dataset(self, images, labels, angle):
-        rotation = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Lambda(lambda x: rotate(x, angle, fill=(0,),
-                interpolation=torchvision.transforms.InterpolationMode.BILINEAR)),
-            transforms.ToTensor()])
+        rotation = transforms.Compose(
+            [
+                transforms.ToPILImage(),
+                transforms.Lambda(
+                    lambda x: rotate(
+                        x,
+                        angle,
+                        fill=(0,),
+                        interpolation=torchvision.transforms.InterpolationMode.BILINEAR
+                    )
+                ),
+                transforms.ToTensor()
+            ]
+        )
 
         x = torch.zeros(len(images), 1, 28, 28)
         for i in range(len(images)):
@@ -185,28 +263,31 @@ class RotatedMNIST(MultipleEnvironmentMNIST):
 
 
 class MultipleEnvironmentImageFolder(MultipleDomainDataset):
+
     def __init__(self, root, test_envs, augment, hparams):
         super().__init__()
         environments = [f.name for f in os.scandir(root) if f.is_dir()]
         environments = sorted(environments)
 
-        transform = transforms.Compose([
-            transforms.Resize((224,224)),
-            transforms.ToTensor(),
-            transforms.Normalize(
-                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
+        transform = transforms.Compose(
+            [
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            ]
+        )
 
-        augment_transform = transforms.Compose([
-            # transforms.Resize((224,224)),
-            transforms.RandomResizedCrop(224, scale=(0.7, 1.0)),
-            transforms.RandomHorizontalFlip(),
-            transforms.ColorJitter(0.3, 0.3, 0.3, 0.3),
-            transforms.RandomGrayscale(),
-            transforms.ToTensor(),
-            transforms.Normalize(
-                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
+        augment_transform = transforms.Compose(
+            [
+                # transforms.Resize((224,224)),
+                transforms.RandomResizedCrop(224, scale=(0.7, 1.0)),
+                transforms.RandomHorizontalFlip(),
+                transforms.ColorJitter(0.3, 0.3, 0.3, 0.3),
+                transforms.RandomGrayscale(),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]
+        )
 
         self.datasets = []
         for i, environment in enumerate(environments):
@@ -217,71 +298,83 @@ class MultipleEnvironmentImageFolder(MultipleDomainDataset):
                 env_transform = transform
 
             path = os.path.join(root, environment)
-            env_dataset = ImageFolder(path,
-                transform=env_transform)
+            env_dataset = ImageFolder(path, transform=env_transform)
 
             self.datasets.append(env_dataset)
 
-        self.input_shape = (3, 224, 224,)
+        self.input_shape = (
+            3,
+            224,
+            224,
+        )
         self.num_classes = len(self.datasets[-1].classes)
 
+
 class VLCS(MultipleEnvironmentImageFolder):
-    CHECKPOINT_FREQ = 50 ## DiWA ##
+    CHECKPOINT_FREQ = 50  ## DiWA ##
     ENVIRONMENTS = ["C", "L", "S", "V"]
+
     def __init__(self, root, test_envs, hparams):
         self.dir = os.path.join(root, "VLCS/")
         super().__init__(self.dir, test_envs, hparams['data_augmentation'], hparams)
 
+
 class PACS(MultipleEnvironmentImageFolder):
-    CHECKPOINT_FREQ = 100 ## DiWA ##
+    CHECKPOINT_FREQ = 100  ## DiWA ##
     ENVIRONMENTS = ["A", "C", "P", "S"]
+
     def __init__(self, root, test_envs, hparams):
         self.dir = os.path.join(root, "PACS/")
         super().__init__(self.dir, test_envs, hparams['data_augmentation'], hparams)
 
+
 class DomainNet(MultipleEnvironmentImageFolder):
-    CHECKPOINT_FREQ = 500 ## DiWA ##
+    CHECKPOINT_FREQ = 500  ## DiWA ##
     N_STEPS = 15000
     ENVIRONMENTS = ["clip", "info", "paint", "quick", "real", "sketch"]
+
     def __init__(self, root, test_envs, hparams):
         self.dir = os.path.join(root, "domain_net/")
         super().__init__(self.dir, test_envs, hparams['data_augmentation'], hparams)
 
+
 class OfficeHome(MultipleEnvironmentImageFolder):
-    CHECKPOINT_FREQ = 100 ## DiWA ##
+    CHECKPOINT_FREQ = 100  ## DiWA ##
     ENVIRONMENTS = ["A", "C", "P", "R"]
+
     def __init__(self, root, test_envs, hparams):
         self.dir = os.path.join(root, "office_home/")
         super().__init__(self.dir, test_envs, hparams['data_augmentation'], hparams)
 
+
 class TerraIncognita(MultipleEnvironmentImageFolder):
-    CHECKPOINT_FREQ = 100 ## DiWA ##
+    CHECKPOINT_FREQ = 100  ## DiWA ##
     ENVIRONMENTS = ["L100", "L38", "L43", "L46"]
+
     def __init__(self, root, test_envs, hparams):
         self.dir = os.path.join(root, "terra_incognita/")
         super().__init__(self.dir, test_envs, hparams['data_augmentation'], hparams)
 
+
 class SVIRO(MultipleEnvironmentImageFolder):
     CHECKPOINT_FREQ = 300
-    ENVIRONMENTS = ["aclass", "escape", "hilux", "i3", "lexus", "tesla", "tiguan", "tucson", "x5", "zoe"]
+    ENVIRONMENTS = [
+        "aclass", "escape", "hilux", "i3", "lexus", "tesla", "tiguan", "tucson", "x5", "zoe"
+    ]
+
     def __init__(self, root, test_envs, hparams):
         self.dir = os.path.join(root, "sviro/")
         super().__init__(self.dir, test_envs, hparams['data_augmentation'], hparams)
 
 
 class WILDSEnvironment:
-    def __init__(
-            self,
-            wilds_dataset,
-            metadata_name,
-            metadata_value,
-            transform=None):
+
+    def __init__(self, wilds_dataset, metadata_name, metadata_value, transform=None):
         self.name = metadata_name + "_" + str(metadata_value)
 
         metadata_index = wilds_dataset.metadata_fields.index(metadata_name)
         metadata_array = wilds_dataset.metadata_array
-        subset_indices = torch.where(
-            metadata_array[:, metadata_index] == metadata_value)[0]
+        subset_indices = torch.where(metadata_array[:, metadata_index] == metadata_value)[0]
 
         self.dataset = wilds_dataset
         self.indices = subset_indices
@@ -303,42 +396,47 @@ class WILDSEnvironment:
 
 class WILDSDataset(MultipleDomainDataset):
     INPUT_SHAPE = (3, 224, 224)
+
     def __init__(self, dataset, metadata_name, test_envs, augment, hparams):
         super().__init__()
 
-        transform = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize(
-                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
+        transform = transforms.Compose(
+            [
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            ]
+        )
 
-        augment_transform = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.RandomResizedCrop(224, scale=(0.7, 1.0)),
-            transforms.RandomHorizontalFlip(),
-            transforms.ColorJitter(0.3, 0.3, 0.3, 0.3),
-            transforms.RandomGrayscale(),
-            transforms.ToTensor(),
-            transforms.Normalize(
-                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
+        augment_transform = transforms.Compose(
+            [
+                transforms.Resize((224, 224)),
+                transforms.RandomResizedCrop(224, scale=(0.7, 1.0)),
+                transforms.RandomHorizontalFlip(),
+                transforms.ColorJitter(0.3, 0.3, 0.3, 0.3),
+                transforms.RandomGrayscale(),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]
+        )
 
         self.datasets = []
 
-        for i, metadata_value in enumerate(
-                self.metadata_values(dataset, metadata_name)):
+        for i, metadata_value in enumerate(self.metadata_values(dataset, metadata_name)):
             if augment and (i not in test_envs):
                 env_transform = augment_transform
             else:
                 env_transform = transform
 
-            env_dataset = WILDSEnvironment(
-                dataset, metadata_name, metadata_value, env_transform)
+            env_dataset = WILDSEnvironment(dataset, metadata_name, metadata_value, env_transform)
 
             self.datasets.append(env_dataset)
 
-        self.input_shape = (3, 224, 224,)
+        self.input_shape = (
+            3,
+            224,
+            224,
+        )
         self.num_classes = dataset.n_classes
 
     def metadata_values(self, wilds_dataset, metadata_name):
@@ -415,6 +513,7 @@ class CelebA(torch.utils.data.Dataset):
 
 
 class WaterbirdsDataset(torch.utils.data.Dataset):
+
     def __init__(self, df, root, transform):
         self.df = df
         self.transform = transform
@@ -496,8 +595,12 @@ class CelebA_Blond(MultipleDomainDataset):
         environments = self.ENVIRONMENTS
         print(environments)
 
-        self.input_shape = (3, 224, 224,)
-        self.num_classes = 2 # blond or not
+        self.input_shape = (
+            3,
+            224,
+            224,
+        )
+        self.num_classes = 2  # blond or not
 
         dataframes = []
         for env_name in ('tr_env1', 'tr_env2', 'te_env'):
@@ -509,22 +612,26 @@ class CelebA_Blond(MultipleDomainDataset):
         orig_h = 218
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         images_path = f'{root}/celeba/img_align_celeba'
-        transform = transforms.Compose([
-            transforms.CenterCrop(min(orig_w, orig_h)),
-            transforms.Resize(self.input_shape[1:]),
-            transforms.ToTensor(),
-            normalize,
-        ])
+        transform = transforms.Compose(
+            [
+                transforms.CenterCrop(min(orig_w, orig_h)),
+                transforms.Resize(self.input_shape[1:]),
+                transforms.ToTensor(),
+                normalize,
+            ]
+        )
 
         if hparams['data_augmentation']:
-            augment_transform = transforms.Compose([
-                transforms.RandomResizedCrop(self.input_shape[1:],
-                                             scale=(0.7, 1.0), ratio=(1.0, 1.3333333333333333)),
-                transforms.ColorJitter(0.3, 0.3, 0.3, 0.0),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                normalize
-            ])
+            augment_transform = transforms.Compose(
+                [
+                    transforms.RandomResizedCrop(
+                        self.input_shape[1:], scale=(0.7, 1.0), ratio=(1.0, 1.3333333333333333)
+                    ),
+                    transforms.ColorJitter(0.3, 0.3, 0.3, 0.0),
+                    transforms.RandomHorizontalFlip(),
+                    transforms.ToTensor(), normalize
+                ]
+            )
 
             if hparams.get('test_data_augmentation', False):
                 transform = augment_transform
@@ -535,28 +642,38 @@ class CelebA_Blond(MultipleDomainDataset):
         ccor = hparams.get('ccor', 1)
 
         target_id = 9
-        tr_dataset_1 = CelebA(pd.DataFrame(tr_env1), images_path, target_id, transform=augment_transform,
-                              cdiv=cdiv, ccor=ccor)
-        tr_dataset_2 = CelebA(pd.DataFrame(tr_env2), images_path, target_id, transform=augment_transform,
-                              cdiv=cdiv, ccor=ccor)
+        tr_dataset_1 = CelebA(
+            pd.DataFrame(tr_env1),
+            images_path,
+            target_id,
+            transform=augment_transform,
+            cdiv=cdiv,
+            ccor=ccor
+        )
+        tr_dataset_2 = CelebA(
+            pd.DataFrame(tr_env2),
+            images_path,
+            target_id,
+            transform=augment_transform,
+            cdiv=cdiv,
+            ccor=ccor
+        )
         te_dataset = CelebA(pd.DataFrame(te_env), images_path, target_id, transform=transform)
 
         self.datasets = [tr_dataset_1, tr_dataset_2, te_dataset]
 
 
 class WILDSCamelyon(WILDSDataset):
-    ENVIRONMENTS = [ "hospital_0", "hospital_1", "hospital_2", "hospital_3",
-            "hospital_4"]
+    ENVIRONMENTS = ["hospital_0", "hospital_1", "hospital_2", "hospital_3", "hospital_4"]
+
     def __init__(self, root, test_envs, hparams):
         dataset = Camelyon17Dataset(root_dir=root)
-        super().__init__(
-            dataset, "hospital", test_envs, hparams['data_augmentation'], hparams)
+        super().__init__(dataset, "hospital", test_envs, hparams['data_augmentation'], hparams)
 
 
 class WILDSFMoW(WILDSDataset):
-    ENVIRONMENTS = [ "region_0", "region_1", "region_2", "region_3",
-            "region_4", "region_5"]
+    ENVIRONMENTS = ["region_0", "region_1", "region_2", "region_3", "region_4", "region_5"]
+
     def __init__(self, root, test_envs, hparams):
         dataset = FMoWDataset(root_dir=root)
-        super().__init__(
-            dataset, "region", test_envs, hparams['data_augmentation'], hparams)
+        super().__init__(dataset, "region", test_envs, hparams['data_augmentation'], hparams)
