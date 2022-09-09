@@ -168,6 +168,7 @@ class ColoredRotatedMNIST(ColoredMNIST):
 
     def __init__(self, root, test_envs, hparams):
         environments = [
+            # (color, rotation)
             (0.9, 0.9),
             (0.5, 0.9),
             (0.9, 0.5),
