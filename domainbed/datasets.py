@@ -126,6 +126,7 @@ class MultipleEnvironmentMNIST(MultipleDomainDataset):
 class ColoredMNIST(MultipleEnvironmentMNIST):
     ENVIRONMENTS = ['+90%', '+80%', '-90%']
     CHECKPOINT_FREQ = 100  ## DiWA ##
+    N_WORKERS = 4  # Number of workers for data loading
 
     def __init__(self, root, test_envs, hparams):
         super(ColoredMNIST,
@@ -165,13 +166,15 @@ class ColoredRotatedMNIST(ColoredMNIST):
     ENVIRONMENTS = ['rotation&color', 'rotation', 'color', 'nosp', "wc"]
     CHECKPOINT_FREQ = 100  ## DiWA ##
     NOISE = 0.25
+    SP_COLOR = 0.4
+    SP_ROT = 0.4
 
     def __init__(self, root, test_envs, hparams):
         environments = [
             # (color, rotation)
-            (0.9, 0.9),
-            (0.5, 0.9),
-            (0.9, 0.5),
+            (0.5 + self.SP_COLOR, 0.5 + self.SP_ROT),
+            (0.5, 0.5 + self.SP_ROT),
+            (0.5 + self.SP_COLOR, 0.5),
             (0.5, 0.5),
             (0., 0.),
         ]
@@ -227,8 +230,11 @@ class ColoredRotatedMNIST(ColoredMNIST):
 
         return TensorDataset(x, y)
 
+
 class ColoredRotatedMNISTClean(ColoredRotatedMNIST):
     NOISE = 0.0
+    SP_COLOR = 0.25
+    SP_ROT = 0.25
 
 class RotatedMNIST(MultipleEnvironmentMNIST):
     ENVIRONMENTS = ['0', '15', '30', '45', '60', '75']
