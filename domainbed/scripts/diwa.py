@@ -34,7 +34,10 @@ def _get_args():
     parser.add_argument('--what', nargs='+', default=[])
 
     inf_args = parser.parse_args()
-    inf_args.checkpoints = [(inf_args.checkpoints[2*i], inf_args.checkpoints[2*i+1]) for i in range(len(inf_args.checkpoints)//2)]
+    inf_args.checkpoints = [
+        (inf_args.checkpoints[2 * i], inf_args.checkpoints[2 * i + 1])
+        for i in range(len(inf_args.checkpoints) // 2)
+    ]
     misc.print_args(inf_args)
     return inf_args
 
@@ -169,7 +172,10 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
         if "var" in action:
             wa_algorithm.update_var_network(algorithm.network)
         del algorithm
-    return train_args
+    if train_args is None:
+        return {"seed": 0}
+    else:
+        return train_args
 
 
 def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits, device):
