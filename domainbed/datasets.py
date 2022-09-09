@@ -162,7 +162,7 @@ class ColoredMNIST(MultipleEnvironmentMNIST):
 
 
 class ColoredRotatedMNIST(ColoredMNIST):
-    ENVIRONMENTS = ['raw', 'rotation', 'color', 'test']
+    ENVIRONMENTS = ['rotation&color', 'rotation', 'color', 'nosp', "wc"]
     CHECKPOINT_FREQ = 100  ## DiWA ##
     NOISE = 0.25
 
@@ -173,6 +173,7 @@ class ColoredRotatedMNIST(ColoredMNIST):
             (0.5, 0.9),
             (0.9, 0.5),
             (0.5, 0.5),
+            (0., 0.),
         ]
         super(ColoredMNIST,
               self).__init__(root, environments, self.color_rotate_dataset, (
