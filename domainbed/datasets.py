@@ -26,6 +26,7 @@ DATASETS = [
     "ColoredMNIST",
     "RotatedMNIST",
     "ColoredRotatedMNIST",
+    "ColoredRotatedMNISTClean",
     # Big images
     "VLCS",
     "PACS",
@@ -164,7 +165,6 @@ class ColoredRotatedMNIST(ColoredMNIST):
     ENVIRONMENTS = ['raw', 'rotation', 'color', 'test']
     CHECKPOINT_FREQ = 100  ## DiWA ##
     NOISE = 0.25
-    N_WORKERS = 0
 
     def __init__(self, root, test_envs, hparams):
         environments = [
@@ -225,6 +225,8 @@ class ColoredRotatedMNIST(ColoredMNIST):
 
         return TensorDataset(x, y)
 
+class ColoredRotatedMNISTClean(ColoredRotatedMNIST):
+    NOISE = 0.0
 
 class RotatedMNIST(MultipleEnvironmentMNIST):
     ENVIRONMENTS = ['0', '15', '30', '45', '60', '75']

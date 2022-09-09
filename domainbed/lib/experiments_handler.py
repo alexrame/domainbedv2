@@ -31,6 +31,8 @@ def get_run_name(args, hparams):
         "dataset",
         "algorithm",
     ]])
+    name += 'te' + "".join([str(te) for te in args.test_envs])
+
     keys = sorted(hparams.keys())
     keys = list(dict.fromkeys(keys))
 

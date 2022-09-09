@@ -65,10 +65,6 @@ if __name__ == "__main__":
     print("\tNumPy: {}".format(np.__version__))
     print("\tPIL: {}".format(PIL.__version__))
 
-    print('Args:')
-    for k, v in sorted(vars(args).items()):
-        print('\t{}: {}'.format(k, v))
-
     if args.hparams_seed == 0:
         hparams = hparams_registry.default_hparams(args.algorithm, args.dataset)
     else:
@@ -86,6 +82,10 @@ if __name__ == "__main__":
             )
         else:
             args.output_dir = os.path.join(f"logs/singleruns/{args.dataset}", run_name)
+
+    print('Args:')
+    for k, v in sorted(vars(args).items()):
+        print('\t{}: {}'.format(k, v))
 
     os.makedirs(args.output_dir, exist_ok=True)
     sys.stdout = misc.Tee(os.path.join(args.output_dir, 'out.txt'))
