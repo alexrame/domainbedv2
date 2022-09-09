@@ -110,7 +110,8 @@ class DiWA(algorithms.ERM):
         for param_m, param_0, param_1 in zip(
             mask_classifier.parameters(), self.classifiers[0].parameters(), self.classifiers[1].parameters()
         ):
-            param_m.data = (param_0 + param_1) * (param_0 * param_1 > 0) / 2
+            #  (param_0 + param_1)/2
+            param_m.data = torch.minimum(param_0, param_1) * (param_0 * param_1 > 0).float()
         self.classifiers.append(mask_classifier)
 
     def predict(self, x):
