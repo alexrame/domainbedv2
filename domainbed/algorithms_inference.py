@@ -15,7 +15,7 @@ class ERM(algorithms.ERM):
         algorithms.Algorithm.__init__(self, input_shape, num_classes, num_domains, hparams)
         self.featurizer = networks.Featurizer(input_shape, self.hparams)
         self.classifier = networks.Classifier(
-            self.featurizer.n_outputs, num_classes, self.hparams['nonlinear_classifier']
+            self.featurizer.n_outputs, num_classes, self.hparams.get('nonlinear_classifier', False)
         )
         self.num_classes = num_classes
         self.network = nn.Sequential(self.featurizer, self.classifier)
@@ -104,6 +104,14 @@ class DiWA(algorithms.ERM):
 
     def add_classifier(self, classifier):
         self.classifiers.append(classifier)
+        if len(self.classifiers) != 2:
+            return
+        mask_classifier = copy.deepcopy(classifier)
+        for param_m, param_0, param_1 in zip(
+            mask_classifier.parameters(), self.classifiers[0].parameters(), self.classifiers[1].parameters()
+        ):
+            param_m.data = (param_0 + param_1) * (param_0 * param_1 > 0) / 2
+        self.classifiers.append(mask_classifier)
 
     def predict(self, x):
         if self.network_ma is not None:
@@ -122,29 +130,29 @@ class DiWA(algorithms.ERM):
 
         if len(self.classifiers) != 0:
             logits_enscla = []
-            conflogits_enscla_minus1 = []
-            conflogits_enscla_minus2 = []
+            # conflogits_enscla_minus1 = []
+            # conflogits_enscla_minus2 = []
             features = self.featurizer(x)
 
-            def get_conf(logits, power=-1):
-                probs = torch.softmax(logits, dim=1)
-                ent = torch.sum(-probs * torch.log(probs), dim=1)
-                conf = torch.reshape(torch.pow(ent, power), (-1, 1))
-                return conf
+            # def get_conf(logits, power=-1):
+            #     probs = torch.softmax(logits, dim=1)
+            #     ent = torch.sum(-probs * torch.log(probs), dim=1)
+            #     conf = torch.reshape(torch.pow(ent, power), (-1, 1))
+            #     return conf
 
             for i, classifier in enumerate(self.classifiers):
                 _logits_i = classifier(features)
                 logits_enscla.append(_logits_i)
                 dict_predictions["cla" + str(i)] = _logits_i
-                conflogits_enscla_minus1.append(get_conf(_logits_i, power=-1) * _logits_i)
-                conflogits_enscla_minus2.append(get_conf(_logits_i, power=-2) * _logits_i)
+            #     conflogits_enscla_minus1.append(get_conf(_logits_i, power=-1) * _logits_i)
+            #     conflogits_enscla_minus2.append(get_conf(_logits_i, power=-2) * _logits_i)
 
-            dict_predictions["ensclaminus1"] = torch.mean(
-                torch.stack(conflogits_enscla_minus1, dim=0), 0
-            )
-            dict_predictions["ensclaminus2"] = torch.mean(
-                torch.stack(conflogits_enscla_minus2, dim=0), 0
-            )
+            # dict_predictions["ensclaminus1"] = torch.mean(
+            #     torch.stack(conflogits_enscla_minus1, dim=0), 0
+            # )
+            # dict_predictions["ensclaminus2"] = torch.mean(
+            #     torch.stack(conflogits_enscla_minus2, dim=0), 0
+            # )
 
         return dict_predictions
 

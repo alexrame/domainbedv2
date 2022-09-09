@@ -1,5 +1,7 @@
 # train only on env0
 
+DATA=/Users/alexandrerame/Dataplace python3 -m domainbed.scripts.train --data_dir /Users/alexandrerame/Dataplace/data --algorithm ERM --dataset ColoredRotatedMNIST --test_envs 1 2 3
+
 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.train --data_dir /data/rame/data/domainbed --algorithm ERM --dataset ColoredRotatedMNIST --test_envs 1 2 3 --steps 0 --train_only_classifier 0
 
 
@@ -22,3 +24,6 @@ for EPOCH in 100 200 400 600 800 1000 1200 1400 1600 1800 2000 2200 2400 2600 28
 do
         MODEL_SELECTION=train WHICHMODEL=step$EPOCH INCLUDEVAL_UPTO=4 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0  --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0_ma_saveall_lp_0824 --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0_ermll_saveall_si_0822/3d4174ccb9f69a3d872124137129aa1f/model.pkl 0 --what cla
 done
+
+DATA=/Users/alexandrerame/Dataplace MODEL_SELECTION=train WHICHMODEL=best INCLUDEVAL_UPTO=5 python3 -m domainbed.scripts.diwa --dataset ColoredRotatedMNISTClean --test_env 4  --output_dir no --trial_seed 0 --data_dir /Users/alexandrerame/Dataplace/data --what netm --checkpoints /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/ColoredRotatedMNISTClean_ERMte0234_best.pkl 1 /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/ColoredRotatedMNISTClean_ERMte0134_best.pkl 1
+

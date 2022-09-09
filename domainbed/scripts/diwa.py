@@ -136,12 +136,15 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None):
     return dict_checkpoint_to_score
 
 
-def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="mean"):
+def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="mean", device="gpu"):
     train_args = None
-    model_hparams = None
+    model_hparams = {}
 
     for checkpoint, checkpoint_weight in good_checkpoints:
-        save_dict = torch.load(checkpoint)
+        if device == "cpu":
+            save_dict = torch.load(checkpoint, map_location=torch.device('cpu'))
+        else:
+            save_dict = torch.load(checkpoint)
         if train_args is None:
             train_args = save_dict["args"]
             model_hparams = save_dict["model_hparams"]
@@ -172,10 +175,11 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
         if "var" in action:
             wa_algorithm.update_var_network(algorithm.network)
         del algorithm
+
     if train_args is None:
-        return {"seed": 0}
+        return 0
     else:
-        return train_args
+        return train_args["seed"]
 
 
 def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits, device):
@@ -184,11 +188,11 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
         dataset.num_classes,
         len(dataset) - 1,
     )
-    train_args = load_and_update_networks(
-        wa_algorithm, good_checkpoints, dataset, action=["mean"] + inf_args.what
+    seed = load_and_update_networks(
+        wa_algorithm, good_checkpoints, dataset, action=["mean"] + inf_args.what, device=device
     )
     if "var" in inf_args.what:
-        _ = load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action=["var"])
+        load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action=["var"], device=device)
         wa_algorithm.create_stochastic_networks()
 
     wa_algorithm.to(device)
@@ -196,9 +200,9 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
     if inf_args.path_for_init:
         wa_algorithm.save_path_for_future_init(inf_args.path_for_init)
 
-    random.seed(train_args["seed"])
-    np.random.seed(train_args["seed"])
-    torch.manual_seed(train_args["seed"])
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
