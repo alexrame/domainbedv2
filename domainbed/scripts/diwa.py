@@ -33,8 +33,8 @@ def _get_args():
     parser.add_argument('--topk', type=int, default=0)
     parser.add_argument('--what', nargs='+', default=[])
 
-    inf_args.checkpoints = [(inf_args.checkpoints[2*i], inf_args.checkpoints[2*i+1]) for i in range(len(inf_args.checkpoints)//2)]
     inf_args = parser.parse_args()
+    inf_args.checkpoints = [(inf_args.checkpoints[2*i], inf_args.checkpoints[2*i+1]) for i in range(len(inf_args.checkpoints)//2)]
     misc.print_args(inf_args)
     return inf_args
 
