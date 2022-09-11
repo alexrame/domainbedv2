@@ -120,13 +120,9 @@ class DiWA(algorithms.ERM):
         if len(self.masks) != 2:
             return
 
-        new_mask = copy.deepcopy(mask)
-        for param_m, param_0, param_1 in zip(
-            new_mask.parameters(), self.masks[0].parameters(), self.masks[1].parameters()
-        ):
-            param_m.data = torch.minimum(param_0, param_1)
+        new_mask = nn.Parameter(torch.minimum(self.masks[0], self.masks[1]))
         self.masks.append(new_mask)
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
 
     def predict(self, x):
         if self.network_ma is not None:
