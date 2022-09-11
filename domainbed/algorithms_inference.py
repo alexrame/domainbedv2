@@ -126,6 +126,7 @@ class DiWA(algorithms.ERM):
         ):
             param_m.data = torch.minimum(param_0, param_1)
         self.masks.append(new_mask)
+        import pdb; pdb.set_trace()
 
     def predict(self, x):
         if self.network_ma is not None:
