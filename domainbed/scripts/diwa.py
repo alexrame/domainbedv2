@@ -168,6 +168,11 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
         if "cla" in action:
             wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight)
             wa_algorithm.add_classifier(algorithm.classifier)
+            if "mask" in action:
+                wa_algorithm.add_mask(algorithm.mask_parameters)
+
+        elif "mask" in action:
+            raise ValueError("Masking requires classifier")
 
         if "netm" in action:
             wa_algorithm.add_network(algorithm.network)

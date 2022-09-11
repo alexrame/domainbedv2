@@ -20,7 +20,7 @@ class ERM(algorithms.ERM):
         self.num_classes = num_classes
         self.network = nn.Sequential(self.featurizer, self.classifier)
         self.network_ma = copy.deepcopy(self.network)
-
+        self.mask_parameters = nn.Parameter(torch.zeros(self.featurizer.n_outputs))
 
 class DiWA(algorithms.ERM):
 
@@ -34,6 +34,7 @@ class DiWA(algorithms.ERM):
         self.var_network = None
         self.networks = []
         self.classifiers = []
+        self.masks = []
         self.global_count = 0
         self.global_count_feat = 0
         self.global_count_ma = 0
@@ -106,13 +107,25 @@ class DiWA(algorithms.ERM):
         self.classifiers.append(classifier)
         if len(self.classifiers) != 2:
             return
-        mask_classifier = copy.deepcopy(classifier)
+        new_classifier = copy.deepcopy(classifier)
         for param_m, param_0, param_1 in zip(
-            mask_classifier.parameters(), self.classifiers[0].parameters(), self.classifiers[1].parameters()
+            new_classifier.parameters(), self.classifiers[0].parameters(), self.classifiers[1].parameters()
         ):
             #  (param_0 + param_1)/2
             param_m.data = torch.minimum(param_0, param_1) * (param_0 * param_1 > 0).float()
-        self.classifiers.append(mask_classifier)
+        self.classifiers.append(new_classifier)
+
+    def add_mask(self, mask):
+        self.masks.append(mask)
+        if len(self.masks) != 2:
+            return
+
+        new_mask = copy.deepcopy(mask)
+        for param_m, param_0, param_1 in zip(
+            new_mask.parameters(), self.masks[0].parameters(), self.masks[1].parameters()
+        ):
+            param_m.data = torch.minimum(param_0, param_1)
+        self.masks.append(new_mask)
 
     def predict(self, x):
         if self.network_ma is not None:
@@ -143,8 +156,16 @@ class DiWA(algorithms.ERM):
 
             for i, classifier in enumerate(self.classifiers):
                 _logits_i = classifier(features)
-                logits_enscla.append(_logits_i)
+                # logits_enscla.append(_logits_i)
                 dict_predictions["cla" + str(i)] = _logits_i
+
+            if len(self.masks) != 0:
+                for i, mask in enumerate(self.masks):
+                    features_masked = features * torch.sigmoid(mask)
+                    _logits_i = self.classifiers[0](features_masked)
+                    # does not matter if 0 or 1, they are the same
+                    dict_predictions["mask" + str(i)] = _logits_i
+
             #     conflogits_enscla_minus1.append(get_conf(_logits_i, power=-1) * _logits_i)
             #     conflogits_enscla_minus2.append(get_conf(_logits_i, power=-2) * _logits_i)
 
