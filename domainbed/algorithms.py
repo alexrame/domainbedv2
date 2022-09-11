@@ -168,7 +168,8 @@ class ERMask(ERM):
         self._train_only_classifier = train_only_classifier
         self._load_network(path_for_init)
 
-        self.mask_parameters = torch.zeros(self.featurizer.n_outputs, requires_grad=True)
+        self.mask_parameters = nn.Parameter(
+            torch.zeros(self.featurizer.n_outputs), requires_grad=True)
         self._init_optimizer()
 
     def predict(self, x):
