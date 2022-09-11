@@ -262,17 +262,17 @@ def results_ensembling(algorithm, loader, device):
     return dict_results
 
 
-def accuracy(network, loader, weights, device):
+def accuracy(algorithm, loader, weights, device):
     dict_key_to_correct = {}
     weights_offset = 0
     total = 0
 
-    network.eval()
+    algorithm.eval()
     with torch.no_grad():
         for x, y in loader:
             x = x.to(device)
             y = y.to(device)
-            prediction = network.predict(x)
+            prediction = algorithm.predict(x)
             if not isinstance(prediction, dict):
                 prediction = {"": prediction}
             if weights is None:
@@ -291,7 +291,7 @@ def accuracy(network, loader, weights, device):
                 else:
                     dict_key_to_correct[key_p] += (p.argmax(1).eq(y).float() * batch_weights).sum().item()
 
-    network.train()
+    algorithm.train()
 
     return {("acc_" + key_p if key_p != "" else "acc"): (correct / total)
             for key_p, correct in dict_key_to_correct.items()}

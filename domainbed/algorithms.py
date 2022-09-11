@@ -22,18 +22,10 @@ from domainbed.lib.misc import (
 )
 
 ALGORITHMS = [
-    'ERM',
-    "MA",
-    'Fish',
-    'IRM',
-    'GroupDRO',
-    'Mixup',
-    'CORAL',
-    'MMD',
-    'VREx',
-    "Fishr",
-    "DARE",
-    "DARESWAP"
+    'ERM', "ERMask",
+    "MA", 'Fish',
+    'IRM', 'GroupDRO', 'Mixup', 'CORAL', 'MMD', 'VREx', "Fishr",
+    "DARE", "DARESWAP"
 ]
 
 
@@ -138,6 +130,7 @@ class ERM(Algorithm):
         all_features = self.featurizer(all_x)
         if self._train_only_classifier:
             all_features = all_features.detach()
+        all_features = self.modify_features(all_features)
         loss = F.cross_entropy(self.classifier(all_features), all_y)
 
         self.optimizer.zero_grad()
@@ -145,6 +138,9 @@ class ERM(Algorithm):
         self.optimizer.step()
 
         return {'loss': loss.item()}
+
+    def modify_features(self, feats):
+        return feats
 
     def predict(self, x):
         return {"": self.network(x)}
@@ -154,6 +150,54 @@ class ERM(Algorithm):
         assert not os.path.exists(path_for_save), "The initialization has already been saved"
         torch.save(self.network.state_dict(), path_for_save)
 
+
+class ERMask(ERM):
+    """
+    """
+
+    def __init__(
+        self,
+        input_shape,
+        num_classes,
+        num_domains,
+        hparams,
+        train_only_classifier=False,
+        path_for_init=None
+    ):
+        super(ERM, self).__init__(input_shape, num_classes, num_domains, hparams)
+        self._train_only_classifier = train_only_classifier
+        self._load_network(path_for_init)
+
+        self.mask_parameters = torch.zeros(self.featurizer.n_outputs, requires_grad=True)
+        self._init_optimizer()
+
+    def predict(self, x):
+        feats = self.featurizer(x)
+        mask_feats = self.modify_features(feats)
+        preds = self.classifier(mask_feats)
+        return {"": preds}
+
+    def modify_features(self, feats):
+        return feats * torch.sigmoid(self.mask_parameters)
+
+    def _init_optimizer(self):
+        ## DiWA choose weights to be optimized ##
+        if not self._train_only_classifier:
+            parameters_to_be_optimized = self.network.parameters()
+        else:
+            if self._train_only_classifier == "mask":
+                print("Learn only mask mayer")
+                parameters_to_be_optimized = [self.mask_parameters]
+            else:
+                # linear probing
+                print("Learn only last classification layer")
+                parameters_to_be_optimized = self.classifier.parameters()
+
+        self.optimizer = torch.optim.Adam(
+            parameters_to_be_optimized,
+            lr=self.hparams["lr"],
+            weight_decay=self.hparams['weight_decay']
+        )
 
 ## DiWA to reproduce moving average baseline ##
 class MA(ERM):
@@ -177,7 +221,8 @@ class MA(ERM):
         return result
 
     def predict(self, x):
-        self.network_ma.eval()
+        # self.network_ma.eval()
+        # I think this is not necessary
         return {"ma": self.network_ma(x), "": self.network(x)}
 
     def update_ma(self):
@@ -374,6 +419,7 @@ class DARE(ERM):
     Perform ERM while removing mean covariance
     """
     norm_or_swap = "norm"
+
     def __init__(self, *args, **kwargs):
         ERM.__init__(self, *args, **kwargs)
         assert self._train_only_classifier
@@ -382,8 +428,7 @@ class DARE(ERM):
             "mean_per_domain", torch.zeros(self.num_domains, self.featurizer.n_outputs)
         )
         self.register_buffer(
-            "var_per_domain",
-            torch.ones(self.num_domains, self.featurizer.n_outputs)
+            "var_per_domain", torch.ones(self.num_domains, self.featurizer.n_outputs)
         )
         # self.register_buffer(
         #     "cov_per_domain",
@@ -431,8 +476,11 @@ class DARE(ERM):
         if self.norm_or_swap == "swap":
             dist = Normal(
                 torch.mean(self.mean_per_domain, dim=0),
-                scale = torch.pow(torch.mean(self.var_per_domain, dim=0), 1/2))
-            all_normalized_features = all_normalized_features + dist.sample(torch.Size([all_normalized_features.shape[0]]))
+                scale=torch.pow(torch.mean(self.var_per_domain, dim=0), 1 / 2)
+            )
+            all_normalized_features = all_normalized_features + dist.sample(
+                torch.Size([all_normalized_features.shape[0]])
+            )
 
         all_logits = self.classifier(all_normalized_features)
 
@@ -453,10 +501,9 @@ class DARE(ERM):
         dict_predictions = {}
         features = self.featurizer(x)
         dict_predictions[""] = self.classifier(features)
-        centered_features =  features - torch.mean(self.mean_per_domain, dim=0)
-        var = 0.9 * torch.mean(self.var_per_domain, dim=0) + 0.1 * torch.ones_like(
-                self.var_per_domain[0]
-            )
+        centered_features = features - torch.mean(self.mean_per_domain, dim=0)
+        var = 0.9 * torch.mean(self.var_per_domain,
+                               dim=0) + 0.1 * torch.ones_like(self.var_per_domain[0])
         normalized_features = centered_features * torch.pow(var, -1 / 2)
         dict_predictions["dare"] = self.classifier(normalized_features)
         return dict_predictions
@@ -464,6 +511,7 @@ class DARE(ERM):
 
 class DARESWAP(DARE):
     norm_or_swap = "swap"
+
 
 class AbstractMMD(ERM):
     """

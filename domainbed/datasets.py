@@ -57,7 +57,7 @@ def num_environments(dataset_name):
 class MultipleDomainDataset:
     N_STEPS = 5001  # Default, subclasses may override
     CHECKPOINT_FREQ = 100  # Default, subclasses may override
-    N_WORKERS = 8  # Default, subclasses may override
+    N_WORKERS = 8 if os.environ.get('CUDA_VISIBLE_DEVICES') else 0  # Default, subclasses may override
     ENVIRONMENTS = None  # Subclasses should override
     INPUT_SHAPE = None  # Subclasses should override
 
@@ -126,7 +126,9 @@ class MultipleEnvironmentMNIST(MultipleDomainDataset):
 class ColoredMNIST(MultipleEnvironmentMNIST):
     ENVIRONMENTS = ['+90%', '+80%', '-90%']
     CHECKPOINT_FREQ = 100  ## DiWA ##
-    N_WORKERS = 4  # Number of workers for data loading
+    N_WORKERS = 8 if os.environ.get(
+        'CUDA_VISIBLE_DEVICES'
+    ) else 0  # Default, subclasses may override
 
     def __init__(self, root, test_envs, hparams):
         super(ColoredMNIST,

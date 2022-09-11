@@ -1,6 +1,6 @@
 # train only on env0
 
-DATA=/Users/alexandrerame/Dataplace python3 -m domainbed.scripts.train --data_dir /Users/alexandrerame/Dataplace/data --algorithm ERM --dataset ColoredRotatedMNIST --test_envs 1 2 3
+DATA=/Users/alexandrerame/Dataplace python3 -m domainbed.scripts.train --data_dir /Users/alexandrerame/Dataplace/data --algorithm ERMask --dataset ColoredRotatedMNIST --test_envs 0 2 3 4 --path_for_init /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/ColoredRotatedMNISTClean_ERMte0234_best.pkl
 
 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.train --data_dir /data/rame/data/domainbed --algorithm ERM --dataset ColoredRotatedMNIST --test_envs 1 2 3 --steps 0 --train_only_classifier 0
 
