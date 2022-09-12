@@ -121,7 +121,7 @@ class DiWA(algorithms.ERM):
         if len(self.masks) != 2:
             return
 
-        new_mask = nn.Parameter(torch.minimum(self.masks[0], self.masks[1]))
+        new_mask = nn.Parameter(torch.minimum(self.masks[0], self.masks[1])).to(mask.device)
         print(new_mask)
         self.masks.append(new_mask)
 

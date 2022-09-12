@@ -15,6 +15,7 @@ def _get_args():
     parser = argparse.ArgumentParser(description='Domain generalization')
 
     parser.add_argument('--dataset', type=str)
+    parser.add_argument('--seed', type=int, default=0, help='Seed for everything else')
     parser.add_argument('--test_env', type=int)
     parser.add_argument('--train_envs', nargs="+", type=int, default=[])
     parser.add_argument('--output_dir', nargs="+", type=str, default=None)
@@ -154,6 +155,7 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
             dataset.input_shape, dataset.num_classes,
             len(dataset) - 1, model_hparams
         )
+        algorithm.eval()
         if "model_dict" in save_dict:
             algorithm.load_state_dict(save_dict["model_dict"], strict=False)
         else:
@@ -181,11 +183,6 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
             wa_algorithm.update_var_network(algorithm.network)
         del algorithm
 
-    if train_args is None:
-        return 0
-    else:
-        return train_args["seed"]
-
 
 def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits, device):
     wa_algorithm = algorithms_inference.DiWA(
@@ -193,7 +190,7 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
         dataset.num_classes,
         len(dataset) - 1,
     )
-    seed = load_and_update_networks(
+    load_and_update_networks(
         wa_algorithm, good_checkpoints, dataset, action=["mean"] + inf_args.what, device=device
     )
     if "var" in inf_args.what:
@@ -204,12 +201,6 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
     wa_algorithm.eval()
     if inf_args.path_for_init:
         wa_algorithm.save_path_for_future_init(inf_args.path_for_init)
-
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
 
     data_loaders = [
         FastDataLoader(dataset=split, batch_size=64, num_workers=dataset.N_WORKERS)
@@ -333,6 +324,12 @@ def create_data_splits(inf_args, dataset):
 def main():
     inf_args = _get_args()
     device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    random.seed(inf_args.seed)
+    np.random.seed(inf_args.seed)
+    torch.manual_seed(inf_args.seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
     print(f"Begin DiWA for: {inf_args} with device: {device}")
 
