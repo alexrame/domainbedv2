@@ -123,9 +123,10 @@ class DiWA(algorithms.ERM):
 
         new_mask = nn.Parameter(torch.minimum(self.masks[0], self.masks[1])).to(mask.device)
         print(new_mask)
+        print("device: ", new_mask.device)
         self.masks.append(new_mask)
 
-    def predict(self, x):
+    def predict(self, x, device="gpu"):
         if self.network_ma is not None:
             dict_predictions = {"": self.network_ma(x)}
         else:
@@ -159,7 +160,7 @@ class DiWA(algorithms.ERM):
 
             if len(self.masks) != 0:
                 for i, mask in enumerate(self.masks):
-                    features_masked = features * torch.sigmoid(mask)
+                    features_masked = features * torch.sigmoid(mask.to(device))
                     _logits_i = self.classifiers[0](features_masked)
                     # does not matter if 0 or 1, they are the same
                     dict_predictions["mask" + str(i)] = _logits_i
@@ -200,7 +201,7 @@ class DiWA(algorithms.ERM):
         with torch.no_grad():
             for x, y in loader:
                 x = x.to(device)
-                prediction = self.predict(x)
+                prediction = self.predict(x, device=device)
                 y = y.to(device)
                 batch_classes.append(y)
                 for key in prediction.keys():
