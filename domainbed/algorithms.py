@@ -150,6 +150,38 @@ class ERM(Algorithm):
         assert not os.path.exists(path_for_save), "The initialization has already been saved"
         torch.save(self.network.state_dict(), path_for_save)
 
+class SD(ERM):
+    """
+    Gradient Starvation: A Learning Proclivity in Neural Networks
+    Equation 25 from [https://arxiv.org/pdf/2011.09468.pdf]
+    """
+
+    def __init__(self, *args, **kwargs):
+        ERM.__init__(self, *args, **kwargs)
+        self.sd_reg = self.hparams["sd_reg"]
+
+    def update(self, minibatches, unlabeled=None):
+        all_x = torch.cat([x for x, y in minibatches])
+        all_y = torch.cat([y for x, y in minibatches])
+
+        all_x = torch.cat([x for x, y in minibatches])
+        all_features = self.featurizer(all_x)
+        if self._train_only_classifier:
+            all_features = all_features.detach()
+        all_features = self.modify_features(all_features)
+
+        all_p = self.classifier(all_features)
+
+        loss = F.cross_entropy(all_p, all_y)
+        penalty = (all_p**2).mean()
+        objective = loss + self.sd_reg * penalty
+
+        self.optimizer.zero_grad()
+        objective.backward()
+        self.optimizer.step()
+
+        return {'loss': loss.item(), 'penalty': penalty.item()}
+
 
 class ERMask(ERM):
     """
@@ -184,14 +216,15 @@ class ERMask(ERM):
     def _init_optimizer(self):
         ## DiWA choose weights to be optimized ##
         if not self._train_only_classifier:
+            print("Train full network but not mask")
             parameters_to_be_optimized = self.network.parameters()
         else:
             if self._train_only_classifier == "mask":
-                print("Learn only mask mayer")
+                print("Train only mask mayer")
                 parameters_to_be_optimized = [self.mask_parameters]
             else:
                 # linear probing
-                print("Learn only last classification layer")
+                print("Train only last classification layer")
                 parameters_to_be_optimized = self.classifier.parameters()
 
         self.optimizer = torch.optim.Adam(
@@ -609,36 +642,7 @@ class CORAL(AbstractMMD):
         AbstractMMD.__init__(self, False, *args, **kwargs)
 
 
-class SD(ERM):
-    """
-    Gradient Starvation: A Learning Proclivity in Neural Networks
-    Equation 25 from [https://arxiv.org/pdf/2011.09468.pdf]
-    """
 
-    def __init__(self, *args, **kwargs):
-        ERM.__init__(self, *args, **kwargs)
-
-        self.sd_reg = self.hparams["sd_reg"]
-
-    def update(self, minibatches, unlabeled=None):
-        all_x = torch.cat([x for x, y in minibatches])
-        all_y = torch.cat([y for x, y in minibatches])
-
-        all_x = torch.cat([x for x, y in minibatches])
-        all_features = self.featurizer(all_x)
-        if self._train_only_classifier:
-            all_features = all_features.detach()
-        all_p = self.classifier(all_features)
-
-        loss = F.cross_entropy(all_p, all_y)
-        penalty = (all_p**2).mean()
-        objective = loss + self.sd_reg * penalty
-
-        self.optimizer.zero_grad()
-        objective.backward()
-        self.optimizer.step()
-
-        return {'loss': loss.item(), 'penalty': penalty.item()}
 
 
 class Fishr(Algorithm):

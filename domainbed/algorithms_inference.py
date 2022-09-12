@@ -117,12 +117,13 @@ class DiWA(algorithms.ERM):
 
     def add_mask(self, mask):
         self.masks.append(mask)
+        print(mask)
         if len(self.masks) != 2:
             return
 
         new_mask = nn.Parameter(torch.minimum(self.masks[0], self.masks[1]))
+        print(new_mask)
         self.masks.append(new_mask)
-        # import pdb; pdb.set_trace()
 
     def predict(self, x):
         if self.network_ma is not None:
