@@ -105,14 +105,33 @@ class DiWA(algorithms.ERM):
 
     def add_classifier(self, classifier):
         self.classifiers.append(classifier)
-        if len(self.classifiers) != 2:
+        if len(self.classifiers) != 4:
             return
+
+        # minimum
         new_classifier = copy.deepcopy(classifier)
-        for param_m, param_0, param_1 in zip(
-            new_classifier.parameters(), self.classifiers[0].parameters(), self.classifiers[1].parameters()
+        for param_m, param_1, param_2 in zip(
+            new_classifier.parameters(), self.classifiers[1].parameters(), self.classifiers[2].parameters()
         ):
-            #  (param_0 + param_1)/2
-            param_m.data = torch.minimum(param_0, param_1) * (param_0 * param_1 > 0).float()
+            param_m.data = torch.minimum(param_1, param_2) * (param_1 * param_2 > 0).float()
+        self.classifiers.append(new_classifier)
+
+        # mean
+        new_classifier = copy.deepcopy(classifier)
+        for param_m, param_1, param_2 in zip(
+            new_classifier.parameters(), self.classifiers[1].parameters(), self.classifiers[2].parameters()
+        ):
+            param_m.data = (param_1 + param_2)/2 * (param_1 * param_2 > 0).float()
+        self.classifiers.append(new_classifier)
+
+
+        new_classifier = copy.deepcopy(classifier)
+        for param_m, param_1, param_2, param_0 in zip(
+            new_classifier.parameters(), self.classifiers[1].parameters(),
+            self.classifiers[2].parameters(), self.classifiers[0].parameters()
+        ):
+            param_m.data = (param_1 +
+                            param_2) / 2 * ((param_1 - param_0) * (param_2 - param_0) > 0).float()
         self.classifiers.append(new_classifier)
 
     def add_mask(self, mask):
