@@ -198,6 +198,7 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
         wa_algorithm.create_stochastic_networks()
 
     wa_algorithm.to(device)
+
     wa_algorithm.eval()
     if inf_args.path_for_init:
         wa_algorithm.save_path_for_future_init(inf_args.path_for_init)

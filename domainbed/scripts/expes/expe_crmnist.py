@@ -6,7 +6,8 @@ CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.train --data_dir /data/rame/
 
 
 # classifier
-DATA=/Users/alexandrerame/Dataplace MODEL_SELECTION=train WHICHMODEL=best INCLUDEVAL_UPTO=5 python3 -m domainbed.scripts.diwa --dataset ColoredRotatedMNISTClean --test_env 4  --output_dir no --trial_seed 0 --data_dir /Users/alexandrerame/Dataplace/data --what netm --checkpoints /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/ColoredRotatedMNISTClean_ERMte0234_best.pkl 1 /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/ColoredRotatedMNISTClean_ERMte0134_best.pkl 1
+DATA=/Users/alexandrerame/Dataplace MODEL_SELECTION=train WHICHMODEL=best INCLUDEVAL_UPTO=5 python3 -m domainbed.scripts.diwa --dataset ColoredRotatedMNISTClean --test_env 4  --output_dir no --trial_seed 0 --data_dir /Users/alexandrerame/Dataplace/data --what netm cla --checkpoints /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/erm2.pkl 1 /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/erm1.pkl 1 /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/sd0.pkl 1
+
 
 # masking
 DATA=/Users/alexandrerame/Dataplace MODEL_SELECTION=train WHICHMODEL=best INCLUDEVAL_UPTO=5 python3 -m domainbed.scripts.diwa --dataset ColoredRotatedMNISTClean --test_env 4 --output_dir no --trial_seed 0 --data_dir /Users/alexandrerame/Dataplace/data --what netm cla mask --checkpoints /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/ColoredRotatedMNISTClean_ERMaskte0234_best.pkl 1 /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/ColoredRotatedMNISTClean_ERMaskte0134_best.pkl 1
