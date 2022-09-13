@@ -105,6 +105,9 @@ class DiWA(algorithms.ERM):
 
     def add_classifier(self, classifier):
         self.classifiers.append(classifier)
+        if not os.environ.get('CLADEBUG'):
+            return
+
         if len(self.classifiers) != 4:
             return
 
