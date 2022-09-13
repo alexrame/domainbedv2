@@ -152,7 +152,7 @@ class ERM(Algorithm):
         torch.save(self.network.state_dict(), path_for_save)
 
 
-class ERMLasso(Algorithm):
+class ERMLasso(ERM):
 
     def update(self, minibatches, unlabeled=None):
         all_x = torch.cat([x for x, y in minibatches])
