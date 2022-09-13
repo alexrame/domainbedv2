@@ -8,6 +8,12 @@ CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.train --data_dir /data/rame/
 # classifier
 DATA=/Users/alexandrerame/Dataplace MODEL_SELECTION=train WHICHMODEL=best INCLUDEVAL_UPTO=5 python3 -m domainbed.scripts.diwa --dataset ColoredRotatedMNISTClean --test_env 4  --output_dir no --trial_seed 0 --data_dir /Users/alexandrerame/Dataplace/data --what netm cla --checkpoints /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/erm2.pkl 1 /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/erm1.pkl 1 /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/sd0.pkl 1
 
+DATA=/Users/alexandrerame/Dataplace MODEL_SELECTION=train WHICHMODEL=best INCLUDEVAL_UPTO=5 python3 -m domainbed.scripts.diwa --dataset ColoredRotatedMNISTClean --test_env 4  --output_dir no --trial_seed 0 --data_dir /Users/alexandrerame/Dataplace/data --what netm cla --checkpoints /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/sd0.pkl 1 /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/erm1.pkl 1 /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/erm2.pkl 1  /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/erm3.pkl 1
+
+
+DATA=/Users/alexandrerame/Dataplace MODEL_SELECTION=train WHICHMODEL=best INCLUDEVAL_UPTO=5 python3 -m domainbed.scripts.diwa --dataset ColoredRotatedMNISTClean --test_env 4 --output_dir /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/crmnistc_erm3_isd0_s220912_backup --trial_seed 0 --data_dir /Users/alexandrerame/Dataplace/data --what netm cla --checkpoints
+
+
 
 # masking
 DATA=/Users/alexandrerame/Dataplace MODEL_SELECTION=train WHICHMODEL=best INCLUDEVAL_UPTO=5 python3 -m domainbed.scripts.diwa --dataset ColoredRotatedMNISTClean --test_env 4 --output_dir no --trial_seed 0 --data_dir /Users/alexandrerame/Dataplace/data --what netm cla mask --checkpoints /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/ColoredRotatedMNISTClean_ERMaskte0234_best.pkl 1 /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/ColoredRotatedMNISTClean_ERMaskte0134_best.pkl 1
@@ -44,3 +50,5 @@ MLFLOWEXPES_VERSION=nomlflow HP=L CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.sc
 /data/rame/experiments/domainbed/singleruns/ColoredRotatedMNISTClean/ColoredRotatedMNISTClean_ERMte0134_bat64_cla0_dat1_lre001_non0_res0_res0_wei0_12144753/model_best.pkl
 # 0->3
 /data/rame/experiments/domainbed/singleruns/ColoredRotatedMNISTClean/ColoredRotatedMNISTClean_SDte1234_bat64_cla0_dat1_lre001_non0_res0_res0_sde1_wei0_11190916/model_best.pkl
+/data/rame/experiments/domainbed/singleruns/ColoredRotatedMNISTClean/ColoredRotatedMNISTClean_ERMte0124_bat64_cla0_dat1_lre001_non0_res0_res0_wei0_12135300/model_best.pkl
+/data/rame/experiments/domainbed/crmnistc_erm3_isd0_s220912/

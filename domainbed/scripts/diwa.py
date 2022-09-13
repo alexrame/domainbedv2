@@ -91,7 +91,7 @@ def get_checkpoint_from_folder(output_folder):
     return None
 
 
-def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None):
+def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="cuda"):
     _output_folders = [os.path.join(output_dir, path) for path in os.listdir(output_dir)]
     output_folders = [
         output_folder for output_folder in _output_folders if os.path.isdir(output_folder) and
@@ -104,7 +104,10 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None):
     dict_checkpoint_to_score = {}
     for folder in output_folders:
         checkpoint = get_checkpoint_from_folder(folder)
-        save_dict = torch.load(checkpoint)
+        if device == "cpu":
+            save_dict = torch.load(checkpoint, map_location=torch.device('cpu'))
+        else:
+            save_dict = torch.load(checkpoint)
         train_args = save_dict["args"]
 
         if train_args["dataset"] != inf_args.dataset:
@@ -353,17 +356,17 @@ def main():
     elif not os.environ.get("PERD"):
         for output_dir in inf_args.output_dir:
             list_dict_checkpoint_to_score_i.append(
-                get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=inf_args.train_envs)
+                get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=inf_args.train_envs, device=device)
             )
     else:
         for output_dir in inf_args.output_dir[1:]:
             list_dict_checkpoint_to_score_i.append(
-                get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=inf_args.train_envs)
+                get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=inf_args.train_envs, device=device)
             )
         list_i = [1, 2, 3] if os.environ.get("PERD") == "1" else [int(p) for p in os.environ.get("PERD").split(",")]
         for i in list_i:
             list_dict_checkpoint_to_score_i.append(
-                get_dict_checkpoint_to_score(inf_args.output_dir[0], inf_args, train_envs=[i])
+                get_dict_checkpoint_to_score(inf_args.output_dir[0], inf_args, train_envs=[i], device=device)
             )
 
     dict_checkpoint_to_score, sorted_checkpoints = merge_checkpoints(

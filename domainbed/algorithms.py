@@ -23,6 +23,7 @@ from domainbed.lib.misc import (
 
 ALGORITHMS = [
     'ERM', "ERMask",
+    "ERMLasso",
     "MA", 'Fish',
     'IRM', 'GroupDRO', 'Mixup', 'CORAL', 'MMD', 'VREx', "Fishr",
     "DARE", "DARESWAP"
@@ -149,6 +150,33 @@ class ERM(Algorithm):
     def save_path_for_future_init(self, path_for_save):
         assert not os.path.exists(path_for_save), "The initialization has already been saved"
         torch.save(self.network.state_dict(), path_for_save)
+
+
+class ERMLasso(Algorithm):
+
+    def update(self, minibatches, unlabeled=None):
+        all_x = torch.cat([x for x, y in minibatches])
+        all_y = torch.cat([y for x, y in minibatches])
+        all_features = self.featurizer(all_x)
+        if self._train_only_classifier:
+            all_features = all_features.detach()
+        all_features = self.modify_features(all_features)
+        objective = F.cross_entropy(self.classifier(all_features), all_y)
+
+        l1_reg = torch.tensor(0., requires_grad=True)
+
+        for name, param in self.classifier.named_parameters():
+            if 'weight' in name:
+                l1_reg = l1_reg + torch.norm(param, 1)
+
+        loss = objective + self.hparams["l1_reg"] * l1_reg
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        return {'loss': loss.item(), "objective": objective.item(), "l1_reg": l1_reg.item()}
+
 
 class SD(ERM):
     """
