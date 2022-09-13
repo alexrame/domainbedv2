@@ -115,23 +115,27 @@ class DiWA(algorithms.ERM):
         #     param_m.data = torch.minimum(param_1, param_2) * (param_1 * param_2 > 0).float()
         # self.classifiers.append(new_classifier)
 
-        # # mean
-        # new_classifier = copy.deepcopy(classifier)
-        # for param_m, param_1, param_2 in zip(
-        #     new_classifier.parameters(), self.classifiers[1].parameters(), self.classifiers[2].parameters()
-        # ):
-        #     param_m.data = (param_1 + param_2)/2 * (param_1 * param_2 > 0).float()
-        # self.classifiers.append(new_classifier)
+        # mean
+        new_classifier = copy.deepcopy(classifier)
+        for param_m, param_1, param_2 in zip(
+            new_classifier.parameters(), self.classifiers[1].parameters(), self.classifiers[2].parameters()
+        ):
+            mask = ((param_1[1] - param_1[0]) * (param_2[1] - param_2[0]) > 0).float()
+            param_m.data = (param_1 + param_2)/2 * mask.reshape(1, -1)
+        self.classifiers.append(new_classifier)
 
 
-        # new_classifier = copy.deepcopy(classifier)
-        # for param_m, param_1, param_2, param_0 in zip(
-        #     new_classifier.parameters(), self.classifiers[1].parameters(),
-        #     self.classifiers[2].parameters(), self.classifiers[0].parameters()
-        # ):
-        #     param_m.data = (param_1 +
-        #                     param_2) / 2 * ((param_1 - param_0) * (param_2 - param_0) > 0).float()
-        # self.classifiers.append(new_classifier)
+        new_classifier = copy.deepcopy(classifier)
+        for param_m, param_1, param_2, param_0 in zip(
+            new_classifier.parameters(), self.classifiers[1].parameters(),
+            self.classifiers[2].parameters(), self.classifiers[0].parameters()
+        ):
+            mask = (
+                ((param_1[1] - param_1[0]) - (param_0[1] - param_0[0])) *
+                ((param_2[1] - param_2[0]) - (param_0[1] - param_0[0]))
+                > 0).float()
+            param_m.data = (param_1 + param_2) / 2 * mask.reshape(1, -1)
+        self.classifiers.append(new_classifier)
 
         # import pdb; pdb.set_trace()
 

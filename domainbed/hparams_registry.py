@@ -98,7 +98,7 @@ def _hparams(algorithm, dataset, random_seed):
         _hparam('sd_reg', 0.1, lambda r: 10**r.uniform(-5, -1))
 
     elif algorithm == "ERMLasso":
-        _hparam('l1_reg', 0.001, lambda r: 10**r.uniform(-4, 1))
+        _hparam('l1_reg', 0.001, lambda r: 10**r.uniform(-5, -1))
 
     elif algorithm == "ANDMask":
         _hparam('tau', 1, lambda r: r.uniform(0.5, 1.))
