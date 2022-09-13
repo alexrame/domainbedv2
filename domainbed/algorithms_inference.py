@@ -135,6 +135,7 @@ class DiWA(algorithms.ERM):
                 ((param_1[1] - param_1[0]) - (param_0[1] - param_0[0])) *
                 ((param_2[1] - param_2[0]) - (param_0[1] - param_0[0]))
                 > 0).float()
+            mask = (torch.rand_like(mask) > 0.25).float()
             param_m.data = (param_1 + param_2) / 2 * mask.reshape(1, -1)
         self.classifiers.append(new_classifier)
 
