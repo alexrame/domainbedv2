@@ -105,7 +105,9 @@ class DiWA(algorithms.ERM):
 
     def add_classifier(self, classifier):
         self.classifiers.append(classifier)
-        # if len(self.classifiers) == 20:
+        if len(self.classifiers) != 4:
+            return
+
         #     import pdb; pdb.set_trace()
         # # minimum
         # new_classifier = copy.deepcopy(classifier)
@@ -123,7 +125,6 @@ class DiWA(algorithms.ERM):
             mask = ((param_1[1] - param_1[0]) * (param_2[1] - param_2[0]) > 0).float()
             param_m.data = (param_1 + param_2)/2 * mask.reshape(1, -1)
         self.classifiers.append(new_classifier)
-
 
         new_classifier = copy.deepcopy(classifier)
         for param_m, param_1, param_2, param_0 in zip(

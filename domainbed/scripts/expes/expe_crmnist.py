@@ -11,7 +11,7 @@ DATA=/Users/alexandrerame/Dataplace MODEL_SELECTION=train WHICHMODEL=best INCLUD
 DATA=/Users/alexandrerame/Dataplace MODEL_SELECTION=train WHICHMODEL=best INCLUDEVAL_UPTO=5 python3 -m domainbed.scripts.diwa --dataset ColoredRotatedMNISTClean --test_env 4  --output_dir no --trial_seed 0 --data_dir /Users/alexandrerame/Dataplace/data --what netm cla --checkpoints /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/sd0.pkl 1 /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/erm1.pkl 1 /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/erm2.pkl 1  /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/erm3.pkl 1
 
 
-DATA=/Users/alexandrerame/Dataplace MODEL_SELECTION=train WHICHMODEL=best INCLUDEVAL_UPTO=5 python3 -m domainbed.scripts.diwa --dataset ColoredRotatedMNISTClean --test_env 4 --output_dir /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/crmnistc_erm3_isd0_s220912_backup --trial_seed 0 --data_dir /Users/alexandrerame/Dataplace/data --what netm cla --checkpoints
+DATA=/Users/alexandrerame/Dataplace MODEL_SELECTION=train WHICHMODEL=best INCLUDEVAL_UPTO=5 python3 -m domainbed.scripts.diwa --dataset ColoredRotatedMNISTClean --test_env 4 --output_dir /Users/alexandrerame/Dataplace/experiments/domainbed/sorbonne/crmnistc_erm3_isd0_s220912_backup --trial_seed 0 --data_dir /Users/alexandrerame/Dataplace/data --what netm cla
 
 
 
