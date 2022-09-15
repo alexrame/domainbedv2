@@ -150,6 +150,9 @@ Random init: /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_082
 /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home_erm0wnr_lp0_0903
 from /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/home_lp0_903
 
+## place for sbatch
+/gpfswork/rech/edr/utr15kn/slurmconfig/homeperd0901/infforpacs
+/gpfswork/rech/edr/utr15kn/slurmconfig/pacsspe0906
 
-MODEL_SELECTION=train WHICHMODEL=step$EPOCH INCLUDEVAL_UPTO=4 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env -1 --output_dir /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home_erm0wnr_lp0_0903/ /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home_erm1wnr_lp1_0903/ /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home_erm2wnr_lp2_0903/ /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home_erm3wnr_lp3_0903/ /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home1_ma_saveall_lp_0824 --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/home_lp0_903 5 /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/home_lp1_903 5 /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/home_lp2_903 5 /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/home_lp3_903 5 --topk 0
+
 

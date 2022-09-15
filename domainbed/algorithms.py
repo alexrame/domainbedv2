@@ -105,7 +105,7 @@ class ERM(Algorithm):
             saved_dict = torch.load(path_for_init)
             if "model_dict" in saved_dict:
                 self.load_state_dict(saved_dict["model_dict"])
-            elif os.environ.get("LOADSAVE_ONLY_FEATURES"):
+            elif os.environ.get("LOAD_ONLY_FEATURES"):
                 self.featurizer.load_state_dict(saved_dict)
             else:
                 self.network.load_state_dict(saved_dict)
@@ -153,7 +153,7 @@ class ERM(Algorithm):
     ## DiWA for saving initialization ##
     def save_path_for_future_init(self, path_for_save):
         assert not os.path.exists(path_for_save), "The initialization has already been saved"
-        if os.environ.get("LOADSAVE_ONLY_FEATURES"):
+        if os.environ.get("SAVE_ONLY_FEATURES"):
             print(f"Save only features extractor")
             torch.save(self.featurizer.state_dict(), path_for_save)
         else:
