@@ -115,7 +115,7 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
         if train_args["dataset"] != inf_args.dataset:
             continue
         if misc.is_none(os.environ.get("INDOMAIN")):
-            if inf_args.test_env not in train_args["test_envs"]:
+            if inf_args.test_env not in train_args["test_envs"] + [-1]:
                 continue
             if train_envs and any(train_env in train_args["test_envs"] for train_env in train_envs):
                 continue
@@ -172,14 +172,16 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
         if "ma" in action:
             wa_algorithm.update_mean_network_ma(algorithm.network_ma, weight=checkpoint_weight)
 
-        if "cla" in action:
+        if "feats" in action:
             wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight)
-            wa_algorithm.add_classifier(algorithm.classifier)
-            if "mask" in action:
-                wa_algorithm.add_mask(algorithm.mask_parameters)
 
-        elif "mask" in action:
-            raise ValueError("Masking requires classifier")
+        if "cla" in action:
+            assert "feats" in action
+            wa_algorithm.add_classifier(algorithm.classifier)
+
+        if "mask" in action:
+            assert "cla" in action
+            wa_algorithm.add_mask(algorithm.mask_parameters)
 
         if "netm" in action:
             wa_algorithm.add_network(algorithm.network)

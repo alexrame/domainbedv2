@@ -84,16 +84,18 @@ class ERM(Algorithm):
         super(ERM, self).__init__(input_shape, num_classes, num_domains, hparams)
 
         self._train_only_classifier = train_only_classifier
+        self._create_network()
         self._load_network(path_for_init)
         self._init_optimizer()
 
-    def _load_network(self, path_for_init):
+    def _create_network(self):
         self.featurizer = networks.Featurizer(self.input_shape, self.hparams)
         self.classifier = networks.Classifier(
             self.featurizer.n_outputs, self.num_classes, self.hparams['nonlinear_classifier']
         )
         self.network = nn.Sequential(self.featurizer, self.classifier)
 
+    def _load_network(self, path_for_init):
         ## DiWA load shared initialization ##
         if is_not_none(path_for_init):
             if not os.path.exists(path_for_init):
@@ -103,6 +105,8 @@ class ERM(Algorithm):
             saved_dict = torch.load(path_for_init)
             if "model_dict" in saved_dict:
                 self.load_state_dict(saved_dict["model_dict"])
+            elif os.environ.get("LOADSAVE_ONLY_FEATURES"):
+                self.featurizer.load_state_dict(saved_dict)
             else:
                 self.network.load_state_dict(saved_dict)
             if self._train_only_classifier == "reset":
@@ -149,7 +153,11 @@ class ERM(Algorithm):
     ## DiWA for saving initialization ##
     def save_path_for_future_init(self, path_for_save):
         assert not os.path.exists(path_for_save), "The initialization has already been saved"
-        torch.save(self.network.state_dict(), path_for_save)
+        if os.environ.get("LOADSAVE_ONLY_FEATURES"):
+            print(f"Save only features extractor")
+            torch.save(self.featurizer.state_dict(), path_for_save)
+        else:
+            torch.save(self.network.state_dict(), path_for_save)
 
 
 class ERMLasso(ERM):
@@ -226,8 +234,8 @@ class ERMask(ERM):
     ):
         super(ERM, self).__init__(input_shape, num_classes, num_domains, hparams)
         self._train_only_classifier = train_only_classifier
+        self._create_network()
         self._load_network(path_for_init)
-
         self.mask_parameters = nn.Parameter(
             torch.zeros(self.featurizer.n_outputs), requires_grad=True)
         self._init_optimizer()
@@ -689,6 +697,7 @@ class Fishr(Algorithm):
         super(Fishr, self).__init__(input_shape, num_classes, num_domains, hparams)
 
         self._train_only_classifier = train_only_classifier
+        self._create_network()
         self._load_network(path_for_init)
 
         self.register_buffer("update_count", torch.tensor([0]))
@@ -699,7 +708,7 @@ class Fishr(Algorithm):
         ]
         self._init_optimizer()
 
-    def _load_network(self, path_for_init):
+    def _create_network(self):
         self.featurizer = networks.Featurizer(self.input_shape, self.hparams)
         self.classifier = extend(
             networks.Classifier(
@@ -709,14 +718,6 @@ class Fishr(Algorithm):
             )
         )
         self.network = nn.Sequential(self.featurizer, self.classifier)
-
-        ## DiWA load shared initialization ##
-        if is_not_none(path_for_init):
-            if os.path.exists(path_for_init):
-                print(f"Load weights from {path_for_init}")
-                self.network.load_state_dict(torch.load(path_for_init))
-            else:
-                assert self._train_only_classifier, "Your initialization has not been saved yet"
 
     def _init_optimizer(self):
         ERM._init_optimizer(self)

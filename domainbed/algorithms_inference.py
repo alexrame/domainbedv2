@@ -13,11 +13,14 @@ class ERM(algorithms.ERM):
 
     def __init__(self, input_shape, num_classes, num_domains, hparams):
         algorithms.Algorithm.__init__(self, input_shape, num_classes, num_domains, hparams)
-        self.featurizer = networks.Featurizer(input_shape, self.hparams)
-        self.classifier = networks.Classifier(
-            self.featurizer.n_outputs, num_classes, self.hparams.get('nonlinear_classifier', False)
-        )
         self.num_classes = num_classes
+        self._create_network()
+
+    def _create_network(self):
+        self.featurizer = networks.Featurizer(self.input_shape, self.hparams)
+        self.classifier = networks.Classifier(
+            self.featurizer.n_outputs, self.num_classes, self.hparams.get('nonlinear_classifier', False)
+        )
         self.network = nn.Sequential(self.featurizer, self.classifier)
         self.network_ma = copy.deepcopy(self.network)
         self.mask_parameters = nn.Parameter(torch.zeros(self.featurizer.n_outputs))
@@ -28,6 +31,13 @@ class DiWA(algorithms.ERM):
         """
         """
         algorithms.Algorithm.__init__(self, input_shape, num_classes, num_domains, hparams={})
+        self.global_count = 0
+        self.global_count_feat = 0
+        self.global_count_ma = 0
+        self.var_global_count = 0
+        self._create_network()
+
+    def _create_network(self):
         self.network = None
         self.network_ma = None
         self.featurizer = None
@@ -35,10 +45,6 @@ class DiWA(algorithms.ERM):
         self.networks = []
         self.classifiers = []
         self.masks = []
-        self.global_count = 0
-        self.global_count_feat = 0
-        self.global_count_ma = 0
-        self.var_global_count = 0
 
     def update_mean_featurizer(self, featurizer, weight=1.):
 

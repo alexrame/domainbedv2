@@ -116,19 +116,6 @@ enshome0_erm023_lp_0901_r20
    1014113   gpu_p13 home1_erm023_saveall_lpd023top  utr15kn  R       1:00      1 r10i4n5
    1014108   gpu_p13 home1_erm023_saveall_lpd023_09  utr15kn  R       1:30      1 r10i1n5
 
-# Folders
-Random init: /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_0822
-
-SLP123: /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0_ermll_saveall_si_0822
-LP123: /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0_ermll_saveall_si_0822/3d4174ccb9f69a3d872124137129aa1f/model.pkl
-
-FT123alp: /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0_erm_alp_0822
-FT123: /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0_ma_saveall_lp_0824
-
-FTPerd123:/gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home_ermwnr_lp_0901
-
-
-
 
 TART_CHKPT_FREQ=10 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m domainbed.scripts.sweep launch --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --output_dir=/gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest8_ermwnr_saveall_lp_0827 --command_launcher multi_gpu --datasets OfficeHome --algorithms MA --train_env 0 --n_hparams 20 --n_trials 1 --train_only_classifier 0 --holdout_fraction 0.8 --steps 5000 --save_model_every_checkpoint 1 --path_for_init /gpfsdswork/projects/rech/edr/utr15kn/dataplace/experiments/domainbed/home0ontest841_ermllr_saveall_0827/db66347321bed464bcf99408194a620a/model.pkl
 
@@ -143,4 +130,26 @@ home0h8_ermwnr_0901.slurm
 home0h8_ermwnr_lp0_0901.slurm
 /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/homeh8_ermwnr_lp0_0901
 /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home_ermwnrbs96_lp_0901
+
+
+# Folders
+Random init: /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_0822
+
+SLP123: /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0_ermll_saveall_si_0822
+LP123: /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0_ermll_saveall_si_0822/3d4174ccb9f69a3d872124137129aa1f/model.pkl
+
+FT123alp: /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0_erm_alp_0822
+FT123: /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0_ma_saveall_lp_0824
+
+FTPerd123:/gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home_ermwnr_lp_0901
+
+# updatable ml
+Random init: /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/home0_0822
+
+## 0
+/gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home_erm0wnr_lp0_0903
+from /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/home_lp0_903
+
+
+MODEL_SELECTION=train WHICHMODEL=step$EPOCH INCLUDEVAL_UPTO=4 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env -1 --output_dir /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home_erm0wnr_lp0_0903/ /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home_erm1wnr_lp1_0903/ /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home_erm2wnr_lp2_0903/ /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home_erm3wnr_lp3_0903/ /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home1_ma_saveall_lp_0824 --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/home_lp0_903 5 /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/home_lp1_903 5 /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/home_lp2_903 5 /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/home_lp3_903 5 --topk 0
 
