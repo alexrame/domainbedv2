@@ -304,7 +304,6 @@ if __name__ == "__main__":
             if misc.is_not_none(args.save_model_every_checkpoint):
                 save_checkpoint(f'model_step{step}.pkl', results=json.dumps(results, sort_keys=True))
 
-
     save_checkpoint(
         'model.pkl',
         results=json.dumps(results, sort_keys=True),

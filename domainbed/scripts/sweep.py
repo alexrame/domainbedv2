@@ -110,27 +110,24 @@ def all_test_env_combinations(n):
 
 def make_args_list(
     n_trials, dataset_names, algorithms, n_hparams_from, n_hparams, steps, data_dir, task,
-    holdout_fraction, single_test_envs, hparams, force_test_env, force_train_env, **kwargs
+    holdout_fraction, single_test_envs, hparams, force_test_envs, **kwargs
 ):
     args_list = []
     for trial_seed in range(n_trials):
         for dataset in dataset_names:
             for algorithm in algorithms:
-                if force_train_env is not None:
-                    all_test_envs = [
-                        [
-                            i for i in range(datasets.num_environments(dataset))
-                            if i != force_train_env
-                        ]
-                    ]
-                elif force_test_env is not None:
-                    all_test_envs = [force_test_env] ## DiWA ##
+
+                # select test envs
+                if force_test_envs is not None:
+                    all_test_envs = force_test_envs
                 elif single_test_envs:
                     all_test_envs = [
                         [i] for i in range(datasets.num_environments(dataset))]
                 else:
                     all_test_envs = all_test_env_combinations(
                         datasets.num_environments(dataset))
+
+                # iterate over test envs
                 for test_envs in all_test_envs:
                     for hparams_seed in range(n_hparams_from, n_hparams):
                         train_args = {}
@@ -180,8 +177,7 @@ if __name__ == "__main__":
     parser.add_argument('--single_test_envs', action='store_true')
     parser.add_argument('--ask_confirmation', action='store_true')
     ## DiWA ##
-    parser.add_argument('--test_env', type=int, default=None)
-    parser.add_argument('--train_env', type=int, default=None)
+    parser.add_argument('--test_envs', type=int, nargs='+', default=[0])
     parser.add_argument('--path_for_init', type=str, default=None)
     parser.add_argument('--train_only_classifier', type=str, default=None)
     parser.add_argument('--save_model_every_checkpoint', type=str, default=None)
@@ -201,8 +197,7 @@ if __name__ == "__main__":
         single_test_envs=args.single_test_envs,
         hparams=args.hparams,
         ## DiWA ##
-        force_test_env=args.test_env,
-        force_train_env=args.train_env,
+        force_test_envs=args.test_envs,
         path_for_init=args.path_for_init,
         train_only_classifier=args.train_only_classifier,
         save_model_every_checkpoint=args.save_model_every_checkpoint

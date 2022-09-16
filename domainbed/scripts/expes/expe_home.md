@@ -154,5 +154,7 @@ from /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/home_lp0_903
 /gpfswork/rech/edr/utr15kn/slurmconfig/homeperd0901/infforpacs
 /gpfswork/rech/edr/utr15kn/slurmconfig/pacsspe0906
 
-
-
+# doing
+     JOBID PARTITION                           NAME     USER ST       TIME  NODES NODELIST(REASON)
+   1326534   gpu_p13 pacs3_erm012wnr_ihome_lp_0915.  utr15kn PD       0:00      1 (Priority)
+   1326641   gpu_p13 pacs3_erm012wnr_ihomer40_lp_09  utr15kn PD       0:00      1 (Priority)
