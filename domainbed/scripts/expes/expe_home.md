@@ -170,4 +170,18 @@ SAVE_ONLY_FEATURES=1 MODEL_SELECTION=train WHICHMODEL=step$EPOCH INCLUDEVAL_UPTO
 0.7917525773          0.7995418099          0.9255918828          0.8668197474          20
 
 
-0.9682151589          0.9786324786          0.9970059880          0.9414012739          21                    1.0000000000          stepbest
+/gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/specm/home_erm0123_lp_0916_r40.pkl
+/gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/specm/home_erm0123_lp_0916_r20.pkl
+/gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/specm/home_erm0123_lp_0916_r0.pkl
+
+
+
+LOAD_ONLY_FEATURES=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.train --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --algorithm ERM --dataset PACS --test_envs 3 --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/specm/home_erm0123_lp_0916_r0.pkl --path_for_save /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/lp/pacs3_erm012wn_ihome0123r0_lp_0916.pkl --train_only_classifier 1
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m domainbed.scripts.sweep launch --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --output_dir=/gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs3_erm012wn_ihome0123r0_lp_0916 --command_launcher multi_gpu --datasets PACS --algorithms ERM --test_envs 3 --n_hparams 20 --n_trials 1 --train_only_classifier 0 --save_model_every_checkpoint 1 --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/lp/pacs3_erm012wn_ihome0123r0_lp_0916.pkl
+
+
+
+     JOBID PARTITION                           NAME     USER ST       TIME  NODES NODELIST(REASON)
+   1348141   gpu_p13 pacs3_erm012wn_ihome0123r40_lp  utr15kn  R       0:47      1 r11i2n2
+   1348140   gpu_p13 pacs3_erm012wn_ihome0123r20_lp  utr15kn  R       1:07      1 r11i1n7
+   1348126   gpu_p13 pacs3_erm012wn_ihome0123r0_lp_  utr15kn  R       3:39      1 r10i7n2

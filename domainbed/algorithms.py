@@ -18,7 +18,7 @@ except:
 
 from domainbed import networks
 from domainbed.lib.misc import (
-    random_pairs_of_minibatches, ParamDict, MovingAverage, l2_between_dicts, is_not_none
+    random_pairs_of_minibatches, ParamDict, MovingAverage, l2_between_dicts, is_not_none, is_none
 )
 
 ALGORITHMS = [
@@ -154,9 +154,10 @@ class ERM(Algorithm):
     def save_path_for_future_init(self, path_for_save):
         assert not os.path.exists(path_for_save), "The initialization has already been saved"
         if os.environ.get("SAVE_ONLY_FEATURES"):
-            print(f"Save only features extractor")
+            print(f"Save only features extractor at {path_for_save}")
             torch.save(self.featurizer.state_dict(), path_for_save)
         else:
+            print(f"Save whole network at {path_for_save}")
             torch.save(self.network.state_dict(), path_for_save)
 
 
