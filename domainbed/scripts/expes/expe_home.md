@@ -158,3 +158,16 @@ from /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/home_lp0_903
      JOBID PARTITION                           NAME     USER ST       TIME  NODES NODELIST(REASON)
    1326534   gpu_p13 pacs3_erm012wnr_ihome_lp_0915.  utr15kn PD       0:00      1 (Priority)
    1326641   gpu_p13 pacs3_erm012wnr_ihomer40_lp_09  utr15kn PD       0:00      1 (Priority)
+
+
+SAVE_ONLY_FEATURES=1 MODEL_SELECTION=train WHICHMODEL=step$EPOCH INCLUDEVAL_UPTO=4 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env -1 --output_dir /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home_ma0123_lp_0916 --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/home_lp0123_916 20 --topk 0
+# --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/specm/home_lp0123_r20_903.pkl --what feats
+
+
+
+[0.8061855670, 0.7686139748, 0.9098083427, 0.8610792193]          21                    1.0000000000          stepbest
+[0.8000000000, 0.7411225659, 0.9007891770, 0.8438576349]          21                    2.0000000000          stepbest
+0.7917525773          0.7995418099          0.9255918828          0.8668197474          20
+
+
+0.9682151589          0.9786324786          0.9970059880          0.9414012739          21                    1.0000000000          stepbest
