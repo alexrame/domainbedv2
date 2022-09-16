@@ -291,7 +291,7 @@ if __name__ == "__main__":
                 best_score = current_score
                 results["best_score"] = best_score
                 results["best_step"] = step
-                if step != 0:
+                if step != 0 and step > n_steps/2:
                     print(f"Saving new best score at step: {step} at path: model_best.pkl")
                     save_checkpoint(
                         'model_best.pkl',
