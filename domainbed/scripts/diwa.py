@@ -4,6 +4,7 @@ import json
 import random
 import numpy as np
 import torch
+import time
 import torch.utils.data
 from domainbed import datasets, algorithms_inference
 from domainbed.lib import misc
@@ -161,14 +162,20 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
             len(dataset) - 1, model_hparams
         )
         algorithm.eval()
-        if "model_dict" in save_dict:
-            algorithm.load_state_dict(save_dict["model_dict"], strict=False)
-        elif checkpoint_weight != -1:
-            print(f"Load network {checkpoint}")
-            algorithm.network.load_state_dict(save_dict)
-        else:
-            print(f"Load featurizer {checkpoint}")
-            algorithm.featurizer.load_state_dict(save_dict)
+        try:
+            if "model_dict" in save_dict:
+                algorithm.load_state_dict(save_dict["model_dict"], strict=False)
+            elif checkpoint_weight != -1:
+                print(f"Load network {checkpoint} {checkpoint_weight}")
+                algorithm.network.load_state_dict(save_dict)
+            else:
+                print(f"Load featurizer {checkpoint}")
+                algorithm.featurizer.load_state_dict(save_dict)
+        except Exception as e:
+            print(f"Load {checkpoint} {checkpoint_weight}")
+            print(checkpoint_weight != -1)
+            time.sleep()
+            raise e
 
         if checkpoint_weight != -1:
             if "mean" in action:
