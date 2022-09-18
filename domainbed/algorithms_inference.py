@@ -270,8 +270,8 @@ class DiWA(algorithms.ERM):
 
     def get_dict_diversity(self, dict_stats, targets, device):
         dict_diversity = collections.defaultdict(list)
-        num_classifiers = min(len(self.classifiers), float(os.environ.get("MAXM", math.inf)))
-        num_members = min(len(self.networks), float(os.environ.get("MAXM", math.inf)))
+        num_classifiers = int(min(len(self.classifiers), float(os.environ.get("MAXM", math.inf))))
+        num_members = int(min(len(self.networks), float(os.environ.get("MAXM", math.inf))))
         regexes = [("waens", "wa_ens")]
         # regexes = [("netcla0", "net0_cla0"), ("netcla1", "net1_cla1"), ("netcla2", "net2_cla2")]
         # regexes = [
