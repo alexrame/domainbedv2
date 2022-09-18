@@ -194,7 +194,7 @@ class DiWA(algorithms.ERM):
             for i, classifier in enumerate(self.classifiers):
                 _logits_i = classifier(features)
                 logits_enscla.append(_logits_i)
-                dict_predictions["cla" + str(i)] = _logits_i
+                # dict_predictions["cla" + str(i)] = _logits_i
 
             if len(self.masks) != 0:
                 for i, mask in enumerate(self.masks):
