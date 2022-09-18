@@ -163,31 +163,38 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
         algorithm.eval()
         if "model_dict" in save_dict:
             algorithm.load_state_dict(save_dict["model_dict"], strict=False)
-        else:
+        elif checkpoint_weight != -1:
             algorithm.network.load_state_dict(save_dict)
+        else:
+            algorithm.featurizer.load_state_dict(save_dict)
 
-        if "mean" in action:
-            wa_algorithm.update_mean_network(algorithm.network, weight=checkpoint_weight)
+        if checkpoint_weight != -1:
+            if "mean" in action:
+                wa_algorithm.update_mean_network(algorithm.network, weight=checkpoint_weight)
 
-        if "ma" in action:
-            wa_algorithm.update_mean_network_ma(algorithm.network_ma, weight=checkpoint_weight)
+            if "ma" in action:
+                wa_algorithm.update_mean_network_ma(algorithm.network_ma, weight=checkpoint_weight)
 
-        if "feats" in action:
+            if "feats" in action:
+                wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight)
+
+            if "cla" in action:
+                assert "feats" in action
+                wa_algorithm.add_classifier(algorithm.classifier)
+
+            if "mask" in action:
+                assert "cla" in action
+                wa_algorithm.add_mask(algorithm.mask_parameters)
+
+            if "netm" in action:
+                wa_algorithm.add_network(algorithm.network)
+
+            if "var" in action:
+                wa_algorithm.update_var_network(algorithm.network)
+        else:
+            assert "feats" in action
             wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight)
 
-        if "cla" in action:
-            assert "feats" in action
-            wa_algorithm.add_classifier(algorithm.classifier)
-
-        if "mask" in action:
-            assert "cla" in action
-            wa_algorithm.add_mask(algorithm.mask_parameters)
-
-        if "netm" in action:
-            wa_algorithm.add_network(algorithm.network)
-
-        if "var" in action:
-            wa_algorithm.update_var_network(algorithm.network)
         del algorithm
 
 
@@ -364,15 +371,16 @@ def main():
                 get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=inf_args.train_envs, device=device)
             )
     else:
-        for output_dir in inf_args.output_dir[1:]:
-            list_dict_checkpoint_to_score_i.append(
-                get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=inf_args.train_envs, device=device)
-            )
-        list_i = [1, 2, 3] if os.environ.get("PERD") == "1" else [int(p) for p in os.environ.get("PERD").split(",")]
-        for i in list_i:
-            list_dict_checkpoint_to_score_i.append(
-                get_dict_checkpoint_to_score(inf_args.output_dir[0], inf_args, train_envs=[i], device=device)
-            )
+        raise ValueError("PERD not implemented")
+        # for output_dir in inf_args.output_dir[1:]:
+        #     list_dict_checkpoint_to_score_i.append(
+        #         get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=inf_args.train_envs, device=device)
+        #     )
+        # list_i = [1, 2, 3] if os.environ.get("PERD") == "1" else [int(p) for p in os.environ.get("PERD").split(",")]
+        # for i in list_i:
+        #     list_dict_checkpoint_to_score_i.append(
+        #         get_dict_checkpoint_to_score(inf_args.output_dir[0], inf_args, train_envs=[i], device=device)
+        #     )
 
     dict_checkpoint_to_score, sorted_checkpoints = merge_checkpoints(
         inf_args, list_dict_checkpoint_to_score_i

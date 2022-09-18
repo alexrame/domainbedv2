@@ -169,6 +169,8 @@ SAVE_ONLY_FEATURES=1 MODEL_SELECTION=train WHICHMODEL=step$EPOCH INCLUDEVAL_UPTO
 [0.8000000000, 0.7411225659, 0.9007891770, 0.8438576349]          21                    2.0000000000          stepbest
 0.7917525773          0.7995418099          0.9255918828          0.8668197474          20
 
+env_0_out_acc         env_1_out_acc         env_2_out_acc         env_3_out_acc         length                maxm                  robust                which
+0.6989690722          0.7605956472          0.8996617813          0.8495981630          21                    3                     2.0000000000          stepbest
 
 /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/specm/home_erm0123_lp_0916_r40.pkl
 /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/specm/home_erm0123_lp_0916_r20.pkl
@@ -200,7 +202,58 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m domainbed.scripts.sweep launch --data_di
 
 /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r40_lp_0916
 
+## r0
 
+0.5777548919          0.5752577320          0.7133447881          0.6323024055          0.8336148649          0.7891770011          0.8235800344          0.7703788749          82.3892893924         0.8635875392          7.8502902985          5000                  0.1862661314
+
+
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/a2c5c880c527ecf14fb698bdfafaeeec/model_step100.pkl  with score:  0.622680412371134
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/5feb7a8830c4dc47fde650c9670dc4b5/model_step100.pkl  with score:  0.6206185567010309
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/f4b81dec88fce22108d7d9f6cc272a76/model_step100.pkl  with score:  0.6144329896907217
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/f39eb3901d347275ba5b3e3ca1f33d5a/model_step100.pkl  with score:  0.6144329896907217
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/4cb317864c5773132a6c52eb289d4a3c/model_step100.pkl  with score:  0.6082474226804123
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/04f031b99aedd570971e3d3ec0faadd8/model_step100.pkl  with score:  0.6082474226804123
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/0f6e5cac72a5565b81cd1048f5987b15/model_step100.pkl  with score:  0.6082474226804123
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/0201b7e3f603e1f92087a41592ac69cb/model_step100.pkl  with score:  0.6082474226804123
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/2e299acb2043dd288c5686c9b0c55e4b/model_step100.pkl  with score:  0.6061855670103092
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/092611e6caa483cd65daa5791ce20418/model_step100.pkl  with score:  0.6041237113402061
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/0c3d738b6ade4fcb3dedb477dccd9e84/model_step100.pkl  with score:  0.6041237113402061
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/bbd08958542690418394ddc48f49ca5d/model_step100.pkl  with score:  0.6020618556701031
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/f19375e0cf49c050d25b7132b1c9a4d1/model_step100.pkl  with score:  0.6020618556701031
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/9e19a5bae326586139415d3a771596f8/model_step100.pkl  with score:  0.6
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/7e2ffb3cbf6c316c5d5cf90cf3d12490/model_step100.pkl  with score:  0.5958762886597938
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/186bc8836a0f8d5d4a4ec48c355035f4/model_step100.pkl  with score:  0.5958762886597938
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/af98a533b35aa3d5374aa76cb7bc2a5a/model_step100.pkl  with score:  0.5876288659793815
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/34bd9b576dea7e8d403bebab87bedefb/model_step100.pkl  with score:  0.5835051546391753
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/3d4174ccb9f69a3d872124137129aa1f/model_step100.pkl  with score:  0.5711340206185567
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916/3ddac555654ec118d35d45b072c168fc/model_step100.pkl  with score:  0.5690721649484536
+
+## r20
+0.6513903193          0.6556701031          0.7485681558          0.6632302405          0.8856981982          0.8466741826          0.8711990820          0.8128587830          82.3892893924         0.6680733785          7.8502902985          5000                  0.1873966360
+
+
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/0c3d738b6ade4fcb3dedb477dccd9e84/model_best.pkl  with score:  0.6556701030927835
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/0f6e5cac72a5565b81cd1048f5987b15/model_best.pkl  with score:  0.6515463917525773
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/4cb317864c5773132a6c52eb289d4a3c/model_best.pkl  with score:  0.6474226804123712
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/5feb7a8830c4dc47fde650c9670dc4b5/model_best.pkl  with score:  0.643298969072165
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/f39eb3901d347275ba5b3e3ca1f33d5a/model_best.pkl  with score:  0.6412371134020619
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/186bc8836a0f8d5d4a4ec48c355035f4/model_best.pkl  with score:  0.6371134020618556
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/bbd08958542690418394ddc48f49ca5d/model_best.pkl  with score:  0.6350515463917525
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/04f031b99aedd570971e3d3ec0faadd8/model_best.pkl  with score:  0.6288659793814433
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/7e2ffb3cbf6c316c5d5cf90cf3d12490/model_best.pkl  with score:  0.6206185567010309
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/a2c5c880c527ecf14fb698bdfafaeeec/model_best.pkl  with score:  0.6164948453608248
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/f19375e0cf49c050d25b7132b1c9a4d1/model_best.pkl  with score:  0.6164948453608248
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/092611e6caa483cd65daa5791ce20418/model_best.pkl  with score:  0.6082474226804123
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/2e299acb2043dd288c5686c9b0c55e4b/model_best.pkl  with score:  0.6082474226804123
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/3d4174ccb9f69a3d872124137129aa1f/model_best.pkl  with score:  0.6061855670103092
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/f4b81dec88fce22108d7d9f6cc272a76/model_best.pkl  with score:  0.6041237113402061
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/af98a533b35aa3d5374aa76cb7bc2a5a/model_best.pkl  with score:  0.6
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/34bd9b576dea7e8d403bebab87bedefb/model_best.pkl  with score:  0.5979381443298969
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/0201b7e3f603e1f92087a41592ac69cb/model_best.pkl  with score:  0.5979381443298969
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/3ddac555654ec118d35d45b072c168fc/model_best.pkl  with score:  0.5835051546391753
+Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916/9e19a5bae326586139415d3a771596f8/model_best.pkl  with score:  0.5690721649484536
+## r40
+0.6549948507          0.6618556701          0.7491408935          0.6632302405          0.8921734234          0.8602029312          0.8763625932          0.8243398393          82.3892893924         0.6444481599          7.8502902985          5000                  0.1874449897
 
 
 Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r40_lp_0916/0f6e5cac72a5565b81cd1048f5987b15/model_best.pkl  with score:  0.6597938144329897
@@ -223,3 +276,47 @@ Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs
 Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r40_lp_0916/186bc8836a0f8d5d4a4ec48c355035f4/model_best.pkl  with score:  0.5938144329896907
 Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r40_lp_0916/0201b7e3f603e1f92087a41592ac69cb/model_best.pkl  with score:  0.5855670103092784
 Found:  /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r40_lp_0916/9e19a5bae326586139415d3a771596f8/model_best.pkl  with score:  0.5835051546391753
+
+
+## imagenet
+
+
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/a237f897ccee3c9df18e6f887b914424/best/model_with_weights.pkl  with score:  0.6639175257731958
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/984b8230b5f4e350ea92eae6589202be/best/model_with_weights.pkl  with score:  0.6577319587628866
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/c4993823eb4730e98c4998f45dfbe5df/best/model_with_weights.pkl  with score:  0.6556701030927835
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/60518992a4672a2de8e9e9a7c03e5138/best/model_with_weights.pkl  with score:  0.6494845360824743
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/686198d1e138f25a342d5bf01436aa19/best/model_with_weights.pkl  with score:  0.6494845360824743
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/d40df28539ffb883795745a3f1aff7fe/best/model_with_weights.pkl  with score:  0.6494845360824743
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/99c90984592360b3a073ddab3f21a4dc/best/model_with_weights.pkl  with score:  0.6474226804123712
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/b2b931e32e0e51d3e78fa1fef54edb09/best/model_with_weights.pkl  with score:  0.643298969072165
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/b098d7a1520796c0c3d6d1dfb8e06478/best/model_with_weights.pkl  with score:  0.643298969072165
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/e08d0957d79d1afa45fd4333830740b6/best/model_with_weights.pkl  with score:  0.6371134020618556
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/ac8da225513c7e0b9efbf3db45ce5031/best/model_with_weights.pkl  with score:  0.6185567010309279
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/5fc2c3a3472f026667b02e35c43b9fbe/best/model_with_weights.pkl  with score:  0.6164948453608248
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/bf0bf660c2e84ea34425f0800231bfc2/best/model_with_weights.pkl  with score:  0.6144329896907217
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/59a0d0e21090d3cd06c9325a1e761fc3/best/model_with_weights.pkl  with score:  0.6123711340206186
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/b224b31bc97424b14c98c9d6d01c881a/best/model_with_weights.pkl  with score:  0.5979381443298969
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/883e19f430593cbeff6f073eb09ec8d5/best/model_with_weights.pkl  with score:  0.5958762886597938
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/9a616a675bee8aca51b5131bc4edab27/best/model_with_weights.pkl  with score:  0.5917525773195876
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/15b4615bcac2574163ac571885244a03/best/model_with_weights.pkl  with score:  0.5917525773195876
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/3f1bc74e064b8a77c610798bb2141ba8/best/model_with_weights.pkl  with score:  0.5896907216494846
+Found:  /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/erm203shlphps0423home/78e38cf8fe4c1c176e06280eef6b99cc/best/model_with_weights.pkl  with score:  0.5793814432989691
+
+
+
+#
+
+
+enshome0_erm123wn_ipacs0123r0_lp_0916.slurm_1434327.out
+enshome0_erm123wn_ipacs0123r0_lp_0916_r20.slurm_1447018.out
+enshome0_erm123wn_ipacs0123r20_lp_0916.slurm_1434330.out
+enshome0_erm123wn_ipacs0123r20_lp_0916_r20.slurm_1446968.out
+enshome0_erm123wn_ipacs0123r40_lp_0916.slurm_1434335.out
+enshome0_erm123wn_ipacs0123r40_lp_0916_r20.slurm_1446210.out
+enshome0_erm123_lp_0824_r0.slurm_1445856.out
+enshome0_erm123_lp_0824_r20.slurm_1447069.out
+
+
+#
+
+

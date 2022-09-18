@@ -48,8 +48,13 @@ class DiWA(algorithms.ERM):
 
     def update_mean_featurizer(self, featurizer, weight=1.):
 
-        if self.featurizer is None:
+        if self.featurizer is None or weight == -1:
             self.featurizer = copy.deepcopy(featurizer)
+            self.global_count_feat = 0
+            if weight == -1:
+                weight = 1
+
+        assert weight >= 0
 
         for param_n, param_m in zip(featurizer.parameters(), self.featurizer.parameters()):
             param_m.data = (param_m.data * self.global_count_feat +
@@ -111,42 +116,41 @@ class DiWA(algorithms.ERM):
 
     def add_classifier(self, classifier):
         self.classifiers.append(classifier)
-        if not os.environ.get('CLADEBUG'):
-            return
+        # if not os.environ.get('CLADEBUG'):
+        #     return
+        # if len(self.classifiers) != 4:
+        #     return
 
-        if len(self.classifiers) != 4:
-            return
+        # #     import pdb; pdb.set_trace()
+        # # # minimum
+        # # new_classifier = copy.deepcopy(classifier)
+        # # for param_m, param_1, param_2 in zip(
+        # #     new_classifier.parameters(), self.classifiers[1].parameters(), self.classifiers[2].parameters()
+        # # ):
+        # #     param_m.data = torch.minimum(param_1, param_2) * (param_1 * param_2 > 0).float()
+        # # self.classifiers.append(new_classifier)
 
-        #     import pdb; pdb.set_trace()
-        # # minimum
+        # # mean
         # new_classifier = copy.deepcopy(classifier)
         # for param_m, param_1, param_2 in zip(
         #     new_classifier.parameters(), self.classifiers[1].parameters(), self.classifiers[2].parameters()
         # ):
-        #     param_m.data = torch.minimum(param_1, param_2) * (param_1 * param_2 > 0).float()
+        #     mask = ((param_1[1] - param_1[0]) * (param_2[1] - param_2[0]) > 0).float()
+        #     param_m.data = (param_1 + param_2)/2 * mask.reshape(1, -1)
         # self.classifiers.append(new_classifier)
 
-        # mean
-        new_classifier = copy.deepcopy(classifier)
-        for param_m, param_1, param_2 in zip(
-            new_classifier.parameters(), self.classifiers[1].parameters(), self.classifiers[2].parameters()
-        ):
-            mask = ((param_1[1] - param_1[0]) * (param_2[1] - param_2[0]) > 0).float()
-            param_m.data = (param_1 + param_2)/2 * mask.reshape(1, -1)
-        self.classifiers.append(new_classifier)
-
-        new_classifier = copy.deepcopy(classifier)
-        for param_m, param_1, param_2, param_0 in zip(
-            new_classifier.parameters(), self.classifiers[1].parameters(),
-            self.classifiers[2].parameters(), self.classifiers[0].parameters()
-        ):
-            mask = (
-                ((param_1[1] - param_1[0]) - (param_0[1] - param_0[0])) *
-                ((param_2[1] - param_2[0]) - (param_0[1] - param_0[0]))
-                > 0).float()
-            # mask = (torch.rand_like(mask) > 0.25).float()
-            param_m.data = (param_1 + param_2) / 2 * mask.reshape(1, -1)
-        self.classifiers.append(new_classifier)
+        # new_classifier = copy.deepcopy(classifier)
+        # for param_m, param_1, param_2, param_0 in zip(
+        #     new_classifier.parameters(), self.classifiers[1].parameters(),
+        #     self.classifiers[2].parameters(), self.classifiers[0].parameters()
+        # ):
+        #     mask = (
+        #         ((param_1[1] - param_1[0]) - (param_0[1] - param_0[0])) *
+        #         ((param_2[1] - param_2[0]) - (param_0[1] - param_0[0]))
+        #         > 0).float()
+        #     # mask = (torch.rand_like(mask) > 0.25).float()
+        #     param_m.data = (param_1 + param_2) / 2 * mask.reshape(1, -1)
+        # self.classifiers.append(new_classifier)
 
         # import pdb; pdb.set_trace()
 
