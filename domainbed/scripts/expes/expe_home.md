@@ -185,3 +185,27 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m domainbed.scripts.sweep launch --data_di
    1348141   gpu_p13 pacs3_erm012wn_ihome0123r40_lp  utr15kn  R       0:47      1 r11i2n2
    1348140   gpu_p13 pacs3_erm012wn_ihome0123r20_lp  utr15kn  R       1:07      1 r11i1n7
    1348126   gpu_p13 pacs3_erm012wn_ihome0123r0_lp_  utr15kn  R       3:39      1 r10i7n2
+
+
+
+# from pacs
+
+        SAVE_ONLY_FEATURES=1 MODEL_SELECTION=oracle WHICHMODEL=step$EPOCH INCLUDEVAL_UPTO=4 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916 --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/lp/home0_erm123wn_ipacs0123r20_lp_0916.pkl 20 --topk 0
+
+/gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916
+/gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r20_lp_0916
+
+
+
+
+/gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r40_lp_0916
+
+
+#
+
+Saving new best score at step: 4500 at path: model_best.pkl
+0.6585993821          0.6659793814          0.7500000000          0.6689576174          0.8910472973          0.8478015784          0.8746414228          0.8243398393          75.7981462410         0.6610478103          7.8502902985          4600                  0.1805882621
+0.6534500515          0.6659793814          0.7511454754          0.6643757159          0.8873873874          0.8511837655          0.8737808376          0.8220436280          77.4459320288         0.6528623080          7.8502902985          4700                  0.1906996822
+0.6565396498          0.6721649485          0.7474226804          0.6678121420          0.8902027027          0.8444193912          0.8815261044          0.8450057405          79.0937178167         0.6453106230          7.8502902985          4800                  0.1846068048
+0.6575695160          0.6659793814          0.7568728522          0.6666666667          0.8921734234          0.8489289741          0.8763625932          0.8289322618          80.7415036045         0.6395380396          7.8502902985          4900                  0.1838004732
+0.6549948507          0.6618556701          0.7491408935          0.6632302405          0.8921734234          0.8602029312          0.8763625932          0.8243398393          82.3892893924         0.6444481599          7.8502902985          5000                  0.1874449897

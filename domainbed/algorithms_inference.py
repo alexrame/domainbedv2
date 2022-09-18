@@ -272,14 +272,14 @@ class DiWA(algorithms.ERM):
         dict_diversity = collections.defaultdict(list)
         num_classifiers = min(len(self.classifiers), float(os.environ.get("MAXM", math.inf)))
         num_members = min(len(self.networks), float(os.environ.get("MAXM", math.inf)))
-        # regexes = [("waens", "wa_ens")]
+        regexes = [("waens", "wa_ens")]
         # regexes = [("netcla0", "net0_cla0"), ("netcla1", "net1_cla1"), ("netcla2", "net2_cla2")]
-        regexes = [
-            (f"cla{i}{j}", f"cla{i}_cla{j}")
-            for i in range(num_classifiers)
-            for j in range(i + 1, num_classifiers)
-        ]
-        # regexes += [("netm", f"net{i}_net{j}") for i in range(num_members) for j in range(i + 1, num_members)]
+        # regexes = [
+        #     (f"cla{i}{j}", f"cla{i}_cla{j}")
+        #     for i in range(num_classifiers)
+        #     for j in range(i + 1, num_classifiers)
+        # ]
+        regexes += [("netm", f"net{i}_net{j}") for i in range(num_members) for j in range(i + 1, num_members)]
         for regexname, regex in regexes:
             key0, key1 = regex.split("_")
 
