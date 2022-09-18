@@ -164,8 +164,10 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
         if "model_dict" in save_dict:
             algorithm.load_state_dict(save_dict["model_dict"], strict=False)
         elif checkpoint_weight != -1:
+            print("Load network")
             algorithm.network.load_state_dict(save_dict)
         else:
+            print("Load featurizer")
             algorithm.featurizer.load_state_dict(save_dict)
 
         if checkpoint_weight != -1:
