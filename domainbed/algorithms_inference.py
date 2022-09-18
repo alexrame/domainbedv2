@@ -193,7 +193,7 @@ class DiWA(algorithms.ERM):
 
             for i, classifier in enumerate(self.classifiers):
                 _logits_i = classifier(features)
-                # logits_enscla.append(_logits_i)
+                logits_enscla.append(_logits_i)
                 dict_predictions["cla" + str(i)] = _logits_i
 
             if len(self.masks) != 0:
@@ -205,6 +205,8 @@ class DiWA(algorithms.ERM):
 
             #     conflogits_enscla_minus1.append(get_conf(_logits_i, power=-1) * _logits_i)
             #     conflogits_enscla_minus2.append(get_conf(_logits_i, power=-2) * _logits_i)
+
+            dict_predictions["enscla"] = torch.mean(torch.stack(logits_enscla, dim=0), 0)
 
             # dict_predictions["ensclaminus1"] = torch.mean(
             #     torch.stack(conflogits_enscla_minus1, dim=0), 0
