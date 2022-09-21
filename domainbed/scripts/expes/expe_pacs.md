@@ -12,6 +12,11 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m domainbed.scripts.sweep launch --data_di
 0.9535452323          0.9529914530          0.9970059880          0.8917197452          21                    2.0000000000          stepbest
 
 
+env_0_out_acc         env_0_out_acc_enscla  env_1_out_acc         env_1_out_acc_enscla  env_2_out_acc         env_2_out_acc_enscla  env_3_out_acc         env_3_out_acc_enscla  length                robust                which
+0.9779951100          0.9779951100          0.9786324786          0.9786324786          0.9880239521          0.9880239521          0.9681528662          0.9681528662          20                    0.0000000000          stepbest
+
+
+
 LOAD_ONLY_FEATURES=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.train --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --algorithm ERM --dataset OfficeHome --test_envs 0 --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/specm/pacs_erm0123_lp_0916_r0.pkl --path_for_save /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/lp/home0_erm123wn_ipacs0123r0_lp_0916.pkl --train_only_classifier 1
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m domainbed.scripts.sweep launch --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --output_dir=/gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_ipacs0123r0_lp_0916 --command_launcher multi_gpu --datasets OfficeHome --algorithms ERM --test_envs 0 --n_hparams 20 --n_trials 1 --train_only_classifier 0 --save_model_every_checkpoint 1 --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/lp/home0_erm123wn_ipacs0123r0_lp_0916.pkl
 
@@ -35,3 +40,21 @@ Saving new best score at step: 4900 at path: model_best.pkl
 0.9151921904          0.8875305623          0.8640724947          0.8589743590          0.9917664671          0.9730538922          0.5648854962          0.5656050955          119.7604790419        0.2396117578          7.8485202789          5000                  0.1147945070
 # rinf
 0.8816351434          0.8630806846          0.8358208955          0.8376068376          0.9872754491          0.9850299401          0.4624681934          0.4726114650          119.7604790419        0.3207884185          7.8485202789          5000                  0.1144417500
+
+
+
+# pacs0
+
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m domainbed.scripts.sweep launch --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --output_dir=/gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs0_erm012wn_ihome0123r0_lp_0916 --command_launcher multi_gpu --datasets PACS --algorithms ERM --test_envs 0 --n_hparams 20 --n_trials 1 --train_only_classifier 0 --save_model_every_checkpoint 1 --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/lp/pacs0_erm012wn_ihome0123r0_lp_0916.pkl
+
+
+
+# officehome8
+
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m domainbed.scripts.sweep launch --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --output_dir=/gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs_ermfew_lp_0906 --command_launcher multi_gpu --datasets PACS --algorithms ERM --test_env 3 --n_hparams 20 --n_trials 1 --train_only_classifier 0 --steps 5000 --save_model_every_checkpoint 1 --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/pacs3_ermfew_lp_906 --holdout_fraction 0.8
+
+
+
+OAD_ONLY_FEATURES=1 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.train --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --algorithm ERM --dataset PACS --test_envs 3 --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/specm/home_erm0123_lp_0916_r0.pkl --path_for_save /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/lp/pacs3_erm012fewwn_ihome0123r0_lp_0916.pkl --train_only_classifier 1 --holdout_fraction 0.8
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m domainbed.scripts.sweep launch --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --output_dir=/gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs3_erm012fewwn_ihome0123r0_lp_0916 --command_launcher multi_gpu --datasets PACS --algorithms ERM --test_envs 3 --n_hparams 20 --n_trials 1 --train_only_classifier 0 --save_model_every_checkpoint 1 --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/lp/pacs3_erm012fewwn_ihome0123r0_lp_0916.pkl --holdout_fraction 0.8
+

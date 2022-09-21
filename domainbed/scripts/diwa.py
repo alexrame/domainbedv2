@@ -64,6 +64,16 @@ def create_splits(domain, inf_args, dataset, _filter, holdout_fraction):
                 splits.append(in_)
             elif _filter == "out":
                 splits.append(out_)
+            elif _filter == "insmall":
+                insmall_, inlarge_ = misc.split_dataset(
+                    in_, int(len(in_) * 0.2), misc.seed_hash(inf_args.trial_seed, env_i)
+                )
+                splits.append(insmall_)
+            elif _filter == "outsmall":
+                outsmall_, outlarge_ = misc.split_dataset(
+                    out_, int(len(out_) * 0.2), misc.seed_hash(inf_args.trial_seed, env_i)
+                )
+                splits.append(outsmall_)
             else:
                 raise ValueError(_filter)
 
@@ -320,9 +330,13 @@ def create_data_splits(inf_args, dataset):
         assert inf_args.trial_seed != -1
         dict_domain_to_filter["train"] = "out"
 
-    if os.environ.get("INCLUDE_UPTO", "0") != "0":
-        for env_i in range(0, int(os.environ.get("INCLUDE_UPTO", "0"))):
+    if os.environ.get("INCLUDETSV_UPTO", "0") != "0":
+        for env_i in range(0, int(os.environ.get("INCLUDETSV_UPTO", "0"))):
+            dict_domain_to_filter["env_" + str(env_i) + "_in"] = "insmall"
             dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
+    if os.environ.get("INCLUDETVS_UPTO", "0") != "0":
+        for env_i in range(0, int(os.environ.get("INCLUDETVS_UPTO", "0"))):
+            dict_domain_to_filter["env_" + str(env_i) + "_out"] = "outsmall"
             dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
     if os.environ.get("INCLUDEVAL_UPTO", "0") != "0":
         for env_i in range(0, int(os.environ.get("INCLUDEVAL_UPTO", "0"))):
@@ -330,7 +344,6 @@ def create_data_splits(inf_args, dataset):
 
     for domain in dict_domain_to_filter:
         holdout_fraction = float(os.environ.get("HOLDOUT", 0.2))
-        # if domain.startswith("test") else 0.2
         _data_splits = create_splits(
             domain,
             inf_args,
