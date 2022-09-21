@@ -47,7 +47,7 @@ Saving new best score at step: 4900 at path: model_best.pkl
 
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m domainbed.scripts.sweep launch --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --output_dir=/gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs0_erm012wn_ihome0123r0_lp_0916 --command_launcher multi_gpu --datasets PACS --algorithms ERM --test_envs 0 --n_hparams 20 --n_trials 1 --train_only_classifier 0 --save_model_every_checkpoint 1 --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/lp/pacs0_erm012wn_ihome0123r0_lp_0916.pkl
 
-
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m domainbed.scripts.sweep launch --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --output_dir=/gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs_ermwnr_lp_0906 --command_launcher multi_gpu --datasets PACS --algorithms ERM --test_envs 0 --n_hparams 20 --n_trials 1 --train_only_classifier 0 --save_model_every_checkpoint 1 --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/pacs0_lp_906
 
 # officehome8
 

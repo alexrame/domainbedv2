@@ -319,4 +319,5 @@ enshome0_erm123_lp_0824_r20.slurm_1447069.out
 
 #
 
+CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m domainbed.scripts.sweep launch --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --output_dir=/gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123fewwn_ipacs0123r0_lp_0916 --command_launcher multi_gpu --datasets OfficeHome --algorithms ERM --test_envs 0 --n_hparams 20 --n_trials 1 --train_only_classifier 0 --save_model_every_checkpoint 1 --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/lp/home0_erm123fewwn_ipacs0123r0_lp_0916.pkl  --holdout_fraction 0.8
 
