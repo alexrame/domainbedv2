@@ -258,7 +258,13 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
     if "MAXM" in os.environ:
         dict_results["maxm"] = int(os.environ["MAXM"])
     if "WHICHMODEL" in os.environ:
-        dict_results["which"] = str(os.environ["WHICHMODEL"])
+        dict_results["step"] = str(os.environ["WHICHMODEL"])
+        if dict_results["step"].startswith("step"):
+            dict_results["step"] = dict_results["step"][4:]
+        try:
+            dict_results["step"] = int(dict_results["step"])
+        except:
+            pass
     if inf_args.checkpoints:
         dict_results["robust"] = float(inf_args.checkpoints[0][-1]) / 20
 
