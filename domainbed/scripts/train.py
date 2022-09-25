@@ -211,7 +211,7 @@ if __name__ == "__main__":
     n_steps = args.steps or dataset.N_STEPS
     checkpoint_freq = args.checkpoint_freq or dataset.CHECKPOINT_FREQ
 
-    def save_checkpoint(filename, results=None):
+    def save_checkpoint(filename, results=None, light=False):
         if args.skip_model_save:
             return
         save_dict = {
@@ -220,12 +220,17 @@ if __name__ == "__main__":
             "model_num_classes": dataset.num_classes,
             "model_num_domains": len(dataset) - len(args.test_envs),
             "model_hparams": hparams,
-            "model_dict": algorithm.state_dict()
         }
+        if not light:
+            save_dict["model_dict"] = algorithm.state_dict()
+        else:
+            save_dict["network_dict"] = algorithm.network.state_dict()
+
         ## DiWA ##
         if results is not None:
             save_dict["results"] = results
-        torch.save(save_dict, os.path.join(args.output_dir, filename))
+        save_path = os.path.join(args.output_dir, filename)
+        torch.save(save_dict, save_path)
 
     best_score = -float("inf")
     last_results_keys = None
@@ -302,7 +307,9 @@ if __name__ == "__main__":
             checkpoint_vals = collections.defaultdict(lambda: [])
 
             if misc.is_not_none(args.save_model_every_checkpoint):
-                save_checkpoint(f'model_step{step}.pkl', results=json.dumps(results, sort_keys=True))
+                save_checkpoint(
+                    f'model_step{step}.pkl', results=json.dumps(results, sort_keys=True),
+                    light=True)
 
     save_checkpoint(
         'model.pkl',
