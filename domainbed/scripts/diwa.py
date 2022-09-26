@@ -344,8 +344,8 @@ def create_data_splits(inf_args, dataset):
             dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
     if os.environ.get("INCLUDETVS_UPTO", "0") != "0":
         for env_i in range(0, int(os.environ.get("INCLUDETVS_UPTO", "0"))):
-            dict_domain_to_filter["env_" + str(env_i) + "_out"] = "outsmall"
             dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
+            dict_domain_to_filter["env_" + str(env_i) + "_out"] = "outsmall"
     if os.environ.get("INCLUDEVAL_UPTO", "0") != "0":
         for env_i in range(0, int(os.environ.get("INCLUDEVAL_UPTO", "0"))):
             dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
