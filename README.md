@@ -1,7 +1,7 @@
 # Diverse Weight Averaging for Out-of-Distribution Generalization
 
 Anonymous PyTorch implementation to reproduce our main experiment (Table 1) on the DomainBed benchmark.
-
+Should be updated
 
 ## DomainBed
 
