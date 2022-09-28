@@ -177,7 +177,7 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
                 algorithm.load_state_dict(save_dict["model_dict"], strict=False)
             elif "network_dict" in save_dict:
                 algorithm.network.load_state_dict(save_dict["network_dict"])
-            elif checkpoint_weight != -1:
+            elif checkpoint_weight >= 0:
                 print(f"Load network {checkpoint} {checkpoint_weight}")
                 algorithm.network.load_state_dict(save_dict)
             else:
@@ -185,11 +185,11 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
                 algorithm.featurizer.load_state_dict(save_dict)
         except Exception as e:
             print(f"Load {checkpoint} {checkpoint_weight}")
-            print(checkpoint_weight != -1)
-            time.sleep()
+            print("checkpoint_weight: ", checkpoint_weight)
+            time.sleep(1)
             raise e
 
-        if checkpoint_weight != -1:
+        if checkpoint_weight >= 0:
             if "mean" in action:
                 wa_algorithm.update_mean_network(algorithm.network, weight=checkpoint_weight)
 
@@ -268,7 +268,9 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
         except:
             pass
     if inf_args.checkpoints:
-        dict_results["robust"] = float(inf_args.checkpoints[0][-1]) / 20
+        dict_results["robust"] = np.sum([
+            float(cktp[-1]) / 20
+            for cktp in inf_args.checkpoints])
 
     return dict_results
 
