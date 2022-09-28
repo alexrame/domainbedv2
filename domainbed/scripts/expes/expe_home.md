@@ -332,3 +332,9 @@ env_0_in_acc          env_0_out_acc         env_1_in_acc          env_1_out_acc 
 env_0_in_acc          env_0_out_acc         env_1_in_acc          env_1_out_acc         env_2_in_acc          env_2_out_acc         env_3_in_acc          env_3_out_acc         length                maxm                  robust                step
 0.9871134021          0.8020618557          0.9383954155          0.7605956472          0.9915492958          0.8940248027          0.9870875179          0.8323765786          1                     3                     0.0000000000          best
 0.9896907216          0.7546391753          0.9555873926          0.7651775487          0.9887323944          0.9064261556          0.9827833572          0.8404133180          1                     3                     0.0000000000          best
+
+
+sbatch -A gtw@v100 enshome_erm0123wn_idn1erm0921r0top1_lp_0916_r0.slurm
+sbatch -A gtw@v100 enshome_erm0123wn_idn1erm0921r0top1_lp_0916_r20.slurm
+sbatch -A gtw@v100 enshome_erm0123wn_idn1erm0921r20top1_lp_0916_r0.slurm
+sbatch -A gtw@v100 enshome_erm0123wn_idn1erm0921r20top1_lp_0916_r20.slurm
