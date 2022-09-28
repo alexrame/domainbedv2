@@ -48,11 +48,8 @@ class DiWA(algorithms.ERM):
 
     def update_mean_featurizer(self, featurizer, weight=1.):
 
-        if self.featurizer is None or weight == -1:
+        if self.featurizer is None:
             self.featurizer = copy.deepcopy(featurizer)
-            self.global_count_feat = 0
-            if weight == -1:
-                weight = 1
 
         assert weight >= 0
 

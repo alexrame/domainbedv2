@@ -214,7 +214,8 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
                 wa_algorithm.update_var_network(algorithm.network)
         else:
             assert "feats" in action
-            wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight)
+            wa_algorithm.update_mean_featurizer(
+                algorithm.featurizer, weight=-checkpoint_weight)
 
         del algorithm
 
