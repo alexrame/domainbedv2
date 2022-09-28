@@ -104,6 +104,12 @@ topk=0
 
 srun /private/home/alexandrerame/.conda/envs/pytorch/bin/python3 /private/home/alexandrerame/domainbedv2/domainbed/scripts/diwa.py --trial_seed 0 --data_dir ${data_dir} --dataset ${dataset} --output_dir ${expe_dir}/home/home_erm_lp${train_env}_idn${train_env_transfer}r${robust_ft_transfer}t${topk_transfer}_0926 --checkpoints ${data_dir}/inits/home/fromdn/home${test_env}_lp_idn${train_env_transfer}r${robust_ft_transfer}t${topk_transfer}_0926.pkl ${robust_ft} --test_env ${test_env} --topk ${topk}
 
+## rand officehome
+
+data_dir=/private/home/alexandrerame/dataplace/data/domainbed
+dataset=OfficeHome
+
+srun /private/home/alexandrerame/.conda/envs/pytorch/bin/python3 /private/home/alexandrerame/domainbedv2/domainbed/scripts/train.py --data_dir ${data_dir} --algorithm ERM --dataset ${dataset} --test_envs -1 --path_for_init ${data_dir}/inits/home/home_rand_0926.pkl --path_for_save ${data_dir}/inits/home/home_rand_0926.pkl --train_only_classifier 1 --steps -1
 
 
 ## lp officehome
@@ -113,7 +119,7 @@ dataset=OfficeHome
 
 test_env="todo"
 
-srun /private/home/alexandrerame/.conda/envs/pytorch/bin/python3 /private/home/alexandrerame/domainbedv2/domainbed/scripts/train.py --data_dir ${data_dir} --algorithm ERM --dataset ${dataset} --test_envs ${test_env} --path_for_init ${data_dir}/inits/home/home_rand_0926.pkl --path_for_save ${data_dir}/inits/home/home${test_env}_lp_0926.pkl --train_only_classifier 1
+srun /private/home/alexandrerame/.conda/envs/pytorch/bin/python3 /private/home/alexandrerame/domainbedv2/domainbed/scripts/train.py --data_dir ${data_dir} --algorithm ERM --dataset ${dataset} --test_envs ${test_env} --path_for_save ${data_dir}/inits/home/home${test_env}_lp_0926.pkl --train_only_classifier 1
 
 ## sweep dn
 
@@ -123,4 +129,4 @@ dataset=OfficeHome
 
 test_env="todo"
 
-srun /private/home/alexandrerame/.conda/envs/pytorch/bin/python3 /private/home/alexandrerame/domainbedv2/domainbed/scripts/sweep.py launch --n_hparams 20 --save_model_every_checkpoint 0 --data_dir ${data_dir} --datasets ${dataset} --algorithms ERM --path_for_init ${data_dir}/inits/home/home${test_env}_lp_0926.pkl --output_dir ${expe_dir}/home/home${test_env}_lp_0926 --test_envs ${test_env}
+srun /private/home/alexandrerame/.conda/envs/pytorch/bin/python3 /private/home/alexandrerame/domainbedv2/domainbed/scripts/sweep.py launch --n_hparams 20 --save_model_every_checkpoint 1 --data_dir ${data_dir} --datasets ${dataset} --algorithms ERM --path_for_init ${data_dir}/inits/home/home${test_env}_lp_0926.pkl --output_dir ${expe_dir}/home/home${test_env}_erm_lp_0926 --test_envs ${test_env}
