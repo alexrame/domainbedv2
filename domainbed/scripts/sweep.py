@@ -165,12 +165,12 @@ if __name__ == "__main__":
     parser.add_argument('--algorithms', nargs='+', type=str, default=algorithms.ALGORITHMS)
     parser.add_argument('--task', type=str, default="domain_generalization")
     parser.add_argument('--n_hparams_from', type=int, default=0)
-    parser.add_argument('--n_hparams', type=int, default=20)
     parser.add_argument('--output_dir', type=str, required=True)
     parser.add_argument('--data_dir', type=str, required=True)
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--n_trials', type=int, default=3)
-    parser.add_argument('--command_launcher', type=str, required=True)
+    parser.add_argument('--n_hparams', type=int, default=20)
+    parser.add_argument('--n_trials', type=int, default=1)
+    parser.add_argument('--command_launcher', type=str, default="multi_gpu")
     parser.add_argument('--steps', type=int, default=None)
     parser.add_argument('--hparams', type=str, default=None)
     parser.add_argument('--holdout_fraction', type=float, default=0.2)
@@ -178,9 +178,9 @@ if __name__ == "__main__":
     parser.add_argument('--ask_confirmation', action='store_true')
     ## DiWA ##
     parser.add_argument('--test_envs', type=int, nargs='+', default=[0])
-    parser.add_argument('--path_for_init', type=str, default=None)
-    parser.add_argument('--train_only_classifier', type=str, default=None)
-    parser.add_argument('--save_model_every_checkpoint', type=str, default=None)
+    parser.add_argument('--path_for_init', type=str, default="")
+    parser.add_argument('--train_only_classifier', type=str, default="0")
+    parser.add_argument('--save_model_every_checkpoint', type=str, default="0")
 
     args = parser.parse_args()
 

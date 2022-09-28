@@ -338,3 +338,8 @@ sbatch -A gtw@v100 enshome_erm0123wn_idn1erm0921r0top1_lp_0916_r0.slurm
 sbatch -A gtw@v100 enshome_erm0123wn_idn1erm0921r0top1_lp_0916_r20.slurm
 sbatch -A gtw@v100 enshome_erm0123wn_idn1erm0921r20top1_lp_0916_r0.slurm
 sbatch -A gtw@v100 enshome_erm0123wn_idn1erm0921r20top1_lp_0916_r20.slurm
+
+sbatch -A gtw@v100 enspacs_erm0123wn_idn1erm0921r0top1_lp_0916_r0.slurm
+sbatch -A gtw@v100 enspacs_erm0123wn_idn1erm0921r0top1_lp_0916_r20.slurm
+sbatch -A gtw@v100 enspacs_erm0123wn_idn1erm0921r20top1_lp_0916_r0.slurm
+sbatch -A gtw@v100 enspacs_erm0123wn_idn1erm0921r20top1_lp_0916_r20.slurm
