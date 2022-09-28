@@ -324,3 +324,11 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m domainbed.scripts.sweep launch --data_di
 
 
 CUDA_VISIBLE_DEVICES=0,1,2,3 python3 -m domainbed.scripts.sweep launch --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --output_dir=/gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_idn1erm0921r40_lp_0916 --command_launcher multi_gpu --datasets OfficeHome --algorithms ERM --test_envs 0 --n_hparams 20 --n_trials 1 --train_only_classifier 0 --save_model_every_checkpoint 1 --path_for_init /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/lp/home0_erm123wn_idn1erm0921r40_lp_0916.pkl
+
+
+
+env_0_in_acc          env_0_out_acc         env_1_in_acc          env_1_out_acc         env_2_in_acc          env_2_out_acc         env_3_in_acc          env_3_out_acc         length                maxm                  robust                step
+0.9922680412          0.8103092784          0.9541547278          0.7938144330          0.9957746479          0.9210822999          0.9942611191          0.8645235362          20                    3                     0.0000000000          best
+env_0_in_acc          env_0_out_acc         env_1_in_acc          env_1_out_acc         env_2_in_acc          env_2_out_acc         env_3_in_acc          env_3_out_acc         length                maxm                  robust                step
+0.9871134021          0.8020618557          0.9383954155          0.7605956472          0.9915492958          0.8940248027          0.9870875179          0.8323765786          1                     3                     0.0000000000          best
+0.9896907216          0.7546391753          0.9555873926          0.7651775487          0.9887323944          0.9064261556          0.9827833572          0.8404133180          1                     3                     0.0000000000          best
