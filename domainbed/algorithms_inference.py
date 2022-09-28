@@ -23,7 +23,6 @@ class ERM(algorithms.ERM):
         )
         self.network = nn.Sequential(self.featurizer, self.classifier)
         self.network_ma = copy.deepcopy(self.network)
-        self.mask_parameters = nn.Parameter(torch.zeros(self.featurizer.n_outputs))
 
 class DiWA(algorithms.ERM):
 
@@ -44,7 +43,6 @@ class DiWA(algorithms.ERM):
         self.var_network = None
         self.networks = []
         self.classifiers = []
-        self.masks = []
 
     def update_mean_featurizer(self, featurizer, weight=1.):
 
@@ -113,53 +111,6 @@ class DiWA(algorithms.ERM):
 
     def add_classifier(self, classifier):
         self.classifiers.append(classifier)
-        # if not os.environ.get('CLADEBUG'):
-        #     return
-        # if len(self.classifiers) != 4:
-        #     return
-
-        # #     import pdb; pdb.set_trace()
-        # # # minimum
-        # # new_classifier = copy.deepcopy(classifier)
-        # # for param_m, param_1, param_2 in zip(
-        # #     new_classifier.parameters(), self.classifiers[1].parameters(), self.classifiers[2].parameters()
-        # # ):
-        # #     param_m.data = torch.minimum(param_1, param_2) * (param_1 * param_2 > 0).float()
-        # # self.classifiers.append(new_classifier)
-
-        # # mean
-        # new_classifier = copy.deepcopy(classifier)
-        # for param_m, param_1, param_2 in zip(
-        #     new_classifier.parameters(), self.classifiers[1].parameters(), self.classifiers[2].parameters()
-        # ):
-        #     mask = ((param_1[1] - param_1[0]) * (param_2[1] - param_2[0]) > 0).float()
-        #     param_m.data = (param_1 + param_2)/2 * mask.reshape(1, -1)
-        # self.classifiers.append(new_classifier)
-
-        # new_classifier = copy.deepcopy(classifier)
-        # for param_m, param_1, param_2, param_0 in zip(
-        #     new_classifier.parameters(), self.classifiers[1].parameters(),
-        #     self.classifiers[2].parameters(), self.classifiers[0].parameters()
-        # ):
-        #     mask = (
-        #         ((param_1[1] - param_1[0]) - (param_0[1] - param_0[0])) *
-        #         ((param_2[1] - param_2[0]) - (param_0[1] - param_0[0]))
-        #         > 0).float()
-        #     # mask = (torch.rand_like(mask) > 0.25).float()
-        #     param_m.data = (param_1 + param_2) / 2 * mask.reshape(1, -1)
-        # self.classifiers.append(new_classifier)
-
-        # import pdb; pdb.set_trace()
-
-    def add_mask(self, mask):
-        self.masks.append(mask)
-        print(mask)
-        if len(self.masks) != 2:
-            return
-
-        new_mask = nn.Parameter(torch.minimum(self.masks[0], self.masks[1]))
-        print(new_mask)
-        self.masks.append(new_mask)
 
     def predict(self, x):
         if self.network_ma is not None:
@@ -193,16 +144,6 @@ class DiWA(algorithms.ERM):
                 logits_enscla.append(_logits_i)
                 # dict_predictions["cla" + str(i)] = _logits_i
 
-            if len(self.masks) != 0:
-                for i, mask in enumerate(self.masks):
-                    features_masked = features * torch.sigmoid(mask)
-                    _logits_i = self.classifiers[0](features_masked)
-                    # does not matter if 0 or 1, they are the same
-                    dict_predictions["mask" + str(i)] = _logits_i
-
-            #     conflogits_enscla_minus1.append(get_conf(_logits_i, power=-1) * _logits_i)
-            #     conflogits_enscla_minus2.append(get_conf(_logits_i, power=-2) * _logits_i)
-
             dict_predictions["enscla"] = torch.mean(torch.stack(logits_enscla, dim=0), 0)
 
             # dict_predictions["ensclaminus1"] = torch.mean(
@@ -227,8 +168,6 @@ class DiWA(algorithms.ERM):
             network.to(device)
         for classifier in self.classifiers:
             classifier.to(device)
-        for mask in self.masks:
-            mask.to(device)
 
     def get_dict_prediction_stats(
         self,

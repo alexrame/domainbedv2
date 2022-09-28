@@ -203,10 +203,6 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
                 assert "feats" in action
                 wa_algorithm.add_classifier(algorithm.classifier)
 
-            if "mask" in action:
-                assert "cla" in action
-                wa_algorithm.add_mask(algorithm.mask_parameters)
-
             if "netm" in action:
                 wa_algorithm.add_network(algorithm.network)
 
