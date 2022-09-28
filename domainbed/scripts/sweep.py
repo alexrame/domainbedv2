@@ -109,7 +109,7 @@ def all_test_env_combinations(n):
 
 def make_args_list(
     n_trials, dataset_names, algorithms, n_hparams_from, n_hparams, steps, data_dir, task,
-    holdout_fraction, single_test_envs, single_train_envs, hparams, force_test_envs, **kwargs
+    holdout_fraction, single_test_envs, hparams, force_test_envs, **kwargs
 ):
     args_list = []
     for trial_seed in range(n_trials):
@@ -118,14 +118,7 @@ def make_args_list(
 
                 # select test envs
                 if force_test_envs is not None:
-                    all_test_envs = force_test_envs
-                elif single_train_envs:
-                    all_test_envs = [
-                        [j
-                         for j in range(datasets.num_environments(dataset))
-                         if j != i]
-                        for i in range(datasets.num_environments(dataset))
-                    ]
+                    all_test_envs = [force_test_envs]
                 elif single_test_envs:
                     all_test_envs = [[i] for i in range(datasets.num_environments(dataset))]
                 else:
@@ -172,23 +165,22 @@ if __name__ == "__main__":
     parser.add_argument('--algorithms', nargs='+', type=str, default=algorithms.ALGORITHMS)
     parser.add_argument('--task', type=str, default="domain_generalization")
     parser.add_argument('--n_hparams_from', type=int, default=0)
-    parser.add_argument('--n_hparams', type=int, default=20)
     parser.add_argument('--output_dir', type=str, required=True)
     parser.add_argument('--data_dir', type=str, required=True)
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--n_trials', type=int, default=3)
-    parser.add_argument('--command_launcher', type=str, required=True)
+    parser.add_argument('--n_hparams', type=int, default=20)
+    parser.add_argument('--n_trials', type=int, default=1)
+    parser.add_argument('--command_launcher', type=str, default="multi_gpu")
     parser.add_argument('--steps', type=int, default=None)
     parser.add_argument('--hparams', type=str, default=None)
     parser.add_argument('--holdout_fraction', type=float, default=0.2)
     parser.add_argument('--single_test_envs', action='store_true')
-    parser.add_argument('--single_train_envs', action='store_true')
     parser.add_argument('--ask_confirmation', action='store_true')
     ## DiWA ##
     parser.add_argument('--test_envs', type=int, nargs='+', default=[0])
-    parser.add_argument('--path_for_init', type=str, default=None)
-    parser.add_argument('--train_only_classifier', type=str, default=None)
-    parser.add_argument('--save_model_every_checkpoint', type=str, default=None)
+    parser.add_argument('--path_for_init', type=str, default="")
+    parser.add_argument('--train_only_classifier', type=str, default="0")
+    parser.add_argument('--save_model_every_checkpoint', type=str, default="0")
 
     args = parser.parse_args()
 
@@ -205,7 +197,6 @@ if __name__ == "__main__":
         single_test_envs=args.single_test_envs,
         hparams=args.hparams,
         ## DiWA ##
-        single_train_envs=args.single_train_envs,
         force_test_envs=args.test_envs,
         path_for_init=args.path_for_init,
         train_only_classifier=args.train_only_classifier,

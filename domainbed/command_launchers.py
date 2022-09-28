@@ -54,8 +54,8 @@ REGISTRY = {
     'multi_gpu': multi_gpu_launcher
 }
 
-try:
-    from domainbed import facebook
-    facebook.register_command_launchers(REGISTRY)
-except ImportError:
-    pass
+# try:
+#     from domainbed import facebook
+#     facebook.register_command_launchers(REGISTRY)
+# except ImportError:
+#     pass

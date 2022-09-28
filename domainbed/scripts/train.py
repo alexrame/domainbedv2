@@ -321,7 +321,7 @@ if __name__ == "__main__":
 
     ## DiWA ##
     if args.path_for_save:
-        assert args.train_only_classifier or n_steps == -1
+        assert misc.is_not_none(args.train_only_classifier) or n_steps == -1
         algorithm.save_path_for_future_init(args.path_for_save)
     # else:
     #     if os.environ.get("MLFLOWEXPES_VERSION", "v0") == "nomlflow":
