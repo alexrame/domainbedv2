@@ -154,7 +154,7 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
 
 
 def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="mean", device="gpu"):
-    model_hparams = {"nonlinear_classifier": False, "resnet18": False}
+    model_hparams = {"nonlinear_classifier": False, "resnet18": False, "resnet_dropout": 0}
 
     for checkpoint, checkpoint_weight in good_checkpoints:
         if device == "cpu":
