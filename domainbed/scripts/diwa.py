@@ -197,7 +197,10 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
                 wa_algorithm.update_mean_network_ma(algorithm.network_ma, weight=checkpoint_weight)
 
             if "feats" in action:
-                wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight)
+                if checkpoint_weight != 1111:
+                    wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight)
+                else:
+                    print("Ugly quick hack for checkpoint_weight: ", checkpoint_weight)
 
             if "cla" in action:
                 assert "feats" in action
