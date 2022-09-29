@@ -154,7 +154,7 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
 
 
 def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="mean", device="gpu"):
-    model_hparams = {"nonlinear_classifier": False}
+    model_hparams = {"nonlinear_classifier": False, "resnet18": False}
 
     for checkpoint, checkpoint_weight in good_checkpoints:
         if device == "cpu":
@@ -162,8 +162,8 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
         else:
             save_dict = torch.load(checkpoint)
 
-        # if "model_hparams" in save_dict:
-        #     model_hparams.udpate(save_dict["model_hparams"])
+        if "model_hparams" in save_dict:
+            model_hparams = save_dict["model_hparams"]
 
         # load individual weights
         algorithm = algorithms_inference.ERM(
