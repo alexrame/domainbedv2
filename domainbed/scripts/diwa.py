@@ -162,8 +162,8 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
         else:
             save_dict = torch.load(checkpoint)
 
-        if "model_hparams" in save_dict:
-            model_hparams.udpate(save_dict["model_hparams"])
+        # if "model_hparams" in save_dict:
+        #     model_hparams.udpate(save_dict["model_hparams"])
 
         # load individual weights
         algorithm = algorithms_inference.ERM(
