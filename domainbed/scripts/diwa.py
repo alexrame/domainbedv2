@@ -228,6 +228,12 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
 
         del algorithm
 
+    if not normalize:
+        print("No normalization of wa")
+        print(wa_algorithm.global_count)
+        print(wa_algorithm.global_count_feat)
+        print(wa_algorithm.global_count_ma)
+
 
 def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits, device):
     wa_algorithm = algorithms_inference.DiWA(
