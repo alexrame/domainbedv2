@@ -484,9 +484,11 @@ def main():
         if inf_args.checkpoints:
             # normalizer = len(selected_checkpoints)/20 if len(selected_checkpoints) else 1.
             checkpoints = [
-                {"name": str(ckpt["name"]), "weight": float(ckpt["val"]), "type": ckpt["type"]}
-                for ckpt in inf_args.checkpoints
-                if float(ckpt["val"]) != 0
+                {
+                    "name": str(ckpt["name"]),
+                    "weight": float(ckpt["weight"]),
+                    "type": ckpt["type"]
+                } for ckpt in inf_args.checkpoints if float(ckpt["weight"]) != 0
             ]
             print(f"Extending inf_args.checkpoints: {checkpoints}")
             selected_checkpoints.extend(checkpoints)
