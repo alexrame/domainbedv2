@@ -190,14 +190,14 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
         try:
             if "model_dict" in save_dict:
                 algorithm.load_state_dict(save_dict["model_dict"], strict=False)
-            elif checkpoint_type in ["network", "classifier"]:
+            elif checkpoint_type in ["network", "classifier", "featurizer"]:
                 print(f"Load network {checkpoint} {checkpoint_weight}")
                 if "network_dict" in save_dict:
                     algorithm.network.load_state_dict(save_dict["network_dict"])
                 else:
                     algorithm.network.load_state_dict(save_dict)
             else:
-                assert checkpoint_type in ["featurizer"]
+                assert checkpoint_type in ["featurizeronly"]
                 print(f"Load featurizer {checkpoint}")
                 algorithm.featurizer.load_state_dict(save_dict)
 
@@ -217,7 +217,7 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
             if "var" in action:
                 wa_algorithm.update_var_network(algorithm.network)
 
-        if checkpoint_type in ["network", "featurizer"]:
+        if checkpoint_type in ["network", "featurizeronly"]:
             if "feats" in action:
                 wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight)
 
