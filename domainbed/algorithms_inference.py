@@ -48,39 +48,48 @@ class DiWA(algorithms.ERM):
 
         if self.featurizer is None:
             self.featurizer = copy.deepcopy(featurizer)
+            use_previous = 0.
+        else:
+            use_previous = 1
 
         for param_n, param_m in zip(featurizer.parameters(), self.featurizer.parameters()):
             if normalize:
                 param_m.data = (param_m.data * self.global_count_feat +
                                 param_n.data * weight) / (weight + self.global_count_feat)
             else:
-                param_m.data = (param_m.data + param_n.data * weight)
+                param_m.data = (param_m.data * use_previous + param_n.data * weight)
         self.global_count_feat += weight
 
     def update_mean_network(self, network, weight=1., normalize=True):
 
         if self.network is None:
             self.network = copy.deepcopy(network)
+            use_previous = 0.
+        else:
+            use_previous = 1
 
         for param_n, param_m in zip(network.parameters(), self.network.parameters()):
             if normalize:
                 param_m.data = (param_m.data * self.global_count +
                                 param_n.data * weight) / (weight + self.global_count)
             else:
-                param_m.data = (param_m.data + param_n.data * weight)
+                param_m.data = (param_m.data * use_previous + param_n.data * weight)
         self.global_count += weight
 
     def update_mean_network_ma(self, network, weight=1., normalize=True):
 
         if self.network_ma is None:
             self.network_ma = copy.deepcopy(network)
+            use_previous = 0.
+        else:
+            use_previous = 1
 
         for param_n, param_m in zip(network.parameters(), self.network_ma.parameters()):
             if normalize:
                 param_m.data = (param_m.data * self.global_count_ma +
                                 param_n.data * weight) / (weight + self.global_count_ma)
             else:
-                param_m.data = (param_m.data + param_n.data * weight)
+                param_m.data = (param_m.data * use_previous + param_n.data * weight)
         self.global_count_ma += weight
 
     def update_var_network(self, network):

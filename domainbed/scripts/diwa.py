@@ -454,10 +454,11 @@ def main():
             selected_indexes.append(i)
             selected_checkpoints = [sorted_checkpoints[index] for index in selected_indexes]
             selected_checkpoints = [
-                (
-                    checkpoint,
-                    weighting_checkpoint(checkpoint, inf_args.weighting, dict_checkpoint_to_score)
-                ) for checkpoint in selected_checkpoints
+                {
+                    "name": checkpoint,
+                    "weight": weighting_checkpoint(checkpoint, inf_args.weighting, dict_checkpoint_to_score),
+                    "type": "network"
+                } for checkpoint in selected_checkpoints
             ]
 
             ood_results = get_wa_results(
@@ -486,12 +487,12 @@ def main():
 
     elif inf_args.weight_selection == "uniform":
         selected_checkpoints = [
-            {
-                "name": checkpoint,
-                "weight": weighting_checkpoint(checkpoint, inf_args.weighting, dict_checkpoint_to_score),
-                "type": "network"
-             } for checkpoint in sorted_checkpoints
-        ]
+                {
+                    "name": checkpoint,
+                    "weight": weighting_checkpoint(checkpoint, inf_args.weighting, dict_checkpoint_to_score),
+                    "type": "network"
+                } for checkpoint in selected_checkpoints
+            ]
         if inf_args.checkpoints:
             # normalizer = len(selected_checkpoints)/20 if len(selected_checkpoints) else 1.
             checkpoints = [ckpt for ckpt in inf_args.checkpoints if float(ckpt["weight"]) != 0][::-1]
