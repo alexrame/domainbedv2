@@ -217,7 +217,7 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
             if "var" in action:
                 wa_algorithm.update_var_network(algorithm.network)
 
-        if checkpoint_type in ["network", "featurizeronly"]:
+        if checkpoint_type in ["network", "featurizer", "featurizeronly"]:
             if "feats" in action:
                 wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight, normalize=normalize)
 
