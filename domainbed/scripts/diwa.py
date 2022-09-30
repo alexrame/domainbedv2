@@ -491,7 +491,7 @@ def main():
                     "name": checkpoint,
                     "weight": weighting_checkpoint(checkpoint, inf_args.weighting, dict_checkpoint_to_score),
                     "type": "network"
-                } for checkpoint in selected_checkpoints
+                } for checkpoint in sorted_checkpoints
             ]
         if inf_args.checkpoints:
             # normalizer = len(selected_checkpoints)/20 if len(selected_checkpoints) else 1.
