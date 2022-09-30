@@ -192,14 +192,14 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
             if "model_dict" in save_dict:
                 algorithm.load_state_dict(save_dict["model_dict"], strict=False)
             elif checkpoint_type in ["network", "classifier", "featurizer"]:
-                print(f"Load network {checkpoint} {checkpoint_weight}")
+                print(f"Load network {checkpoint} {checkpoint_weight} {checkpoint_type}")
                 if "network_dict" in save_dict:
                     algorithm.network.load_state_dict(save_dict["network_dict"])
                 else:
                     algorithm.network.load_state_dict(save_dict)
             else:
                 assert checkpoint_type in ["featurizeronly"]
-                print(f"Load featurizer {checkpoint}")
+                print(f"Load featurizer {checkpoint} {checkpoint_weight} {checkpoint_type}")
                 algorithm.featurizer.load_state_dict(save_dict)
 
         except Exception as e:
@@ -235,6 +235,7 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
         dataset.num_classes,
         len(dataset) - 1,
     )
+    print("selected_checkpoints: ", good_checkpoints)
     load_and_update_networks(
         wa_algorithm, good_checkpoints, dataset, action=["mean"] + inf_args.what, device=device
     )
