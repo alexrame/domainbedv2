@@ -9,22 +9,17 @@ do
 done
 
 
-
-MAXM=3 MODEL_SELECTION=oracle WHICHMODEL=step$EPOCH INCLUDETSV_UPTO=4 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0_ma_saveall_lp_0824 --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0_ermll_saveall_si_0822/3d4174ccb9f69a3d872124137129aa1f/model.pkl 0 /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/specm/dn1_erm02345_lp_r0_0921.pkl -20 --topk 0 --what feats cla
-
-sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_r0.slurm
-sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_r20.slurm
-sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_r0_rfeats20fdn1erm0921r0.slurm
-sbatch -A gtw@v100 enspacs1_erm023wnr_lp_0906_r0.slurm
-sbatch -A gtw@v100 enspacs1_erm023wnr_lp_0906_r20.slurm
-sbatch -A gtw@v100 enspacs1_erm023wnr_lp_0906_r0_rfeats20fdn1erm0921r0.slurm
-
-sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_rfeats1dn-im.slurm
-sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_rfeats2dn-im.slurm
-sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_rfeats7dn-im.slurm
-sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_rfeats12dn-im.slurm
-sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_rfeats18dn-im.slurm
-sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_rfeats30dn-im.slurm
+sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats10dn-im.slurm
+sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats50dn-im.slurm
+sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats5dn-im.slurm
+sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats1dn-im.slurm
+sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats2dn-im.slurm
+sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats7dn-im.slurm
+sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats12dn-im.slurm
+sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats18dn-im.slurm
+sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats30dn-im.slurm
+sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats20dn-im.slurm
+scancel  1936635 1936617 1936619 1936621 1936622 1936623 1936634 1936636 1936637 1936638
 
 # full pipeline from DomainNet to OfficeHome
 
