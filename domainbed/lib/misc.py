@@ -27,7 +27,7 @@ def is_float(element):
     try:
         float(element)
         return True
-    except ValueError:
+    except:
         return False
 
 def is_none(arg):
