@@ -286,12 +286,12 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
 
 
 def weighting_checkpoint(checkpoint, weighting, dict_checkpoint_to_score):
+    if weighting in [None, "uniform"]:
+        return 1.
     if misc.is_float(weighting):
         return float(weighting)
     if "/" in weighting:
         return eval(weighting)
-    if weighting in [None, "uniform"]:
-        return 1.
     if weighting in ["linear"]:
         return dict_checkpoint_to_score[checkpoint]
     if weighting in ["quadratic"]:
