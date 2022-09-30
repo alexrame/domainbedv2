@@ -12,8 +12,12 @@ done
 
 MAXM=3 MODEL_SELECTION=oracle WHICHMODEL=step$EPOCH INCLUDETSV_UPTO=4 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0_ma_saveall_lp_0824 --trial_seed 0 --data_dir /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed --checkpoints /gpfswork/rech/edr/utr15kn/dataplace/experiments/domainbed/home0_ermll_saveall_si_0822/3d4174ccb9f69a3d872124137129aa1f/model.pkl 0 /gpfswork/rech/edr/utr15kn/dataplace/data/domainbed/inits/spec/specm/dn1_erm02345_lp_r0_0921.pkl -20 --topk 0 --what feats cla
 
-
-
+sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_r0.slurm
+sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_r20.slurm
+sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_r0_rfeats20fdn1erm0921r0.slurm
+sbatch -A gtw@v100 enspacs1_erm023wnr_lp_0906_r0.slurm
+sbatch -A gtw@v100 enspacs1_erm023wnr_lp_0906_r20.slurm
+sbatch -A gtw@v100 enspacs1_erm023wnr_lp_0906_r0_rfeats20fdn1erm0921r0.slurm
 # full pipeline from DomainNet to OfficeHome
 
 ## lp dn

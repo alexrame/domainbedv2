@@ -351,3 +351,7 @@ sbatch -A gtw@v100 enspacs_erm0123wn_idn1erm0921r20top1_lp_0916_r20.slurm
 /gpfsdswork/projects/rech/edr/utr15kn/slurmconfig/homeperd0901/trainfromdn/inf1/runs/enshome1_erm023_lp_r0824_r20fdn1erm0921r0.slurm_1842743.out
 /gpfsdswork/projects/rech/edr/utr15kn/slurmconfig/homeperd0901/trainfromdn/inf1/runs/enshome1_erm023_lp_r0824_r20fdn1erm0921r20.slurm_1843366.out
 
+
+
+
+# inf0: lp + features from domainnet
