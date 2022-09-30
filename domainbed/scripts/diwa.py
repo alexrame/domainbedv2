@@ -40,7 +40,7 @@ def _get_args():
         inf_args.checkpoints = [
             {
                 "name": inf_args.checkpoints[3 * i],
-                "weight": inf_args.checkpoints[3 * i + 1],
+                "weight": eval(inf_args.checkpoints[3 * i + 1]),
                 "type": inf_args.checkpoints[3 * i + 2],
             } for i in range(len(inf_args.checkpoints) // 3)
         ]
@@ -48,7 +48,7 @@ def _get_args():
         print("Your checkpoints should be of 'name weight type'")
         inf_args.checkpoints = [
             {"name": inf_args.checkpoints[2 * i],
-            "weight": inf_args.checkpoints[2 * i + 1],
+            "weight": eval(inf_args.checkpoints[2 * i + 1]),
             "type": "network"
             }
             for i in range(len(inf_args.checkpoints) // 2)
@@ -169,6 +169,7 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
 def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="mean", device="gpu"):
     model_hparams = {"nonlinear_classifier": False, "resnet18": False, "resnet_dropout": 0}
 
+    normalize = os.environ.get("NORMALIZE", "1") == "0"
     for ckpt in good_checkpoints:
         checkpoint = ckpt["name"]
         checkpoint_weight = ckpt["weight"]
@@ -202,16 +203,15 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
                 algorithm.featurizer.load_state_dict(save_dict)
 
         except Exception as e:
-            print(f"Load {checkpoint} {checkpoint_weight}")
-            print("checkpoint_weight: ", checkpoint_weight)
+            print(f"Failed when trying to load {checkpoint} {checkpoint_weight} {checkpoint_type}")
             time.sleep(1)
             raise e
 
         if checkpoint_type == "network":
             if "mean" in action:
-                wa_algorithm.update_mean_network(algorithm.network, weight=checkpoint_weight)
+                wa_algorithm.update_mean_network(algorithm.network, weight=checkpoint_weight, normalize=normalize)
             if "ma" in action:
-                wa_algorithm.update_mean_network_ma(algorithm.network_ma, weight=checkpoint_weight)
+                wa_algorithm.update_mean_network_ma(algorithm.network_ma, weight=checkpoint_weight, normalize=normalize)
             if "netm" in action:
                 wa_algorithm.add_network(algorithm.network)
             if "var" in action:
@@ -219,7 +219,7 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
 
         if checkpoint_type in ["network", "featurizeronly"]:
             if "feats" in action:
-                wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight)
+                wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight, normalize=normalize)
 
         if checkpoint_type in ["network", "classifier"]:
             if "cla" in action:
@@ -286,6 +286,10 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
 
 
 def weighting_checkpoint(checkpoint, weighting, dict_checkpoint_to_score):
+    if misc.is_float(weighting):
+        return float(weighting)
+    if "/" in weighting:
+        return eval(weighting)
     if weighting in [None, "uniform"]:
         return 1.
     if weighting in ["linear"]:
@@ -483,13 +487,7 @@ def main():
         ]
         if inf_args.checkpoints:
             # normalizer = len(selected_checkpoints)/20 if len(selected_checkpoints) else 1.
-            checkpoints = [
-                {
-                    "name": str(ckpt["name"]),
-                    "weight": float(ckpt["weight"]),
-                    "type": ckpt["type"]
-                } for ckpt in inf_args.checkpoints if float(ckpt["weight"]) != 0
-            ]
+            checkpoints = [ckpt for ckpt in inf_args.checkpoints if float(ckpt["weight"]) != 0]
             print(f"Extending inf_args.checkpoints: {checkpoints}")
             selected_checkpoints.extend(checkpoints)
 

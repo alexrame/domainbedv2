@@ -18,6 +18,14 @@ sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_r0_rfeats20fdn1erm0921r0.slurm
 sbatch -A gtw@v100 enspacs1_erm023wnr_lp_0906_r0.slurm
 sbatch -A gtw@v100 enspacs1_erm023wnr_lp_0906_r20.slurm
 sbatch -A gtw@v100 enspacs1_erm023wnr_lp_0906_r0_rfeats20fdn1erm0921r0.slurm
+
+sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_rfeats1dn-im.slurm
+sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_rfeats2dn-im.slurm
+sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_rfeats7dn-im.slurm
+sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_rfeats12dn-im.slurm
+sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_rfeats18dn-im.slurm
+sbatch -A gtw@v100 enshome2_erm_saveall_lp_0824_rfeats30dn-im.slurm
+
 # full pipeline from DomainNet to OfficeHome
 
 ## lp dn

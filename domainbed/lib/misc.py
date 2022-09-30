@@ -23,6 +23,13 @@ import socket
 from collections import Counter
 
 
+def is_float(element):
+    try:
+        float(element)
+        return True
+    except ValueError:
+        return False
+
 def is_none(arg):
     return arg in [None, "", "none", "None", "0", "False", "false", False, 0]
 
