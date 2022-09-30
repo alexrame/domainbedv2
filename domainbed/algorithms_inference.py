@@ -49,8 +49,6 @@ class DiWA(algorithms.ERM):
         if self.featurizer is None:
             self.featurizer = copy.deepcopy(featurizer)
 
-        assert weight >= 0
-
         for param_n, param_m in zip(featurizer.parameters(), self.featurizer.parameters()):
             param_m.data = (param_m.data * self.global_count_feat +
                             param_n.data * weight) / (weight + self.global_count_feat)

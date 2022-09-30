@@ -197,7 +197,7 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
                 else:
                     algorithm.network.load_state_dict(save_dict)
             else:
-                assert checkpoint_type == "featurizer"
+                assert checkpoint_type in ["featurizer"]
                 print(f"Load featurizer {checkpoint}")
                 algorithm.featurizer.load_state_dict(save_dict)
 
@@ -278,8 +278,8 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
         except:
             pass
     if inf_args.checkpoints:
-        dict_results["robust"] = np.sum([
-            float(ckpt["weight"]) / 20
+        dict_results["robust"] = "-".join([
+            str(ckpt["weight"]) + "_" + str(ckpt["type"])
             for ckpt in inf_args.checkpoints])
 
     return dict_results
@@ -482,9 +482,9 @@ def main():
              } for checkpoint in sorted_checkpoints
         ]
         if inf_args.checkpoints:
-            normalizer = len(selected_checkpoints)/20 if len(selected_checkpoints) else 1.
+            # normalizer = len(selected_checkpoints)/20 if len(selected_checkpoints) else 1.
             checkpoints = [
-                {"name": str(ckpt["name"]), "weight": float(ckpt["val"]) * normalizer, "type": ckpt["type"]}
+                {"name": str(ckpt["name"]), "weight": float(ckpt["val"]), "type": ckpt["type"]}
                 for ckpt in inf_args.checkpoints
                 if float(ckpt["val"]) != 0
             ]
