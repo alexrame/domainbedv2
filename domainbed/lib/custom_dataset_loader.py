@@ -1,17 +1,26 @@
 import os
+from PIL import Image
 
 from torchvision.datasets import VisionDataset
 
 IMG_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', '.webp')
 
+def pil_loader(path):
+    # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
+    with open(path, "rb") as f:
+        img = Image.open(f)
+        return img.convert("RGB")
+
+
 def default_loader(path):
     from torchvision import get_image_backend
     if get_image_backend() == 'accimage':
-        from torchvision.datasets import accimage_loader
-        return accimage_loader(path)
+        raise ValueError(get_image_backend())
+        # from torchvision.datasets import accimage_loader
+        # return accimage_loader(path)
     else:
-        from torchvision.datasets import pil_loader
         return pil_loader(path)
+
 
 def has_file_allowed_extension(filename, extensions):
     """Checks if a file is an allowed extension.

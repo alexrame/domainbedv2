@@ -353,7 +353,7 @@ class DomainNet(MultipleEnvironmentImageFolder):
 
 
 class iNaturalist(MultipleDomainDataset):
-    CHECKPOINT_FREQ = 500  ## DiWA ##
+    CHECKPOINT_FREQ = 500
     N_STEPS = 15001
     ENVIRONMENTS = ["Reptiles", "Plants", "Insects", "Fungi", "Birds", "Amphibians"]
 
