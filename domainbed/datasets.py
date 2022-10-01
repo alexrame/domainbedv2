@@ -13,6 +13,7 @@ from torch.utils.data import TensorDataset, Subset
 from torchvision.datasets import MNIST, ImageFolder
 from torchvision.transforms.functional import rotate
 
+from domainbed.lib.custom_dataset_loader import find_classes_hierarchy, ImageFolderHierarchy
 # from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
 # from wilds.datasets.fmow_dataset import FMoWDataset
 
@@ -32,6 +33,7 @@ DATASETS = [
     "PACS",
     "OfficeHome",
     "TerraIncognita",
+    "iNaturalist",
     "DomainNet",
     "SVIRO",
     # WILDS datasets
@@ -348,6 +350,68 @@ class DomainNet(MultipleEnvironmentImageFolder):
     def __init__(self, root, test_envs, hparams):
         self.dir = os.path.join(root, "domain_net/")
         super().__init__(self.dir, test_envs, hparams['data_augmentation'], hparams)
+
+
+class iNaturalist(MultipleEnvironmentImageFolder):
+    CHECKPOINT_FREQ = 500  ## DiWA ##
+    N_STEPS = 15001
+    ENVIRONMENTS = ["Reptiles", "Plants", "Insects", "Fungi", "Birds", "Amphibians"]
+
+    def __init__(self, root, test_envs, augment, hparams):
+        super().__init__()
+
+
+    def __init__(self, root, test_envs, hparams):
+        if root.startswith("/private"):
+            root = "/datasets01/inaturalist/090619/"
+        self.dir = os.path.join(root, "train_val2019/")
+
+        augment = hparams['data_augmentation']
+
+        environments = [f.name for f in os.scandir(root) if f.is_dir()]
+        environments = sorted(environments)
+
+        transform = transforms.Compose(
+            [
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            ]
+        )
+
+        augment_transform = transforms.Compose(
+            [
+                # transforms.Resize((224,224)),
+                transforms.RandomResizedCrop(224, scale=(0.7, 1.0)),
+                transforms.RandomHorizontalFlip(),
+                transforms.ColorJitter(0.3, 0.3, 0.3, 0.3),
+                transforms.RandomGrayscale(),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]
+        )
+
+        self.datasets = []
+        classes, class_to_idx = find_classes_hierarchy(self.dir)
+        for i, environment in enumerate(environments):
+
+            if augment and (i not in test_envs):
+                env_transform = augment_transform
+            else:
+                env_transform = transform
+
+            path = os.path.join(root, environment)
+            env_dataset = ImageFolderHierarchy(
+                path, transform=env_transform, classes=classes, class_to_idx=class_to_idx)
+
+            self.datasets.append(env_dataset)
+
+        self.input_shape = (
+            3,
+            224,
+            224,
+        )
+        self.num_classes = len(classes)
 
 
 class OfficeHome(MultipleEnvironmentImageFolder):
