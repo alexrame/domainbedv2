@@ -352,23 +352,20 @@ class DomainNet(MultipleEnvironmentImageFolder):
         super().__init__(self.dir, test_envs, hparams['data_augmentation'], hparams)
 
 
-class iNaturalist(MultipleEnvironmentImageFolder):
+class iNaturalist(MultipleDomainDataset):
     CHECKPOINT_FREQ = 500  ## DiWA ##
     N_STEPS = 15001
     ENVIRONMENTS = ["Reptiles", "Plants", "Insects", "Fungi", "Birds", "Amphibians"]
-
-    def __init__(self, root, test_envs, augment, hparams):
-        super().__init__()
-
 
     def __init__(self, root, test_envs, hparams):
         if root.startswith("/private"):
             root = "/datasets01/inaturalist/090619/"
         self.dir = os.path.join(root, "train_val2019/")
+        super().__init__()
 
         augment = hparams['data_augmentation']
 
-        environments = [f.name for f in os.scandir(root) if f.is_dir()]
+        environments = [f.name for f in os.scandir(self.dir) if f.is_dir()]
         environments = sorted(environments)
 
         transform = transforms.Compose(
@@ -400,7 +397,7 @@ class iNaturalist(MultipleEnvironmentImageFolder):
             else:
                 env_transform = transform
 
-            path = os.path.join(root, environment)
+            path = os.path.join(self.dir, environment)
             env_dataset = ImageFolderHierarchy(
                 path, transform=env_transform, classes=classes, class_to_idx=class_to_idx)
 
