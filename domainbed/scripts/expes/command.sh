@@ -1,4 +1,5 @@
 ssh utr15kn@jean-zay.idris.fr
+sed -i -- 's/home0_erm_saveall_lp_0824/home0_ma_saveall_lp_0824/g' *
 sbatch -A gtw@v100 enshome3_erm012wn_idn1erm0921r0_lp_0916_r0.slurm
 
 for FILE in enspacs1_erm023wn_idn1erm0921r0_lp_0916_r0.slurm_1801193.out enspacs1_erm023wn_idn1erm0921r20_lp_0916_r0.slurm_1801255.out enspacs1_erm023wn_idn1erm0921r40_lp_0916_r0.slurm_1801272.out enspacs1_erm023wn_idn1erm0921r0_lp_0916_r20.slurm_1801043.out enspacs1_erm023wn_idn1erm0921r20_lp_0916_r20.slurm_1801275.out enspacs1_erm023wn_idn1erm0921r40_lp_0916_r20.slurm_1801326.out
@@ -111,6 +112,8 @@ topk=0
 
 srun /private/home/alexandrerame/.conda/envs/pytorch/bin/python3 /private/home/alexandrerame/domainbedv2/domainbed/scripts/diwa.py --trial_seed 0 --data_dir ${data_dir} --dataset ${dataset} --output_dir ${expe_dir}/home/home_erm_lp${train_env}_idn${train_env_transfer}r${robust_ft_transfer}t${topk_transfer}_0926 --checkpoints ${data_dir}/inits/home/fromdn/home${test_env}_lp_idn${train_env_transfer}r${robust_ft_transfer}t${topk_transfer}_0926.pkl ${robust_ft} --test_env ${test_env} --topk ${topk}
 
+
+
 ## rand officehome
 
 data_dir=/private/home/alexandrerame/dataplace/data/domainbed
@@ -137,3 +140,27 @@ dataset=OfficeHome
 test_env="todo"
 
 srun /private/home/alexandrerame/.conda/envs/pytorch/bin/python3 /private/home/alexandrerame/domainbedv2/domainbed/scripts/sweep.py launch --n_hparams 20 --save_model_every_checkpoint 1 --data_dir ${data_dir} --datasets ${dataset} --algorithms ERM --path_for_init ${data_dir}/inits/home/home${test_env}_lp_0926.pkl --output_dir ${expe_dir}/home/home${test_env}_erm_lp_0926 --test_envs ${test_env}
+
+
+
+## diwa for home transfer
+
+export INCLUDETSV_UPTO=4
+export MODEL_SELECTION=train
+export WHICHMODEL=stepbest
+export NORMALIZE=1
+
+data_dir=/private/home/alexandrerame/dataplace/data/domainbed
+expe_dir=/private/home/alexandrerame/dataplace/experiments/domainbed
+dataset=DomainNet
+
+# robust_ft_transfer=0
+# topk_transfer=0
+
+train_env_transfer=0
+test_env="todo"
+robusttransfer=0
+topk=0
+
+srun /private/home/alexandrerame/.conda/envs/pytorch/bin/python3 /private/home/alexandrerame/domainbedv2/domainbed/scripts/diwa.py --trial_seed 0 --dataset ${dataset} --test_env ${test_env} --topk ${topk} --data_dir ${data_dir} --output_dir ${expe_dir}/home/home${test_env}_erm_lp_0926 --checkpoints ${data_dir}/inits/home/home${test_env}_lp_0926.pkl 0 network ${data_dir}/inits/dn/transfer/dn_erm${train_env_transfer}_lp${train_env_transfer}_r0_t0_0926.pkl ${robusttransfer} featurizeronly --weighting 1/20 --what feats cla
+
