@@ -307,9 +307,12 @@ if __name__ == "__main__":
             checkpoint_vals = collections.defaultdict(lambda: [])
 
             if misc.is_not_none(args.save_model_every_checkpoint):
-                save_checkpoint(
-                    f'model_step{step}.pkl', results=json.dumps(results, sort_keys=True),
-                    light=True)
+                if step not in [100, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000, 4200, 4400, 4500, 4600, 4700, 4800, 4900]:
+                    pass
+                else:
+                    save_checkpoint(
+                        f'model_step{step}.pkl', results=json.dumps(results, sort_keys=True),
+                        light=True)
 
     save_checkpoint(
         'model.pkl',

@@ -10,17 +10,28 @@ do
 done
 
 
-sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats10dn-im.slurm
-sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats50dn-im.slurm
-sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats5dn-im.slurm
-sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats1dn-im.slurm
-sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats2dn-im.slurm
-sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats7dn-im.slurm
-sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats12dn-im.slurm
-sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats18dn-im.slurm
-sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats30dn-im.slurm
-sbatch -A gtw@v100 enshome2_erm_lp_0824_rfeats20dn-im.slurm
-scancel  1936635 1936617 1936619 1936621 1936622 1936623 1936634 1936636 1936637 1936638
+
+sbatch enshome0_erm_lp_0926.sh
+sbatch enshome1_erm_lp_0926.sh
+sbatch enshome2_erm_lp_0926.sh
+sbatch enshome3_erm_lp_0926.sh
+sbatch enshome_erm_lp_0926_t010dn.sh
+sbatch enshome_erm_lp_0926_t020dn.sh
+sbatch enshome_erm_lp_0926_t025dn.sh
+sbatch enshome_erm_lp_0926_t030dn.sh
+sbatch enshome_erm_lp_0926_t040dn.sh
+sbatch enshome_erm_lp_0926_t050dn.sh
+sbatch enshome_erm_lp_0926_t060dn.sh
+sbatch enshome_erm_lp_0926_t070dn.sh
+sbatch enshome_erm_lp_0926_t080dn.sh
+sbatch enshome_erm_lp_0926_t090dn.sh
+sbatch enshome_erm_lp_0926_t100dn.sh
+sbatch enshome_erm_lp_0926_t120dn.sh
+sbatch enshome_erm_lp_0926_t140dn.sh
+sbatch enshome_erm_lp_0926_t160dn.sh
+sbatch enshome_erm_lp_0926_t180dn.sh
+sbatch enshome_erm_lp_0926_t200dn.sh
+sbatch enshome_top1_erm_lp_0926_tdn.sh
 
 # full pipeline from DomainNet to OfficeHome
 
