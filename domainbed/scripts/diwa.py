@@ -365,13 +365,23 @@ def create_data_splits(inf_args, dataset):
         for env_i in range(0, int(os.environ.get("INCLUDETSV_UPTO", "0"))):
             dict_domain_to_filter["env_" + str(env_i) + "_in"] = "insmall"
             dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
-    if os.environ.get("INCLUDETVS_UPTO", "0") != "0":
+    elif os.environ.get("INCLUDETVS_UPTO", "0") != "0":
         for env_i in range(0, int(os.environ.get("INCLUDETVS_UPTO", "0"))):
             dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
             dict_domain_to_filter["env_" + str(env_i) + "_out"] = "outsmall"
-    if os.environ.get("INCLUDEVAL_UPTO", "0") != "0":
+    elif os.environ.get("INCLUDE_UPTO", "0") != "0":
+        for env_i in range(0, int(os.environ.get("INCLUDE_UPTO", "0"))):
+            dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
+            dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
+    elif os.environ.get("INCLUDETRAIN_UPTO", "0") != "0":
+        for env_i in range(0, int(os.environ.get("INCLUDEVAL_UPTO", "0"))):
+            dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
+    elif os.environ.get("INCLUDEVAL_UPTO", "0") != "0":
         for env_i in range(0, int(os.environ.get("INCLUDEVAL_UPTO", "0"))):
             dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
+    elif os.environ.get("INCLUDETRAIN_UPTO", "0") != "0":
+        for env_i in range(0, int(os.environ.get("INCLUDETRAIN_UPTO", "0"))):
+            dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
 
     for domain in dict_domain_to_filter:
         holdout_fraction = float(os.environ.get("HOLDOUT", 0.2))

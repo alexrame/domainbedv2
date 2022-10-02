@@ -130,8 +130,10 @@ class DiWA(algorithms.ERM):
     def predict(self, x):
         if self.network_ma is not None:
             dict_predictions = {"": self.network_ma(x)}
-        else:
+        elif len(self.classifiers) == 0:
             dict_predictions = {"": self.network(x)}
+        else:
+            dict_predictions = {}
 
         if len(self.networks) != 0:
             logits_ens = []
