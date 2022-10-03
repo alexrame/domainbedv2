@@ -27,7 +27,7 @@ def _get_args():
         help='Trial number (used for seeding split_dataset and random_hparams).'
     )
     parser.add_argument("--checkpoints", nargs='+', default=[])
-    parser.add_argument('--weighting', type=str, default=None)
+    parser.add_argument('--weighting', type=str, default="None")
 
     # select which checkpoints
     parser.add_argument('--weight_selection', type=str, default="uniform")  # or "restricted"
@@ -292,9 +292,11 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
     return dict_results
 
 
-def weighting_checkpoint(checkpoint, weighting, dict_checkpoint_to_score):
+def weighting_checkpoint(checkpoint, weighting, dict_checkpoint_to_score, len_checkpoint):
     if weighting in [None, "uniform"]:
         return 1.
+    if weighting in "norm":
+        return 1/len_checkpoint
     if misc.is_float(weighting):
         return float(weighting)
     if "/" in weighting:
@@ -465,9 +467,16 @@ def main():
             selected_checkpoints = [sorted_checkpoints[index] for index in selected_indexes]
             selected_checkpoints = [
                 {
-                    "name": checkpoint,
-                    "weight": weighting_checkpoint(checkpoint, inf_args.weighting, dict_checkpoint_to_score),
-                    "type": "network"
+                    "name":
+                    checkpoint,
+                    "weight":
+                    weighting_checkpoint(
+                        checkpoint, inf_args.weighting,
+                        dict_checkpoint_to_score,
+                        len(selected_checkpoints)
+                    ),
+                    "type":
+                    "network"
                 } for checkpoint in selected_checkpoints
             ]
 
@@ -499,7 +508,9 @@ def main():
         selected_checkpoints = [
                 {
                     "name": checkpoint,
-                    "weight": weighting_checkpoint(checkpoint, inf_args.weighting, dict_checkpoint_to_score),
+                    "weight": weighting_checkpoint(
+                        checkpoint, inf_args.weighting, dict_checkpoint_to_score,
+                        len(sorted_checkpoints)),
                     "type": "network"
                 } for checkpoint in sorted_checkpoints
             ]
