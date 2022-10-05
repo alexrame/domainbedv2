@@ -293,7 +293,7 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
 
 
 def weighting_checkpoint(checkpoint, weighting, dict_checkpoint_to_score, len_checkpoint):
-    if weighting in [None, "uniform"]:
+    if weighting in [None, "uniform", "None"]:
         return 1.
     if weighting in "norm":
         return 1/len_checkpoint
