@@ -12,8 +12,13 @@ import json
 import os
 import pandas as pd
 
-# from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
-# from wilds.datasets.fmow_dataset import FMoWDataset
+
+try:
+    # from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
+    # from wilds.datasets.fmow_dataset import FMoWDataset
+    from wilds.datasets.iwildcam_dataset import IWildCamDataset
+except:
+    print("No wilds")
 
 
 # utils #######################################################################
@@ -285,7 +290,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # download_mnist(args.data_dir)
-    download_pacs(args.data_dir)
+    # download_pacs(args.data_dir)
     # download_office_home(args.data_dir)
     # download_domain_net(args.data_dir)
     # download_vlcs(args.data_dir)
@@ -294,3 +299,4 @@ if __name__ == "__main__":
     # download_sviro(args.data_dir)
     # Camelyon17Dataset(root_dir=args.data_dir, download=True)
     # FMoWDataset(root_dir=args.data_dir, download=True)
+    IWildCamDataset(root_dir=args.data_dir, download=True)
