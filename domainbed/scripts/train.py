@@ -297,25 +297,27 @@ if __name__ == "__main__":
                 best_score = current_score
                 results["best_score"] = best_score
                 results["best_step"] = step
-                if step != 0:
-                    print(f"Saving new best score at step: {step} at path: model_best.pkl")
-                    save_checkpoint(
-                        'model_best.pkl',
-                        results=json.dumps(results, sort_keys=True),
-                    )
-                    # algorithm.to(device)
+
+                print(f"Saving new best train at step: {step} at path: model_best.pkl")
+                save_checkpoint(
+                    'model_best.pkl',
+                    results=json.dumps(results, sort_keys=True),
+                )
+                # algorithm.to(device)
             current_score_oracle = misc.get_score(results, args.test_envs, model_selection="oracle")
             if current_score_oracle > best_score_oracle:
                 best_score_oracle = current_score_oracle
                 results["best_score_oracle"] = best_score_oracle
                 results["best_step_oracle"] = step
-                if step != 0:
-                    print(f"Saving new best score at step: {step} at path: model_best.pkl")
-                    save_checkpoint(
-                        'model_bestoracle.pkl',
-                        results=json.dumps(results, sort_keys=True),
-                    )
-                    # algorithm.to(device)
+
+                print(
+                    f"Saving new best oracle at step: {step} at path: model_bestoracle.pkl"
+                )
+                save_checkpoint(
+                    'model_bestoracle.pkl',
+                    results=json.dumps(results, sort_keys=True),
+                )
+                # algorithm.to(device)
 
             checkpoint_vals = collections.defaultdict(lambda: [])
 
