@@ -42,6 +42,8 @@ def get_machine_name():
 
 ## DiWA ##
 def get_score(results, test_envs, metric_key="out_acc", model_selection="train"):
+    if test_envs == [-1] and model_selection == "oracle":
+        return 0.
     val_env_keys = []
     for i in itertools.count():
         acc_key = f'env{i}_' + metric_key

@@ -232,7 +232,8 @@ if __name__ == "__main__":
         save_path = os.path.join(args.output_dir, filename)
         torch.save(save_dict, save_path)
 
-    best_score = -float("inf")
+    best_score = 0
+    best_score_oracle = 0
     last_results_keys = None
     results = {}
 
@@ -300,6 +301,18 @@ if __name__ == "__main__":
                     print(f"Saving new best score at step: {step} at path: model_best.pkl")
                     save_checkpoint(
                         'model_best.pkl',
+                        results=json.dumps(results, sort_keys=True),
+                    )
+                    # algorithm.to(device)
+            current_score_oracle = misc.get_score(results, args.test_envs, model_selection="oracle")
+            if current_score_oracle > best_score_oracle:
+                best_score_oracle = current_score_oracle
+                results["best_score_oracle"] = best_score_oracle
+                results["best_step_oracle"] = step
+                if step != 0:
+                    print(f"Saving new best score at step: {step} at path: model_best.pkl")
+                    save_checkpoint(
+                        'model_bestoracle.pkl',
                         results=json.dumps(results, sort_keys=True),
                     )
                     # algorithm.to(device)
