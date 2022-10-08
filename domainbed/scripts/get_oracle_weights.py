@@ -73,8 +73,11 @@ def main():
             print("Failure for checkpoints:", checkpoints)
         else:
             oracle = get_checkpoint_from_folder(folder, return_oracle=True)
-            print("Copying:", best_checkpoint)
-            shutil.copyfile(best_checkpoint, oracle)
+            if os.path.exixts(oracle):
+                print("Oracle already exists:", oracle)
+            else:
+                print("Copying:", best_checkpoint)
+                shutil.copyfile(best_checkpoint, oracle)
 
 
 if __name__ == "__main__":

@@ -43,6 +43,7 @@ DATASETS = [
     # WILDS datasets
     "WILDSCamelyon",
     "WILDSFMoW",
+    "iWILDSCam",
     # correlation shift
     "CelebA_Blond",
     "Waterbirds"
@@ -63,7 +64,9 @@ def num_environments(dataset_name):
 class MultipleDomainDataset:
     N_STEPS = 5001  # Default, subclasses may override
     CHECKPOINT_FREQ = 100  # Default, subclasses may override
-    N_WORKERS = 8 if os.environ.get('CUDA_VISIBLE_DEVICES') else 0  # Default, subclasses may override
+    N_WORKERS = 8 if os.environ.get(
+        'CUDA_VISIBLE_DEVICES'
+    ) else 0  # Default, subclasses may override
     ENVIRONMENTS = None  # Subclasses should override
     INPUT_SHAPE = None  # Subclasses should override
 
@@ -244,6 +247,7 @@ class ColoredRotatedMNISTClean(ColoredRotatedMNIST):
     SP_COLOR = 0.25
     SP_ROT = 0.25
 
+
 class RotatedMNIST(MultipleEnvironmentMNIST):
     ENVIRONMENTS = ['0', '15', '30', '45', '60', '75']
 
@@ -403,7 +407,8 @@ class iNaturalist(MultipleDomainDataset):
 
             path = os.path.join(self.dir, environment)
             env_dataset = ImageFolderHierarchy(
-                path, transform=env_transform, classes=classes, class_to_idx=class_to_idx)
+                path, transform=env_transform, classes=classes, class_to_idx=class_to_idx
+            )
 
             self.datasets.append(env_dataset)
 
@@ -446,12 +451,14 @@ class SVIRO(MultipleEnvironmentImageFolder):
 
 class WILDSEnvironment:
 
-    def __init__(self, wilds_dataset, metadata_name, metadata_value, transform=None):
-        self.name = metadata_name + "_" + str(metadata_value)
-
+    def __init__(self, wilds_dataset, metadata_name, metadata_range, transform=None):
+        self.name = metadata_name + "_" + "_".join([str(v) for v in metadata_range])
         metadata_index = wilds_dataset.metadata_fields.index(metadata_name)
         metadata_array = wilds_dataset.metadata_array
-        subset_indices = torch.where(metadata_array[:, metadata_index] == metadata_value)[0]
+        list_subset_indices = [
+            torch.where(metadata_array[:, metadata_index] == metadata_value)[0]
+            for metadata_value in metadata_range]
+        subset_indices = torch.cat(list_subset_indices)
 
         self.dataset = wilds_dataset
         self.indices = subset_indices
@@ -474,7 +481,7 @@ class WILDSEnvironment:
 class WILDSDataset(MultipleDomainDataset):
     INPUT_SHAPE = (3, 224, 224)
 
-    def __init__(self, dataset, metadata_name, test_envs, augment, hparams):
+    def __init__(self, dataset, metadata_name, test_envs, augment, hparams, value_range=1):
         super().__init__()
 
         transform = transforms.Compose(
@@ -499,13 +506,20 @@ class WILDSDataset(MultipleDomainDataset):
 
         self.datasets = []
 
-        for i, metadata_value in enumerate(self.metadata_values(dataset, metadata_name)):
+        metadata_values = self.metadata_values(dataset, metadata_name)
+        metadata_ranges = [
+            metadata_values[i: i + value_range]
+            for i in range(0, len(metadata_values), value_range)]
+
+        for i, metadata_range in enumerate(metadata_ranges):
             if augment and (i not in test_envs):
                 env_transform = augment_transform
             else:
                 env_transform = transform
 
-            env_dataset = WILDSEnvironment(dataset, metadata_name, metadata_value, env_transform)
+            env_dataset = WILDSEnvironment(
+                dataset, metadata_name, metadata_range, env_transform
+            )
 
             self.datasets.append(env_dataset)
 
@@ -537,13 +551,18 @@ class WILDSFMoW(WILDSDataset):
         dataset = FMoWDataset(root_dir=root)
         super().__init__(dataset, "region", test_envs, hparams['data_augmentation'], hparams)
 
+
 class iWILDSCam(WILDSDataset):
-    ENVIRONMENTS = ["region_0", "region_1", "region_2", "region_3", "region_4", "region_5"]
+    ENVIRONMENTS = [
+        "0to35", "36to71", "72to107", "108to143", "144to179", "180to215", "216to251", "252to287",
+        "288to323"
+    ]
 
     def __init__(self, root, test_envs, hparams):
         dataset = IWildCamDataset(root_dir=root)
-        super().__init__(dataset, "region", test_envs, hparams['data_augmentation'], hparams)
-
+        super().__init__(
+            dataset, "location", test_envs, hparams['data_augmentation'], hparams, value_range=36
+        )
 
 
 # this class is adapted from https://github.com/chingyaoc/fair-mixup/blob/master/celeba/main_dp.py
