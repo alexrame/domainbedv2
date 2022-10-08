@@ -5,6 +5,7 @@ import torch
 import torch.utils.data
 from domainbed.lib import misc
 import shutil
+# CUDA_VISIBLE_DEVICES=-1 python3 -m domainbed.scripts.get_oracle_weights --dataset OfficeHome --test_env 0 --output_dir /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_idn1erm0921r0_lp_0916 --trial_seed 0
 
 
 def _get_args():
@@ -21,7 +22,7 @@ def _get_args():
 
 
 def get_checkpoint_from_folder(output_folder, return_oracle=False):
-    l = [os.path.join(output_folder, file) for file in os.listdir(output_folder) if file.startswith("model") and file.startswith("pkl")]
+    l = [os.path.join(output_folder, file) for file in os.listdir(output_folder) if file.startswith("model") and file.endswith(".pkl")]
     name = "model_bestoracle.pkl"
     assert not name in os.listdir(output_folder)
     if return_oracle:

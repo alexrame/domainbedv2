@@ -14,8 +14,12 @@ from torchvision.datasets import MNIST, ImageFolder
 from torchvision.transforms.functional import rotate
 
 from domainbed.lib.custom_dataset_loader import find_classes_hierarchy, ImageFolderHierarchy
-# from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
-# from wilds.datasets.fmow_dataset import FMoWDataset
+try:
+    # from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
+    # from wilds.datasets.fmow_dataset import FMoWDataset
+    from wilds.datasets.iwildcam_dataset import IWildCamDataset
+except:
+    print("No wilds")
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -518,6 +522,30 @@ class WILDSDataset(MultipleDomainDataset):
         return sorted(list(set(metadata_vals.view(-1).tolist())))
 
 
+class WILDSCamelyon(WILDSDataset):
+    ENVIRONMENTS = ["hospital_0", "hospital_1", "hospital_2", "hospital_3", "hospital_4"]
+
+    def __init__(self, root, test_envs, hparams):
+        dataset = Camelyon17Dataset(root_dir=root)
+        super().__init__(dataset, "hospital", test_envs, hparams['data_augmentation'], hparams)
+
+
+class WILDSFMoW(WILDSDataset):
+    ENVIRONMENTS = ["region_0", "region_1", "region_2", "region_3", "region_4", "region_5"]
+
+    def __init__(self, root, test_envs, hparams):
+        dataset = FMoWDataset(root_dir=root)
+        super().__init__(dataset, "region", test_envs, hparams['data_augmentation'], hparams)
+
+class iWILDSCam(WILDSDataset):
+    ENVIRONMENTS = ["region_0", "region_1", "region_2", "region_3", "region_4", "region_5"]
+
+    def __init__(self, root, test_envs, hparams):
+        dataset = IWildCamDataset(root_dir=root)
+        super().__init__(dataset, "region", test_envs, hparams['data_augmentation'], hparams)
+
+
+
 # this class is adapted from https://github.com/chingyaoc/fair-mixup/blob/master/celeba/main_dp.py
 class CelebA(torch.utils.data.Dataset):
 
@@ -734,19 +762,3 @@ class CelebA_Blond(MultipleDomainDataset):
         te_dataset = CelebA(pd.DataFrame(te_env), images_path, target_id, transform=transform)
 
         self.datasets = [tr_dataset_1, tr_dataset_2, te_dataset]
-
-
-class WILDSCamelyon(WILDSDataset):
-    ENVIRONMENTS = ["hospital_0", "hospital_1", "hospital_2", "hospital_3", "hospital_4"]
-
-    def __init__(self, root, test_envs, hparams):
-        dataset = Camelyon17Dataset(root_dir=root)
-        super().__init__(dataset, "hospital", test_envs, hparams['data_augmentation'], hparams)
-
-
-class WILDSFMoW(WILDSDataset):
-    ENVIRONMENTS = ["region_0", "region_1", "region_2", "region_3", "region_4", "region_5"]
-
-    def __init__(self, root, test_envs, hparams):
-        dataset = FMoWDataset(root_dir=root)
-        super().__init__(dataset, "region", test_envs, hparams['data_augmentation'], hparams)
