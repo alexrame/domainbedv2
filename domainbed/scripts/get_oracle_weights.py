@@ -26,7 +26,7 @@ def get_checkpoint_from_folder(output_folder, return_oracle=False):
     name = "model_bestoracle.pkl"
     assert not name in os.listdir(output_folder)
     if return_oracle:
-        os.path.join(output_folder, name)
+        return os.path.join(output_folder, name)
     else:
         return l
 
