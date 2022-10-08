@@ -22,9 +22,9 @@ def _get_args():
 
 
 def get_checkpoint_from_folder(output_folder, return_oracle=False):
-    l = [os.path.join(output_folder, file) for file in os.listdir(output_folder) if file.startswith("model") and file.endswith(".pkl")]
     name = "model_bestoracle.pkl"
-    assert not name in os.listdir(output_folder)
+    l = [os.path.join(output_folder, file) for file in os.listdir(output_folder)
+         if file.startswith("model") and file.endswith(".pkl") and file != name]
     if return_oracle:
         return os.path.join(output_folder, name)
     else:
@@ -72,7 +72,7 @@ def main():
         if best_checkpoint is None:
             print("Failure for checkpoints:", checkpoints)
         else:
-            oracle = get_checkpoint_from_folder(output_dir, return_oracle=True)
+            oracle = get_checkpoint_from_folder(folder, return_oracle=True)
             print("Copying:", best_checkpoint)
             shutil.copyfile(best_checkpoint, oracle)
 
