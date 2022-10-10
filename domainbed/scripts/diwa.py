@@ -24,7 +24,8 @@ def _get_args():
     parser.add_argument(
         '--trial_seed',
         type=int,
-        help='Trial number (used for seeding split_dataset and random_hparams).'
+        help='Trial number (used for seeding split_dataset and random_hparams).',
+        default=0
     )
     parser.add_argument("--checkpoints", nargs='+', default=[])
     parser.add_argument('--weighting', type=str, default="None")
@@ -36,25 +37,36 @@ def _get_args():
     parser.add_argument('--what', nargs='+', default=[])
 
     inf_args = parser.parse_args()
-    if len(inf_args.checkpoints)%3 == 0:
+    if len(inf_args.checkpoints) % 3 == 0:
         inf_args.checkpoints = [
             {
                 "name": inf_args.checkpoints[3 * i],
-                "weight": eval(inf_args.checkpoints[3 * i + 1]),
+                "weight": evalweight(inf_args.checkpoints[3 * i + 1]),
                 "type": inf_args.checkpoints[3 * i + 2],
             } for i in range(len(inf_args.checkpoints) // 3)
         ]
     else:
         print("Your checkpoints should be of 'name weight type'")
         inf_args.checkpoints = [
-            {"name": inf_args.checkpoints[2 * i],
-            "weight": eval(inf_args.checkpoints[2 * i + 1]),
-            "type": "network"
-            }
-            for i in range(len(inf_args.checkpoints) // 2)
+            {
+                "name": inf_args.checkpoints[2 * i],
+                "weight": evalweight(inf_args.checkpoints[2 * i + 1]),
+                "type": "network"
+            } for i in range(len(inf_args.checkpoints) // 2)
         ]
+    inf_args.checkpoints = [ckpt for ckpt in inf_args.checkpoints if float(ckpt["weight"]) != 0][::-1]
     misc.print_args(inf_args)
     return inf_args
+
+
+def evalweight(string):
+    if "/" in string:
+        return evalweight(string.split("/")[0]) / evalweight(string.split("/")[1])
+    elif string != "unifr":
+        return eval(string)
+    else:
+        r = random.uniform(0, 1)
+        return r/(1-r)
 
 
 def create_splits(domain, inf_args, dataset, _filter, holdout_fraction):
@@ -103,7 +115,7 @@ def get_checkpoint_from_folder(output_folder):
             name = "model_with_weights.pkl"
         elif "model.pkl" in os.listdir(output_folder):
             name = "model.pkl"
-    elif os.environ.get("WHICHMODEL") in ['stepbestoracle']:
+    elif os.environ.get("WHICHMODEL") in ['bestoracle', 'stepbestoracle']:
         name = "model_bestoracle.pkl"
 
     if name is None:
@@ -518,9 +530,8 @@ def main():
             ]
         if inf_args.checkpoints:
             # normalizer = len(selected_checkpoints)/20 if len(selected_checkpoints) else 1.
-            checkpoints = [ckpt for ckpt in inf_args.checkpoints if float(ckpt["weight"]) != 0][::-1]
-            print(f"Extending inf_args.checkpoints: {checkpoints}")
-            selected_checkpoints.extend(checkpoints)
+            print(f"Extending inf_args.checkpoints: {inf_args.checkpoints}")
+            selected_checkpoints.extend(inf_args.checkpoints)
 
         dict_results = get_wa_results(
             selected_checkpoints, dataset, inf_args, data_names, data_splits, device

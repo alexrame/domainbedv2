@@ -12,7 +12,7 @@ def _get_args():
     parser = argparse.ArgumentParser(description='Domain generalization')
 
     parser.add_argument('--test_env', type=int)
-    parser.add_argument('--trial_seed', type=int, default=-1)
+    parser.add_argument('--trial_seed', type=int, default=0)
     parser.add_argument('--output_dir', type=str, default=None)
     parser.add_argument('--dataset', type=str, default=None)
     inf_args = parser.parse_args()
@@ -73,7 +73,7 @@ def main():
             print("Failure for checkpoints:", checkpoints)
         else:
             oracle = get_checkpoint_from_folder(folder, return_oracle=True)
-            if os.path.exixts(oracle):
+            if os.path.exists(oracle):
                 print("Oracle already exists:", oracle)
             else:
                 print("Copying:", best_checkpoint)
