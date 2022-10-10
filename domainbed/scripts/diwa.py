@@ -103,7 +103,7 @@ def get_checkpoint_from_folder(output_folder):
             name = "model_with_weights.pkl"
         elif "model.pkl" in os.listdir(output_folder):
             name = "model.pkl"
-    elif os.environ.get("WHICHMODEL") in ['steporacle']:
+    elif os.environ.get("WHICHMODEL") in ['stepbestoracle']:
         name = "model_bestoracle.pkl"
 
     if name is None:

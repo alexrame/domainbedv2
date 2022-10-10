@@ -5,26 +5,19 @@ Run sweeps
 
 import argparse
 import copy
-import getpass
 import hashlib
 import json
 import os
-import random
 import shutil
-import time
-import uuid
-
 import numpy as np
-import torch
-
-from domainbed import datasets
-from domainbed import hparams_registry
-from domainbed import algorithms
-from domainbed.lib import misc
-from domainbed import command_launchers
 
 import tqdm
 import shlex
+
+from domainbed import datasets
+from domainbed.lib import misc
+from domainbed import command_launchers
+
 
 
 class Job:
@@ -162,7 +155,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run a sweep')
     parser.add_argument('command', choices=['launch', 'delete_incomplete'])
     parser.add_argument('--datasets', nargs='+', type=str, default=DATASETS)
-    parser.add_argument('--algorithms', nargs='+', type=str, default=algorithms.ALGORITHMS)
+    parser.add_argument('--algorithms', nargs='+', type=str, default=["ERM"])
     parser.add_argument('--task', type=str, default="domain_generalization")
     parser.add_argument('--n_hparams_from', type=int, default=0)
     parser.add_argument('--output_dir', type=str, required=True)

@@ -14,6 +14,8 @@ from torchvision.datasets import MNIST, ImageFolder
 from torchvision.transforms.functional import rotate
 
 from domainbed.lib.custom_dataset_loader import find_classes_hierarchy, ImageFolderHierarchy
+
+# Not clear why but this fails if importing at top of file
 # try:
 #     # from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
 #     # from wilds.datasets.fmow_dataset import FMoWDataset
