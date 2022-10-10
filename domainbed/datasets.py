@@ -466,7 +466,7 @@ class WILDSEnvironment:
 
     def __getitem__(self, i):
         x = self.dataset.get_input(self.indices[i])
-        if type(x).__name__ != "Image":
+        if type(x).__name__ not in ["Image", "JpegImageFile"]:
             x = Image.fromarray(x)
 
         y = self.dataset.y_array[self.indices[i]]
