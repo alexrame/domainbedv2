@@ -14,12 +14,12 @@ from torchvision.datasets import MNIST, ImageFolder
 from torchvision.transforms.functional import rotate
 
 from domainbed.lib.custom_dataset_loader import find_classes_hierarchy, ImageFolderHierarchy
-try:
-    # from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
-    # from wilds.datasets.fmow_dataset import FMoWDataset
-    from wilds.datasets.iwildcam_dataset import IWildCamDataset
-except:
-    print("No wilds")
+# try:
+#     # from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
+#     # from wilds.datasets.fmow_dataset import FMoWDataset
+#     from wilds.datasets.iwildcam_dataset import IWildCamDataset
+# except:
+#     print("No wilds")
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -540,6 +540,7 @@ class WILDSCamelyon(WILDSDataset):
     ENVIRONMENTS = ["hospital_0", "hospital_1", "hospital_2", "hospital_3", "hospital_4"]
 
     def __init__(self, root, test_envs, hparams):
+        from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
         dataset = Camelyon17Dataset(root_dir=root)
         super().__init__(dataset, "hospital", test_envs, hparams['data_augmentation'], hparams)
 
@@ -548,6 +549,7 @@ class WILDSFMoW(WILDSDataset):
     ENVIRONMENTS = ["region_0", "region_1", "region_2", "region_3", "region_4", "region_5"]
 
     def __init__(self, root, test_envs, hparams):
+        from wilds.datasets.fmow_dataset import FMoWDataset
         dataset = FMoWDataset(root_dir=root)
         super().__init__(dataset, "region", test_envs, hparams['data_augmentation'], hparams)
 
@@ -559,6 +561,7 @@ class iWILDSCam(WILDSDataset):
     ]
 
     def __init__(self, root, test_envs, hparams):
+        from wilds.datasets.iwildcam_dataset import IWildCamDataset
         dataset = IWildCamDataset(root_dir=root)
         super().__init__(
             dataset, "location", test_envs, hparams['data_augmentation'], hparams, value_range=36
