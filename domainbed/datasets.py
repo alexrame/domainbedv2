@@ -497,7 +497,7 @@ class WILDSDataset(MultipleDomainDataset):
 
         augment_transform = transforms.Compose(
             [
-                transforms.Resize((224, 224)),
+                # transforms.Resize((224, 224)),
                 transforms.RandomResizedCrop(224, scale=(0.7, 1.0)),
                 transforms.RandomHorizontalFlip(),
                 transforms.ColorJitter(0.3, 0.3, 0.3, 0.3),
