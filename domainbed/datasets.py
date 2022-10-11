@@ -4,6 +4,7 @@ import os
 import pickle
 import pandas as pd
 import numpy as np
+import time
 
 import torch
 from PIL import Image, ImageFile
@@ -542,6 +543,8 @@ class WILDSCamelyon(WILDSDataset):
     ENVIRONMENTS = ["hospital_0", "hospital_1", "hospital_2", "hospital_3", "hospital_4"]
 
     def __init__(self, root, test_envs, hparams):
+        print("Begin loading Camelyon17Dataset")
+        time.sleep(1)
         from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
         dataset = Camelyon17Dataset(root_dir=root)
         super().__init__(dataset, "hospital", test_envs, hparams['data_augmentation'], hparams)
@@ -551,6 +554,8 @@ class WILDSFMoW(WILDSDataset):
     ENVIRONMENTS = ["region_0", "region_1", "region_2", "region_3", "region_4", "region_5"]
 
     def __init__(self, root, test_envs, hparams):
+        print("Begin loading FMoWDataset")
+        time.sleep(1)
         from wilds.datasets.fmow_dataset import FMoWDataset
         dataset = FMoWDataset(root_dir=root)
         super().__init__(dataset, "region", test_envs, hparams['data_augmentation'], hparams)
@@ -563,6 +568,8 @@ class iWILDSCam(WILDSDataset):
     ]
 
     def __init__(self, root, test_envs, hparams):
+        print("Begin loading IWildCamDataset")
+        time.sleep(1)
         from wilds.datasets.iwildcam_dataset import IWildCamDataset
         dataset = IWildCamDataset(root_dir=root)
         super().__init__(
