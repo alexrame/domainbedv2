@@ -153,7 +153,12 @@ class ERM(Algorithm):
     ## DiWA for saving initialization ##
     def save_path_for_future_init(self, path_for_save):
         assert not os.path.exists(path_for_save), "The initialization has already been saved"
-        if os.environ.get("SAVE_ONLY_FEATURES"):
+        if os.environ.get('SAVE_FEATURES_CLASSIFIERS', "0") != "0":
+            # for algorithms inference with decouplage of classifiers and network
+            print(f"Save only features extractor at {path_for_save}")
+            network = nn.Sequential(self.featurizer, self.classifiers[0])
+            torch.save(network.state_dict(), path_for_save)
+        if os.environ.get("SAVE_ONLY_FEATURES", "0") != "0":
             print(f"Save only features extractor at {path_for_save}")
             torch.save(self.featurizer.state_dict(), path_for_save)
         else:

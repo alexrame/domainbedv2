@@ -135,7 +135,7 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
     _output_folders = [os.path.join(output_dir, path) for path in os.listdir(output_dir)]
     output_folders = [
         output_folder for output_folder in _output_folders if os.path.isdir(output_folder) and
-        (os.environ.get("DONEOPTIONAL") or "done" in os.listdir(output_folder)) and
+        (os.environ.get("DONEOPTIONAL", "0") != "0" or "done" in os.listdir(output_folder)) and
         get_checkpoint_from_folder(output_folder)
     ]
     if len(output_folders) == 0:

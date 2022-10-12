@@ -130,7 +130,7 @@ class DiWA(algorithms.ERM):
     def predict(self, x):
         if self.network_ma is not None:
             dict_predictions = {"": self.network_ma(x)}
-        elif len(self.classifiers) == 0:
+        elif len(self.classifiers) == 0 or os.environ.get("NETWORKINFERENCE", "0") == "1":
             dict_predictions = {"": self.network(x)}
         else:
             dict_predictions = {}
