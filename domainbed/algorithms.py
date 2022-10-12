@@ -158,7 +158,7 @@ class ERM(Algorithm):
             print(f"Save only features extractor at {path_for_save}")
             network = nn.Sequential(self.featurizer, self.classifiers[0])
             torch.save(network.state_dict(), path_for_save)
-        if os.environ.get("SAVE_ONLY_FEATURES", "0") != "0":
+        elif os.environ.get("SAVE_ONLY_FEATURES", "0") != "0":
             print(f"Save only features extractor at {path_for_save}")
             torch.save(self.featurizer.state_dict(), path_for_save)
         else:
