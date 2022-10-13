@@ -226,8 +226,8 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
                 wa_algorithm.update_mean_network(
                     algorithm.network, weight=checkpoint_weight, normalize=normalize
                 )
-            if "update_product_network" in action:
-                wa_algorithm.update_update_product_network_network(
+            if "product" in action:
+                wa_algorithm.update_product_network(
                     algorithm.network, weight=checkpoint_weight, normalize=normalize
                 )
             if "ma" in action:
