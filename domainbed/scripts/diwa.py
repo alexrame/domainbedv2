@@ -222,7 +222,11 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
             raise e
 
         if checkpoint_type in ["network", "networknotclassifier"]:
-            if "mean" in action:
+            if "dot" in action:
+                wa_algorithm.update_dot_network(
+                    algorithm.network, weight=checkpoint_weight, normalize=normalize
+                )
+            elif "mean" in action:
                 wa_algorithm.update_mean_network(algorithm.network, weight=checkpoint_weight, normalize=normalize)
             if "ma" in action:
                 wa_algorithm.update_mean_network_ma(algorithm.network_ma, weight=checkpoint_weight, normalize=normalize)

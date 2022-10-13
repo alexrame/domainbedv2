@@ -155,7 +155,7 @@ class ERM(Algorithm):
         assert not os.path.exists(path_for_save), "The initialization has already been saved"
         if os.environ.get('SAVE_FEATURES_CLASSIFIERS', "0") != "0":
             # for algorithms inference with decouplage of classifiers and network
-            print(f"Save only features extractor at {path_for_save}")
+            print(f"Save features extractor and classifier at {path_for_save}")
             network = nn.Sequential(self.featurizer, self.classifiers[0])
             torch.save(network.state_dict(), path_for_save)
         elif os.environ.get("SAVE_ONLY_FEATURES", "0") != "0":

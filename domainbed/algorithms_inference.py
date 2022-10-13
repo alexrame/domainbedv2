@@ -19,10 +19,12 @@ class ERM(algorithms.ERM):
     def _create_network(self):
         self.featurizer = networks.Featurizer(self.input_shape, self.hparams)
         self.classifier = networks.Classifier(
-            self.featurizer.n_outputs, self.num_classes, self.hparams.get('nonlinear_classifier', False)
+            self.featurizer.n_outputs, self.num_classes,
+            self.hparams.get('nonlinear_classifier', False)
         )
         self.network = nn.Sequential(self.featurizer, self.classifier)
         self.network_ma = copy.deepcopy(self.network)
+
 
 class DiWA(algorithms.ERM):
 
@@ -62,7 +64,6 @@ class DiWA(algorithms.ERM):
         self.global_count_feat += weight
 
     def update_mean_network(self, network, weight=1., normalize=True):
-
         if self.network is None:
             self.network = copy.deepcopy(network)
             use_previous = 0.
@@ -75,6 +76,18 @@ class DiWA(algorithms.ERM):
                                 param_n.data * weight) / (weight + self.global_count)
             else:
                 param_m.data = (param_m.data * use_previous + param_n.data * weight)
+        self.global_count += weight
+
+    def update_dot_network(self, network, weight=1., normalize=True):
+        assert normalize
+        if self.network is None:
+            self.network = copy.deepcopy(network)
+        global_count = self.global_count
+        for param_n, param_m in zip(network.parameters(), self.network.parameters()):
+            mask = (torch.sign(param_n.data) == torch.sign(param_m.data))
+            product = torch.pow(torch.abs(param_n.data), weight) * torch.pow(torch.abs(param_m.data), global_count)
+            param_m.data = mask * torch.sign(param_m.data) * torch.pow(product, 1 / (weight + global_count))
+
         self.global_count += weight
 
     def update_mean_network_ma(self, network, weight=1., normalize=True):
@@ -239,7 +252,11 @@ class DiWA(algorithms.ERM):
         #     for i in range(num_classifiers)
         #     for j in range(i + 1, num_classifiers)
         # ]
-        regexes += [("netm", f"net{i}_net{j}") for i in range(num_members) for j in range(i + 1, num_members)]
+        regexes += [
+            ("netm", f"net{i}_net{j}")
+            for i in range(num_members)
+            for j in range(i + 1, num_members)
+        ]
         for regexname, regex in regexes:
             key0, key1 = regex.split("_")
 
