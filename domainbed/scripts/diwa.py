@@ -222,12 +222,14 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
             raise e
 
         if checkpoint_type in ["network", "networknotclassifier"]:
-            if "dot" in action:
-                wa_algorithm.update_dot_network(
+            if "mean" in action:
+                wa_algorithm.update_mean_network(
                     algorithm.network, weight=checkpoint_weight, normalize=normalize
                 )
-            elif "mean" in action:
-                wa_algorithm.update_mean_network(algorithm.network, weight=checkpoint_weight, normalize=normalize)
+            if "update_product_network" in action:
+                wa_algorithm.update_update_product_network_network(
+                    algorithm.network, weight=checkpoint_weight, normalize=normalize
+                )
             if "ma" in action:
                 wa_algorithm.update_mean_network_ma(algorithm.network_ma, weight=checkpoint_weight, normalize=normalize)
             if "netm" in action:
@@ -375,33 +377,25 @@ def create_data_splits(inf_args, dataset):
         dict_domain_to_filter = {"test": "full"}
     else:
         dict_domain_to_filter = {}
-    if inf_args.weight_selection == "restricted" or misc.is_not_none(
-        os.environ.get("INCLUDE_TRAIN")
-    ):
-        assert inf_args.trial_seed != -1
-        dict_domain_to_filter["train"] = "out"
 
-    if os.environ.get("INCLUDETSV_UPTO", "0") != "0":
-        for env_i in range(0, int(os.environ.get("INCLUDETSV_UPTO", "0"))):
-            dict_domain_to_filter["env_" + str(env_i) + "_in"] = "insmall"
-            dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
-    elif os.environ.get("INCLUDETVS_UPTO", "0") != "0":
-        for env_i in range(0, int(os.environ.get("INCLUDETVS_UPTO", "0"))):
-            dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
-            dict_domain_to_filter["env_" + str(env_i) + "_out"] = "outsmall"
-    elif os.environ.get("INCLUDE_UPTO", "0") != "0":
+    # if os.environ.get("INCLUDE_TRAIN", "0") != "0":
+    #     assert inf_args.trial_seed != -1
+    #     dict_domain_to_filter["train"] = "out"
+
+    if os.environ.get("INCLUDE_UPTO", "0") != "0":
         for env_i in range(0, int(os.environ.get("INCLUDE_UPTO", "0"))):
             dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
             dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
-    elif os.environ.get("INCLUDETRAIN_UPTO", "0") != "0":
-        for env_i in range(0, int(os.environ.get("INCLUDEVAL_UPTO", "0"))):
-            dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
-    elif os.environ.get("INCLUDEVAL_UPTO", "0") != "0":
-        for env_i in range(0, int(os.environ.get("INCLUDEVAL_UPTO", "0"))):
+    if os.environ.get("INCLUDETSV_UPTO", "0") != "0":
+        for env_i in range(0, int(os.environ.get("INCLUDETSV_UPTO", "0"))):
             dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
-    elif os.environ.get("INCLUDETRAIN_UPTO", "0") != "0":
+            dict_domain_to_filter["env_" + str(env_i) + "_in"] = "insmall"
+    if os.environ.get("INCLUDETRAIN_UPTO", "0") != "0":
         for env_i in range(0, int(os.environ.get("INCLUDETRAIN_UPTO", "0"))):
             dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
+    if os.environ.get("INCLUDEVAL_UPTO", "0") != "0":
+        for env_i in range(0, int(os.environ.get("INCLUDEVAL_UPTO", "0"))):
+            dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
 
     for domain in dict_domain_to_filter:
         holdout_fraction = float(os.environ.get("HOLDOUT", 0.2))

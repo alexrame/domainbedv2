@@ -35,11 +35,13 @@ class DiWA(algorithms.ERM):
         self.global_count = 0
         self.global_count_feat = 0
         self.global_count_ma = 0
+        self.global_count_product = 0
         self.var_global_count = 0
         self._create_network()
 
     def _create_network(self):
         self.network = None
+        self.network_product = None
         self.network_ma = None
         self.featurizer = None
         self.var_network = None
@@ -78,17 +80,17 @@ class DiWA(algorithms.ERM):
                 param_m.data = (param_m.data * use_previous + param_n.data * weight)
         self.global_count += weight
 
-    def update_dot_network(self, network, weight=1., normalize=True):
+    def update_product_network(self, network, weight=1., normalize=True):
         assert normalize
-        if self.network is None:
-            self.network = copy.deepcopy(network)
-        global_count = self.global_count
-        for param_n, param_m in zip(network.parameters(), self.network.parameters()):
-            mask = (torch.sign(param_n.data) == torch.sign(param_m.data))
-            product = torch.pow(torch.abs(param_n.data), weight) * torch.pow(torch.abs(param_m.data), global_count)
-            param_m.data = mask * torch.sign(param_m.data) * torch.pow(product, 1 / (weight + global_count))
+        if self.network_product is None:
+            self.network_product = copy.deepcopy(network)
 
-        self.global_count += weight
+        for param_n, param_m in zip(network.parameters(), self.network_product.parameters()):
+            mask = (torch.sign(param_n.data) == torch.sign(param_m.data))
+            product = torch.pow(torch.abs(param_n.data), weight) * torch.pow(torch.abs(param_m.data), self.global_count_product)
+            param_m.data = mask * torch.sign(param_m.data) * torch.pow(product, 1 / (weight + self.global_count_product))
+
+        self.global_count_product += weight
 
     def update_mean_network_ma(self, network, weight=1., normalize=True):
 
@@ -147,6 +149,9 @@ class DiWA(algorithms.ERM):
             dict_predictions = {"": self.network(x)}
         else:
             dict_predictions = {}
+
+        if self.network_product is not None:
+            dict_predictions = {"prod": self.network_product(x)}
 
         if len(self.networks) != 0:
             logits_ens = []
@@ -245,7 +250,7 @@ class DiWA(algorithms.ERM):
         dict_diversity = collections.defaultdict(list)
         num_classifiers = int(min(len(self.classifiers), float(os.environ.get("MAXM", math.inf))))
         num_members = int(min(len(self.networks), float(os.environ.get("MAXM", math.inf))))
-        regexes = [("waens", "wa_ens")]
+        regexes = [("waens", "wa_ens"), ("waprod", "wa_prod")]
         # regexes = [("netcla0", "net0_cla0"), ("netcla1", "net1_cla1"), ("netcla2", "net2_cla2")]
         # regexes = [
         #     (f"cla{i}{j}", f"cla{i}_cla{j}")
@@ -264,11 +269,11 @@ class DiWA(algorithms.ERM):
                 if key0 == "wa":
                     key0 = ""
                 else:
-                    print(f"Skip {regex}")
+                    # print(f"Skip {regex}")
                     continue
 
             if key1 not in dict_stats:
-                print(f"Skip {regex}")
+                # print(f"Skip {regex}")
                 continue
 
             preds0 = dict_stats[key0]["preds"].numpy()
