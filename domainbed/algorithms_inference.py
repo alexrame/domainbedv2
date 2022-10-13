@@ -151,7 +151,7 @@ class DiWA(algorithms.ERM):
             dict_predictions = {}
 
         if self.network_product is not None:
-            dict_predictions = {"prod": self.network_product(x)}
+            dict_predictions["prod"] = self.network_product(x)
 
         if len(self.networks) != 0:
             logits_ens = []
