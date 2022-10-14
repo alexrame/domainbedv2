@@ -11,6 +11,7 @@ from domainbed.lib import misc
 from domainbed.lib.fast_data_loader import FastDataLoader
 from domainbed.lib import misc
 
+# MODEL_SELECTION=oracle WHICHMODEL=stepbest CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /data/rame/experiments/domainbed/home0_ma_lp_0824 --trial_seed 0 --data_dir /data/rame/data/domainbed --topk 2 --what mean product feats cla clas featsproduct claproduct netm
 
 def _get_args():
     parser = argparse.ArgumentParser(description='Domain generalization')

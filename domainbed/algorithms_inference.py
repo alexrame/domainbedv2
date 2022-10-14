@@ -72,6 +72,8 @@ class DiWA(algorithms.ERM):
 
     @staticmethod
     def _update_mean(net0, net1, weight0, weight1):
+        if weight0 + weight1 == 0:
+            return
         for param_n, param_m in zip(net0.parameters(), net1.parameters()):
             param_m.data = (param_m.data * weight1 + param_n.data * weight0) / (weight0 + weight1)
 
@@ -249,21 +251,35 @@ class DiWA(algorithms.ERM):
                             # "confs": [],
                         }
                     preds = logits.argmax(1)
-                    probs = torch.softmax(logits, dim=1)
+                    dict_stats[key]["probs"] = torch.softmax(logits, dim=1)
                     # dict_stats[key]["logits"].append(logits.cpu())
                     # dict_stats[key]["probs"].append(probs.cpu())
                     dict_stats[key]["preds"].append(preds.cpu())
                     dict_stats[key]["correct"].append(preds.eq(y).float().cpu())
 
-                    dict_stats[key]["tcp"].append(
-                        probs[range(len(torch.flatten(y))),
-                              torch.flatten(y)].flatten().cpu()
-                    )
+                    # dict_stats[key]["tcp"].append(
+                    #     probs[range(len(torch.flatten(y))),
+                    #           torch.flatten(y)].flatten().cpu()
+                    # )
                     # dict_stats[key]["confs"].append(probs.max(dim=1)[0].cpu())
         for key0 in dict_stats:
             for key1 in dict_stats[key0]:
                 dict_stats[key0][key1] = torch.cat(dict_stats[key0][key1])
         return dict_stats, batch_classes
+
+    def get_dict_entropy(self, dict_stats, device):
+        dict_results = {}
+        def compute_entropy_predictions(x):
+            #print(x)
+            entropy = x * torch.log(x + 1e-10)  #bs * num_classes
+            return -1. * entropy.sum()/entropy.size(0)
+
+        for key, value in dict_stats:
+            probs = value["probs"]
+            entropy = compute_entropy_predictions(probs)
+            dict_results["ent_" + key] = entropy
+
+        return dict_results
 
     def get_dict_diversity(self, dict_stats, targets, device):
         dict_diversity = collections.defaultdict(list)
