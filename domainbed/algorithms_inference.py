@@ -162,7 +162,7 @@ class DiWA(algorithms.ERM):
     def predict(self, x):
         if self.network_ma is not None:
             dict_predictions = {"": self.network_ma(x)}
-        elif self.classifier is not None or os.environ.get("NETWORKINFERENCE", "0") == "1":
+        elif self.classifier is None or os.environ.get("NETWORKINFERENCE", "0") == "1":
             dict_predictions = {"": self.network(x)}
         else:
             dict_predictions = {}
@@ -284,7 +284,7 @@ class DiWA(algorithms.ERM):
                 continue
             probs = value["probs"]
             entropy = compute_entropy_predictions(probs)
-            dict_results["ent_" + key] = entropy.float().cpu()
+            dict_results["ent_" + key] = entropy.float().cpu().numpy()
 
         return dict_results
 

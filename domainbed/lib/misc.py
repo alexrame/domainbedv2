@@ -265,9 +265,10 @@ def results_ensembling(algorithm, loader, device):
                 del dict_results[f"acc_net{key}"]
 
     targets = torch.cat(batch_classes).cpu().numpy()
-    # print("Compute diversity across different networks")
+    # print("Compute diversity")
     dict_diversity = algorithm.get_dict_diversity(dict_stats, targets, device)
     dict_results.update(dict_diversity)
+    # print("Compute prediction entropy")
     dict_entropy = algorithm.get_dict_entropy(dict_stats, device)
     dict_results.update(dict_entropy)
     return dict_results
