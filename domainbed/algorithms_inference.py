@@ -183,6 +183,9 @@ class DiWA(algorithms.ERM):
             if self.classifier is not None:
                 dict_predictions["cla"] = self.classifier(features)
 
+            if self.classifier_product is not None:
+                dict_predictions["clameanprod"] = self.classifier_product(features_product)
+
             if len(self.classifiers) != 0:
                 for i, classifier in enumerate(self.classifiers):
                     _logits_i = classifier(features)
@@ -194,8 +197,11 @@ class DiWA(algorithms.ERM):
 
         if self.featurizer_product is not None:
             features_product = self.featurizer_product(x)
+            if self.classifier is not None:
+                dict_predictions["claprodmean"] = self.classifier(features_product)
             if self.classifier_product is not None:
                 dict_predictions["claprod"] = self.classifier_product(features_product)
+
 
         return dict_predictions
 
