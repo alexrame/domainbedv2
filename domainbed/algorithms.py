@@ -725,7 +725,7 @@ class Fishr(Algorithm):
         )
         self.network = nn.Sequential(self.featurizer, self.classifier)
     def _load_network(self, path_for_init):
-        return ERM._load_network(path_for_init)
+        return ERM._load_network(self, path_for_init)
 
     def _init_optimizer(self):
         ERM._init_optimizer(self)
