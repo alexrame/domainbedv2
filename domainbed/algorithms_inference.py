@@ -247,7 +247,7 @@ class DiWA(algorithms.ERM):
                             "probs": [],
                             "preds": [],
                             "correct": [],
-                            "tcp": []
+                            # "tcp": []
                             # "confs": [],
                         }
                     preds = logits.argmax(1)
