@@ -77,7 +77,7 @@ class DiWA(algorithms.ERM):
             elif merging_method == "max":
                 new_data = torch.max(torch.abs(param_0.data), torch.abs(param_1.data))
             elif merging_method == "min":
-                new_data = torch.max(torch.abs(param_0.data), torch.abs(param_1.data))
+                new_data = torch.min(torch.abs(param_0.data), torch.abs(param_1.data))
             elif merging_method == "rand":
                 if random.random() < weight0/(weight0 + weight1):
                     new_data = torch.abs(param_0.data)
