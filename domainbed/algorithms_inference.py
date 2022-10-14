@@ -278,6 +278,9 @@ class DiWA(algorithms.ERM):
             import pdb
             pdb.set_trace()
         for key, value in dict_stats.items():
+            if "probs" not in value:
+                print(value.keys())
+                continue
             probs = value["probs"]
             entropy = compute_entropy_predictions(probs)
             dict_results["ent_" + key] = entropy
