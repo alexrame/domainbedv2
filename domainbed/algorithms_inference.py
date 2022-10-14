@@ -184,7 +184,7 @@ class DiWA(algorithms.ERM):
                 dict_predictions["cla"] = self.classifier(features)
 
             if self.classifier_product is not None:
-                dict_predictions["clameanprod"] = self.classifier_product(features_product)
+                dict_predictions["clameanprod"] = self.classifier_product(features)
 
             if len(self.classifiers) != 0:
                 for i, classifier in enumerate(self.classifiers):
