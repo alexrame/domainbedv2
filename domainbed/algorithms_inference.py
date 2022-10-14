@@ -284,7 +284,7 @@ class DiWA(algorithms.ERM):
                 continue
             probs = value["probs"]
             entropy = compute_entropy_predictions(probs)
-            dict_results["ent_" + key] = entropy.float().cpu().numpy()
+            dict_results["ent_" + key] = np.mean(entropy.float().cpu().numpy()) # mean just to get rid of array
 
         return dict_results
 
