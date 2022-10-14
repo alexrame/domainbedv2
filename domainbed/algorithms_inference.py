@@ -274,7 +274,10 @@ class DiWA(algorithms.ERM):
             entropy = x * torch.log(x + 1e-10)  #bs * num_classes
             return -1. * entropy.sum()/entropy.size(0)
 
-        for key, value in dict_stats:
+        if os.environ.get("DEBUG"):
+            import pdb
+            pdb.set_trace()
+        for key, value in dict_stats.items():
             probs = value["probs"]
             entropy = compute_entropy_predictions(probs)
             dict_results["ent_" + key] = entropy

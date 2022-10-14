@@ -271,9 +271,6 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
         load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action=["var"], device=device)
         wa_algorithm.create_stochastic_networks()
 
-    if os.environ.get("DEBUG"):
-        import pdb
-        pdb.set_trace()
     wa_algorithm.to(device)
 
     wa_algorithm.eval()
