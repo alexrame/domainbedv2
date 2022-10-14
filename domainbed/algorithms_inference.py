@@ -251,7 +251,7 @@ class DiWA(algorithms.ERM):
                             # "confs": [],
                         }
                     preds = logits.argmax(1)
-                    dict_stats[key]["probs"] = torch.softmax(logits, dim=1)
+                    dict_stats[key]["probs"] = torch.softmax(logits, dim=1).cpu()
                     # dict_stats[key]["logits"].append(logits.cpu())
                     # dict_stats[key]["probs"].append(probs.cpu())
                     dict_stats[key]["preds"].append(preds.cpu())
