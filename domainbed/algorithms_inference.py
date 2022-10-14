@@ -5,6 +5,7 @@ import math
 import torch
 import torch.nn as nn
 import collections
+import random
 from domainbed import networks, algorithms
 from domainbed.lib import diversity_metrics
 
@@ -61,21 +62,37 @@ class DiWA(algorithms.ERM):
 
     @staticmethod
     def _update_product(net0, net1, weight0, weight1):
-        for param_n, param_m in zip(net0.parameters(), net1.parameters()):
-            mask = (torch.sign(param_n.data) == torch.sign(param_m.data))
-            product = torch.pow(torch.abs(
-                param_n.data
-            ), weight0) * torch.pow(torch.abs(param_m.data), weight1)
-            param_m.data = mask * torch.sign(
-                param_m.data
-            ) * torch.pow(product, 1 / (weight0 + weight1))
+        if weight0 + weight1 == 0:
+            return
+        for param_0, param_1 in zip(net0.parameters(), net1.parameters()):
+            mask = (torch.sign(param_0.data) == torch.sign(param_1.data))
+            merging_method = os.environ.get("MERGINGMETHOD", "product")
+            if merging_method == "product":
+                product = torch.pow(torch.abs(
+                    param_0.data
+                ), weight0) * torch.pow(torch.abs(param_1.data), weight1)
+                new_data = mask * torch.sign(
+                    param_1.data
+                ) * torch.pow(product, 1 / (weight0 + weight1))
+            elif merging_method == "max":
+                new_data = torch.max(torch.abs(param_0.data), torch.abs(param_1.data))
+            elif merging_method == "min":
+                new_data = torch.max(torch.abs(param_0.data), torch.abs(param_1.data))
+            elif merging_method == "rand":
+                if random.random() < weight0/(weight0 + weight1):
+                    new_data = param_0.data
+                else:
+                    new_data = param_1.data
+            else:
+                raise ValueError("Unknown merging type: " + merging_method)
+            param_1.data = mask * torch.sign(param_1.data) * new_data
 
     @staticmethod
     def _update_mean(net0, net1, weight0, weight1):
         if weight0 + weight1 == 0:
             return
-        for param_n, param_m in zip(net0.parameters(), net1.parameters()):
-            param_m.data = (param_m.data * weight1 + param_n.data * weight0) / (weight0 + weight1)
+        for param_0, param_1 in zip(net0.parameters(), net1.parameters()):
+            param_1.data = (param_1.data * weight1 + param_0.data * weight0) / (weight0 + weight1)
 
     def update_mean_network(self, network, weight=1.):
         if self.network is None:

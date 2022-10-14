@@ -1,5 +1,5 @@
 ssh utr15kn@jean-zay.idris.fr
-sed -i -- 's/home0_ma_saveall_lp_0824/home3_erm_saveall_lp_0824/g' *
+sed -i -- 's/INCLUDETSV_UPTO/INCLUDEVAL_UPTO/g' *
 sbatch -A gtw@v100
 
 for FILE in enspacs1_erm023wn_idn1erm0921r0_lp_0916_r0.slurm_1801193.out enspacs1_erm023wn_idn1erm0921r20_lp_0916_r0.slurm_1801255.out enspacs1_erm023wn_idn1erm0921r40_lp_0916_r0.slurm_1801272.out enspacs1_erm023wn_idn1erm0921r0_lp_0916_r20.slurm_1801043.out enspacs1_erm023wn_idn1erm0921r20_lp_0916_r20.slurm_1801275.out enspacs1_erm023wn_idn1erm0921r40_lp_0916_r20.slurm_1801326.out
