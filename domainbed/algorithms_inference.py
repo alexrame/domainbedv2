@@ -264,10 +264,11 @@ class DiWA(algorithms.ERM):
                     # dict_stats[key]["confs"].append(probs.max(dim=1)[0].cpu())
         for key0 in dict_stats:
             for key1 in dict_stats[key0]:
-                if key1 == "probs" and os.environ.get("DEBUG"):
+                try:
+                    dict_stats[key0][key1] = torch.cat(dict_stats[key0][key1])
+                except:
                     import pdb
                     pdb.set_trace()
-                dict_stats[key0][key1] = torch.cat(dict_stats[key0][key1])
         return dict_stats, batch_classes
 
     def get_dict_entropy(self, dict_stats, device):
