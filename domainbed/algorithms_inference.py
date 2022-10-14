@@ -35,7 +35,11 @@ class DiWA(algorithms.ERM):
         self.global_count = 0
         self.global_count_feat = 0
         self.global_count_ma = 0
+        self.global_count_cla = 0
+
         self.global_count_product = 0
+        self.global_count_feat_product = 0
+        self.global_count_cla_product = 0
         self.var_global_count = 0
         self._create_network()
 
@@ -44,84 +48,76 @@ class DiWA(algorithms.ERM):
         self.network_product = None
         self.network_ma = None
         self.featurizer = None
+        self.featurizer_product = None
         self.var_network = None
         self.networks = []
+        self.classifier_product = None
+        self.classifier = []
         self.classifiers = []
         self.classifiers_weights = []
 
-    def update_mean_featurizer(self, featurizer, weight=1., normalize=True):
-
-        if self.featurizer is None:
-            self.featurizer = copy.deepcopy(featurizer)
-            use_previous = 0.
-        else:
-            use_previous = 1
-
-        for param_n, param_m in zip(featurizer.parameters(), self.featurizer.parameters()):
-            if normalize:
-                param_m.data = (param_m.data * self.global_count_feat +
-                                param_n.data * weight) / (weight + self.global_count_feat)
-            else:
-                param_m.data = (param_m.data * use_previous + param_n.data * weight)
-        self.global_count_feat += weight
-
-    def update_product_featurizer(self, featurizer, weight=1., normalize=True):
-
-        if self.featurizer is None:
-            self.featurizer = copy.deepcopy(featurizer)
-
-        for param_n, param_m in zip(featurizer.parameters(), self.featurizer.parameters()):
+    @staticmethod
+    def _update_product(net0, net1, weight0, weight1):
+        for param_n, param_m in zip(net0.parameters(), net1.parameters()):
             mask = (torch.sign(param_n.data) == torch.sign(param_m.data))
             product = torch.pow(torch.abs(
                 param_n.data
-            ), weight) * torch.pow(torch.abs(param_m.data), self.global_count_feat)
+            ), weight0) * torch.pow(torch.abs(param_m.data), weight1)
             param_m.data = mask * torch.sign(
                 param_m.data
-            ) * torch.pow(product, 1 / (weight + self.global_count_feat))
+            ) * torch.pow(product, 1 / (weight0 + weight1))
 
-        self.global_count_feat += weight
+    @staticmethod
+    def _update_mean(net0, net1, weight0, weight1):
+        for param_n, param_m in zip(net0.parameters(), net1.parameters()):
+            param_m.data = (param_m.data * weight1 + param_n.data * weight0) / (weight0 + weight1)
 
-    def update_product_network(self, network, weight=1., normalize=True):
-        assert normalize
-        if self.network_product is None:
-            self.network_product = copy.deepcopy(network)
-
-        for param_n, param_m in zip(network.parameters(), self.network_product.parameters()):
-            mask = (torch.sign(param_n.data) == torch.sign(param_m.data))
-            product = torch.pow(torch.abs(param_n.data), weight) * torch.pow(torch.abs(param_m.data), self.global_count_product)
-            param_m.data = mask * torch.sign(param_m.data) * torch.pow(product, 1 / (weight + self.global_count_product))
-
-        self.global_count_product += weight
-
-    def update_mean_network(self, network, weight=1., normalize=True):
+    def update_mean_network(self, network, weight=1.):
         if self.network is None:
             self.network = copy.deepcopy(network)
-            use_previous = 0.
-        else:
-            use_previous = 1
-
-        for param_n, param_m in zip(network.parameters(), self.network.parameters()):
-            if normalize:
-                param_m.data = (param_m.data * self.global_count +
-                                param_n.data * weight) / (weight + self.global_count)
-            else:
-                param_m.data = (param_m.data * use_previous + param_n.data * weight)
+        self._update_mean(network, self.network, weight, self.global_count)
         self.global_count += weight
 
+    def update_mean_featurizer(self, network, weight=1.):
+        if self.featurizer is None:
+            self.featurizer = copy.deepcopy(network)
+        self._update_mean(network, self.featurizer, weight, self.global_count_feat)
+        self.global_count_feat += weight
 
-    def update_mean_network_ma(self, network, weight=1., normalize=True):
+    def update_mean_classifier(self, classifier, weight=1.):
+        if self.classifier is None:
+            self.classifier = copy.deepcopy(classifier)
+        self._update_mean(
+            classifier, self.classifier, weight, self.global_count_cla
+        )
+        self.global_count_cla += weight
+
+    def update_product_network(self, network, weight=1.):
+        if self.network_product is None:
+            self.network_product = copy.deepcopy(network)
+        self._update_product(network, self.network_product, weight, self.global_count_product)
+        self.global_count_product += weight
+
+    def update_product_featurizer(self, network, weight=1.):
+        if self.featurizer_product is None:
+            self.featurizer_product = copy.deepcopy(network)
+        self._update_product(network, self.featurizer_product, weight, self.global_count_feat_product)
+        self.global_count_feat_product += weight
+
+    def update_product_classifier(self, classifier, weight=1.):
+
+        if self.classifier_product is None:
+            self.classifier_product = copy.deepcopy(classifier)
+        self._update_product(
+            classifier, self.classifier_product, weight, self.global_count_cla_product
+        )
+        self.global_count_cla_product += weight
+
+    def update_mean_network_ma(self, network, weight=1.):
         if self.network_ma is None:
             self.network_ma = copy.deepcopy(network)
-            use_previous = 0.
-        else:
-            use_previous = 1
 
-        for param_n, param_m in zip(network.parameters(), self.network_ma.parameters()):
-            if normalize:
-                param_m.data = (param_m.data * self.global_count_ma +
-                                param_n.data * weight) / (weight + self.global_count_ma)
-            else:
-                param_m.data = (param_m.data * use_previous + param_n.data * weight)
+        self._update_mean(network, self.network_ma, weight, self.global_count_ma)
         self.global_count_ma += weight
 
     def update_var_network(self, network):
@@ -161,7 +157,7 @@ class DiWA(algorithms.ERM):
     def predict(self, x):
         if self.network_ma is not None:
             dict_predictions = {"": self.network_ma(x)}
-        elif len(self.classifiers) == 0 or os.environ.get("NETWORKINFERENCE", "0") == "1":
+        elif self.classifier is not None or os.environ.get("NETWORKINFERENCE", "0") == "1":
             dict_predictions = {"": self.network(x)}
         else:
             dict_predictions = {}
@@ -178,32 +174,25 @@ class DiWA(algorithms.ERM):
                     dict_predictions["net" + str(i)] = _logits_i
             dict_predictions["ens"] = torch.mean(torch.stack(logits_ens, dim=0), 0)
 
-        if len(self.classifiers) != 0:
+        if self.featurizer is not None:
             logits_enscla = []
-            # conflogits_enscla_minus1 = []
-            # conflogits_enscla_minus2 = []
             features = self.featurizer(x)
+            if self.classifier is not None:
+                dict_predictions["cla"] = self.classifier(features)
 
-            # def get_conf(logits, power=-1):
-            #     probs = torch.softmax(logits, dim=1)
-            #     ent = torch.sum(-probs * torch.log(probs), dim=1)
-            #     conf = torch.reshape(torch.pow(ent, power), (-1, 1))
-            #     return conf
+            if len(self.classifiers) != 0:
+                for i, classifier in enumerate(self.classifiers):
+                    _logits_i = classifier(features)
+                    logits_enscla.append(_logits_i * self.classifiers_weights[i])
+                    # dict_predictions["cla" + str(i)] = _logits_i
+                sum_weights = np.sum(self.classifiers_weights)
+                dict_predictions["enscla"
+                                ] = torch.sum(torch.stack(logits_enscla, dim=0), 0) / sum_weights
 
-            for i, classifier in enumerate(self.classifiers):
-                _logits_i = classifier(features)
-                logits_enscla.append(_logits_i * self.classifiers_weights[i])
-                # dict_predictions["cla" + str(i)] = _logits_i
-            sum_weights = np.sum(self.classifiers_weights)
-            dict_predictions["enscla"
-                            ] = torch.sum(torch.stack(logits_enscla, dim=0), 0) / sum_weights
-
-            # dict_predictions["ensclaminus1"] = torch.mean(
-            #     torch.stack(conflogits_enscla_minus1, dim=0), 0
-            # )
-            # dict_predictions["ensclaminus2"] = torch.mean(
-            #     torch.stack(conflogits_enscla_minus2, dim=0), 0
-            # )
+        if self.featurizer_product is not None:
+            features_product = self.featurizer_product(x)
+            if self.classifier_product is not None:
+                dict_predictions["claprod"] = self.classifier_product(features_product)
 
         return dict_predictions
 

@@ -28,7 +28,7 @@ def _get_args():
         default=0
     )
     parser.add_argument("--checkpoints", nargs='+', default=[])
-    parser.add_argument('--weighting', type=str, default="None")
+    parser.add_argument('--weighting', type=str, default="norm")
 
     # select which checkpoints
     parser.add_argument('--weight_selection', type=str, default="uniform")  # or "restricted"
@@ -183,7 +183,6 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
 def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="mean", device="gpu"):
     model_hparams = {"nonlinear_classifier": False, "resnet18": False, "resnet_dropout": 0}
 
-    normalize = os.environ.get("NORMALIZE", "1") == "1"
     for ckpt in good_checkpoints:
         checkpoint = ckpt["name"]
         checkpoint_weight = ckpt["weight"]
@@ -224,14 +223,14 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
         if checkpoint_type in ["network", "networknotclassifier"]:
             if "mean" in action:
                 wa_algorithm.update_mean_network(
-                    algorithm.network, weight=checkpoint_weight, normalize=normalize
+                    algorithm.network, weight=checkpoint_weight
                 )
             if "product" in action:
                 wa_algorithm.update_product_network(
-                    algorithm.network, weight=checkpoint_weight, normalize=normalize
+                    algorithm.network, weight=checkpoint_weight
                 )
             if "ma" in action:
-                wa_algorithm.update_mean_network_ma(algorithm.network_ma, weight=checkpoint_weight, normalize=normalize)
+                wa_algorithm.update_mean_network_ma(algorithm.network_ma, weight=checkpoint_weight)
             if "netm" in action:
                 wa_algorithm.add_network(algorithm.network)
             if "var" in action:
@@ -239,25 +238,22 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
 
         if checkpoint_type in ["network", "networknotclassifier", "featurizer", "featurizeronly"]:
             if "feats" in action:
-                if os.environ.get("GEOMETRICMEAN"):
-                    wa_algorithm.update_product_featurizer(
-                        algorithm.featurizer, weight=checkpoint_weight, normalize=normalize
-                    )
-                else:
-                    wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight, normalize=normalize)
+                wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight)
+            if "featsproduct" in action:
+                wa_algorithm.update_product_featurizer(algorithm.featurizer, weight=checkpoint_weight)
 
         if checkpoint_type in ["network", "classifier"]:
             if "cla" in action:
                 assert "feats" in action
+                wa_algorithm.update_mean_classifier(algorithm.classifier, weight=checkpoint_weight)
+            if "claproduct" in action:
+                assert "featsproduct" in action
+                wa_algorithm.update_product_classifier(algorithm.classifier, weight=checkpoint_weight)
+            if "clas" in action:
+                assert "feats" in action
                 wa_algorithm.add_classifier(algorithm.classifier, weight=checkpoint_weight)
 
         del algorithm
-
-    if not normalize:
-        print("No normalization of wa")
-        print(wa_algorithm.global_count)
-        print(wa_algorithm.global_count_feat)
-        print(wa_algorithm.global_count_ma)
 
 
 def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits, device):
