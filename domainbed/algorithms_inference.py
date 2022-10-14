@@ -80,9 +80,9 @@ class DiWA(algorithms.ERM):
                 new_data = torch.max(torch.abs(param_0.data), torch.abs(param_1.data))
             elif merging_method == "rand":
                 if random.random() < weight0/(weight0 + weight1):
-                    new_data = param_0.data
+                    new_data = torch.abs(param_0.data)
                 else:
-                    new_data = param_1.data
+                    new_data = torch.abs(param_1.data)
             else:
                 raise ValueError("Unknown merging type: " + merging_method)
             param_1.data = mask * torch.sign(param_1.data) * new_data
