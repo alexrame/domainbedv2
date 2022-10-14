@@ -45,14 +45,16 @@ class DiWA(algorithms.ERM):
 
     def _create_network(self):
         self.network = None
-        self.network_product = None
         self.network_ma = None
         self.featurizer = None
+        self.classifier = None
+
+        self.network_product = None
         self.featurizer_product = None
+        self.classifier_product = None
+
         self.var_network = None
         self.networks = []
-        self.classifier_product = None
-        self.classifier = []
         self.classifiers = []
         self.classifiers_weights = []
 
