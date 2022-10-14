@@ -244,7 +244,7 @@ class DiWA(algorithms.ERM):
                     if key not in dict_stats:
                         dict_stats[key] = {
                             # "logits": [],
-                            # "probs": [],
+                            "probs": [],
                             "preds": [],
                             "correct": [],
                             "tcp": []
