@@ -34,18 +34,18 @@ class DiWA(algorithms.ERM):
         algorithms.Algorithm.__init__(self, input_shape, num_classes, num_domains, hparams={})
         self.global_count = 0
         self.global_count_feat = 0
-        self.global_count_ma = 0
         self.global_count_cla = 0
 
         self.global_count_product = 0
         self.global_count_feat_product = 0
         self.global_count_cla_product = 0
-        self.var_global_count = 0
+
+        self.global_count_ma = 0
+        self.global_count_var = 0
         self._create_network()
 
     def _create_network(self):
         self.network = None
-        self.network_ma = None
         self.featurizer = None
         self.classifier = None
 
@@ -53,7 +53,8 @@ class DiWA(algorithms.ERM):
         self.featurizer_product = None
         self.classifier_product = None
 
-        self.var_network = None
+        self.network_ma = None
+        self.network_var = None
         self.networks = []
         self.classifiers = []
         self.classifiers_weights = []
@@ -115,7 +116,6 @@ class DiWA(algorithms.ERM):
         )
         self.global_count_cla_product += weight
 
-
     def update_mean_network_ma(self, network, weight=1.):
         if self.network_ma is None:
             self.network_ma = copy.deepcopy(network)
@@ -124,15 +124,15 @@ class DiWA(algorithms.ERM):
         self.global_count_ma += weight
 
     def update_var_network(self, network):
-        if self.var_network is None:
-            self.var_network = copy.deepcopy(network)
+        if self.network_var is None:
+            self.network_var = copy.deepcopy(network)
         for param_n, param_m, param_v in zip(
-            network.parameters(), self.network.parameters(), self.var_network.parameters()
+            network.parameters(), self.network.parameters(), self.network_var.parameters()
         ):
             l2_network_meannetwork = (param_n.data - param_m.data)**2
-            param_v.data = (param_v.data * self.var_global_count +
-                            l2_network_meannetwork) / (1. + self.var_global_count)
-        self.var_global_count += 1
+            param_v.data = (param_v.data * self.global_count_var +
+                            l2_network_meannetwork) / (1. + self.global_count_var)
+        self.global_count_var += 1
 
     def create_stochastic_networks(self):
         assert len(self.networks) == 0
@@ -140,12 +140,12 @@ class DiWA(algorithms.ERM):
         for i in range(int(os.environ.get("MAXM", 3))):
             network = copy.deepcopy(self.network)
             for param_n, param_m, param_v in zip(
-                network.parameters(), self.network.parameters(), self.var_network.parameters()
+                network.parameters(), self.network.parameters(), self.network_var.parameters()
             ):
                 param_n.data = torch.normal(
                     mean=param_m.data,
                     std=multiplier *
-                    torch.sqrt(self.var_global_count / (self.var_global_count - 1) * param_v.data)
+                    torch.sqrt(self.global_count_var / (self.global_count_var - 1) * param_v.data)
                 )
                 # param_n.data = param_m.data + * gaussian_noise
             self.add_network(network)
@@ -167,6 +167,12 @@ class DiWA(algorithms.ERM):
 
         if self.network_product is not None:
             dict_predictions["prod"] = self.network_product(x)
+            if "" in dict_predictions:
+                dict_predictions["ensprod"] = torch.mean(
+                    torch.stack(
+                        [dict_predictions[""],dict_predictions["prod"]], dim=0),
+                    0
+                )
 
         if len(self.networks) != 0:
             logits_ens = []
@@ -201,7 +207,6 @@ class DiWA(algorithms.ERM):
                 dict_predictions["claprodmean"] = self.classifier(features_product)
             if self.classifier_product is not None:
                 dict_predictions["claprod"] = self.classifier_product(features_product)
-
 
         return dict_predictions
 
