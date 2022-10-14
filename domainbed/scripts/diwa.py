@@ -239,7 +239,12 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
 
         if checkpoint_type in ["network", "networknotclassifier", "featurizer", "featurizeronly"]:
             if "feats" in action:
-                wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight, normalize=normalize)
+                if os.environ.get("GEOMETRICMEAN"):
+                    wa_algorithm.update_product_featurizer(
+                        algorithm.featurizer, weight=checkpoint_weight, normalize=normalize
+                    )
+                else:
+                    wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight, normalize=normalize)
 
         if checkpoint_type in ["network", "classifier"]:
             if "cla" in action:
