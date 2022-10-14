@@ -284,7 +284,7 @@ class DiWA(algorithms.ERM):
                 continue
             probs = value["probs"]
             entropy = compute_entropy_predictions(probs)
-            dict_results["ent_" + key] = entropy
+            dict_results["ent_" + key] = entropy.float().cpu()
 
         return dict_results
 
