@@ -264,6 +264,9 @@ class DiWA(algorithms.ERM):
                     # dict_stats[key]["confs"].append(probs.max(dim=1)[0].cpu())
         for key0 in dict_stats:
             for key1 in dict_stats[key0]:
+                if key1 == "probs" and os.environ.get("DEBUG"):
+                    import pdb
+                    pdb.set_trace()
                 dict_stats[key0][key1] = torch.cat(dict_stats[key0][key1])
         return dict_stats, batch_classes
 
@@ -274,9 +277,6 @@ class DiWA(algorithms.ERM):
             entropy = x * torch.log(x + 1e-10)  #bs * num_classes
             return -1. * entropy.sum()/entropy.size(0)
 
-        if os.environ.get("DEBUG"):
-            import pdb
-            pdb.set_trace()
         for key, value in dict_stats.items():
             if "probs" not in value:
                 print(value.keys())
