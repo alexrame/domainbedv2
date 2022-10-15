@@ -269,8 +269,8 @@ def results_ensembling(algorithm, loader, device):
     dict_diversity = algorithm.get_dict_diversity(dict_stats, targets, device)
     dict_results.update(dict_diversity)
     # print("Compute prediction entropy")
-    dict_entropy = algorithm.get_dict_entropy(dict_stats, device)
-    dict_results.update(dict_entropy)
+    # dict_entropy = algorithm.get_dict_entropy(dict_stats, device)
+    # dict_results.update(dict_entropy)
     return dict_results
 
 

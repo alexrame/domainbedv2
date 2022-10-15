@@ -78,12 +78,12 @@ class ERM(Algorithm):
         num_classes,
         num_domains,
         hparams,
-        train_only_classifier=False,
+        what_is_trainable=False,
         path_for_init=None
     ):
         super(ERM, self).__init__(input_shape, num_classes, num_domains, hparams)
 
-        self._train_only_classifier = train_only_classifier
+        self._what_is_trainable = what_is_trainable
         self._create_network()
         self._load_network(path_for_init)
         self._init_optimizer()
@@ -109,16 +109,21 @@ class ERM(Algorithm):
                 self.featurizer.load_state_dict(saved_dict)
             else:
                 self.network.load_state_dict(saved_dict)
-            if self._train_only_classifier == "reset":
+            if self._what_is_trainable == "clareset":
                 # or os.environ.get("RESET_CLASSIFIER"):
                 print("Reset random classifier")
                 self.classifier.reset_parameters()
 
     def _init_optimizer(self):
         ## DiWA choose weights to be optimized ##
-        if not self._train_only_classifier:
+        if self._what_is_trainable in [0, "0", None]:
             parameters_to_be_optimized = self.network.parameters()
+        elif self._what_is_trainable == "clafrozen":
+            # linear probing
+            print("Learn only featurizer")
+            parameters_to_be_optimized = self.featurizer.parameters()
         else:
+            assert self._what_is_trainable in ["1", "clareset"]
             # linear probing
             print("Learn only last classification layer")
             parameters_to_be_optimized = self.classifier.parameters()
@@ -133,7 +138,7 @@ class ERM(Algorithm):
         all_x = torch.cat([x for x, y in minibatches])
         all_y = torch.cat([y for x, y in minibatches])
         all_features = self.featurizer(all_x)
-        if self._train_only_classifier:
+        if self._what_is_trainable in ["1", "clareset"]:
             all_features = all_features.detach()
         all_features = self.modify_features(all_features)
         loss = F.cross_entropy(self.classifier(all_features), all_y)
@@ -172,7 +177,7 @@ class ERMLasso(ERM):
         all_x = torch.cat([x for x, y in minibatches])
         all_y = torch.cat([y for x, y in minibatches])
         all_features = self.featurizer(all_x)
-        if self._train_only_classifier:
+        if self._what_is_trainable in ["1", "clareset"]:
             all_features = all_features.detach()
         all_features = self.modify_features(all_features)
         objective = F.cross_entropy(self.classifier(all_features), all_y)
@@ -208,7 +213,7 @@ class SD(ERM):
 
         all_x = torch.cat([x for x, y in minibatches])
         all_features = self.featurizer(all_x)
-        if self._train_only_classifier:
+        if self._what_is_trainable in ["1", "clareset"]:
             all_features = all_features.detach()
         all_features = self.modify_features(all_features)
 
@@ -224,56 +229,6 @@ class SD(ERM):
 
         return {'loss': loss.item(), 'penalty': penalty.item()}
 
-
-class ERMask(ERM):
-    """
-    """
-
-    def __init__(
-        self,
-        input_shape,
-        num_classes,
-        num_domains,
-        hparams,
-        train_only_classifier=False,
-        path_for_init=None
-    ):
-        super(ERM, self).__init__(input_shape, num_classes, num_domains, hparams)
-        self._train_only_classifier = train_only_classifier
-        self._create_network()
-        self._load_network(path_for_init)
-        self.mask_parameters = nn.Parameter(
-            torch.zeros(self.featurizer.n_outputs), requires_grad=True)
-        self._init_optimizer()
-
-    def predict(self, x):
-        feats = self.featurizer(x)
-        mask_feats = self.modify_features(feats)
-        preds = self.classifier(mask_feats)
-        return {"": preds}
-
-    def modify_features(self, feats):
-        return feats * torch.sigmoid(self.mask_parameters)
-
-    def _init_optimizer(self):
-        ## DiWA choose weights to be optimized ##
-        if not self._train_only_classifier:
-            print("Train full network but not mask")
-            parameters_to_be_optimized = self.network.parameters()
-        else:
-            if self._train_only_classifier == "mask":
-                print("Train only mask mayer")
-                parameters_to_be_optimized = [self.mask_parameters]
-            else:
-                # linear probing
-                print("Train only last classification layer")
-                parameters_to_be_optimized = self.classifier.parameters()
-
-        self.optimizer = torch.optim.Adam(
-            parameters_to_be_optimized,
-            lr=self.hparams["lr"],
-            weight_decay=self.hparams['weight_decay']
-        )
 
 ## DiWA to reproduce moving average baseline ##
 class MA(ERM):
@@ -341,7 +296,7 @@ class IRM(ERM):
 
         all_x = torch.cat([x for x, y in minibatches])
         all_features = self.featurizer(all_x)
-        if self._train_only_classifier:
+        if self._what_is_trainable in ["1", "clareset"]:
             all_features = all_features.detach()
         all_logits = self.classifier(all_features)
 
@@ -389,7 +344,7 @@ class VREx(ERM):
 
         all_x = torch.cat([x for x, y in minibatches])
         all_features = self.featurizer(all_x)
-        if self._train_only_classifier:
+        if self._what_is_trainable in ["1", "clareset"]:
             all_features = all_features.detach()
         all_logits = self.classifier(all_features)
 
@@ -437,7 +392,7 @@ class Mixup(ERM):
 
             x = lam * xi + (1 - lam) * xj
             features = self.featurizer(x)
-            if self._train_only_classifier:
+            if self._what_is_trainable in ["1", "clareset"]:
                 features = features.detach()
             predictions = self.classifier(features)
 
@@ -474,7 +429,7 @@ class GroupDRO(ERM):
         for m in range(len(minibatches)):
             x, y = minibatches[m]
             features = self.featurizer(x)
-            if self._train_only_classifier:
+            if self._what_is_trainable in ["1", "clareset"]:
                 features = features.detach()
             losses[m] = F.cross_entropy(self.classifier(features), y)
             self.q[m] *= (self.hparams["groupdro_eta"] * losses[m].data).exp()
@@ -498,7 +453,7 @@ class DARE(ERM):
 
     def __init__(self, *args, **kwargs):
         ERM.__init__(self, *args, **kwargs)
-        assert self._train_only_classifier
+        assert self._what_is_trainable
 
         self.register_buffer(
             "mean_per_domain", torch.zeros(self.num_domains, self.featurizer.n_outputs)
@@ -515,7 +470,7 @@ class DARE(ERM):
         all_x = torch.cat([x for x, y in minibatches])
         all_y = torch.cat([y for x, y in minibatches])
         all_features = self.featurizer(all_x)
-        if self._train_only_classifier:
+        if self._what_is_trainable in ["1", "clareset"]:
             all_features = all_features.detach()
 
         penalty = torch.tensor(0.)
@@ -601,7 +556,7 @@ class AbstractMMD(ERM):
             self.kernel_type = "gaussian"
         else:
             self.kernel_type = "mean_cov"
-        assert not self._train_only_classifier
+        assert not self._what_is_trainable
 
     def my_cdist(self, x1, x2):
         x1_norm = x1.pow(2).sum(dim=-1, keepdim=True)
@@ -696,13 +651,13 @@ class Fishr(Algorithm):
         num_classes,
         num_domains,
         hparams,
-        train_only_classifier=False,
+        what_is_trainable=False,
         path_for_init=None
     ):
         assert backpack is not None, "Install backpack with: 'pip install backpack-for-pytorch==1.3.0'"
         super(Fishr, self).__init__(input_shape, num_classes, num_domains, hparams)
 
-        self._train_only_classifier = train_only_classifier
+        self._what_is_trainable = what_is_trainable
         self._create_network()
         self._load_network(path_for_init)
 
@@ -737,7 +692,7 @@ class Fishr(Algorithm):
         len_minibatches = [x.shape[0] for x, y in minibatches]
 
         all_z = self.featurizer(all_x)
-        if self._train_only_classifier:
+        if self._what_is_trainable in ["1", "clareset"]:
             all_z = all_z.detach()
         all_logits = self.classifier(all_z)
 

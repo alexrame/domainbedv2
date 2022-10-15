@@ -50,7 +50,7 @@ if __name__ == "__main__":
     parser.add_argument('--skip_model_save', action='store_true')
     parser.add_argument('--save_model_every_checkpoint', type=str, default=None)
     ## DiWA ##
-    parser.add_argument('--train_only_classifier', type=str, default=None)
+    parser.add_argument('--train_only_classifier', type=str, default="0")
     parser.add_argument('--path_for_init', type=str, default="")
     parser.add_argument('--path_for_save', type=str, default="")
     args = parser.parse_args()
@@ -188,15 +188,12 @@ if __name__ == "__main__":
     eval_loader_names += ['env{}_uda'.format(i)
         for i in range(len(uda_splits))]
 
-    if args.train_only_classifier == "0":
-        args.train_only_classifier = None
-
     algorithm = algorithms.get_algorithm_class(args.algorithm)(
         dataset.input_shape,
         dataset.num_classes,
         len(dataset) - len(args.test_envs),
         hparams,
-        train_only_classifier=args.train_only_classifier,
+        what_is_trainable=args.train_only_classifier,
         path_for_init=args.path_for_init
     )
 
