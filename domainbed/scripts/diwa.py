@@ -310,7 +310,7 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
             pass
     dict_results["testenv"] = inf_args.test_env
     dict_results["topk"] = inf_args.topk
-    if inf_args.checkpoints:
+    if inf_args.checkpoints_all:
         dict_results["robust"] = "-".join(
             ["{w:.3f}".format(w=ckpt["weight"]) + "_" + str(ckpt["type"])
              for ckpt in inf_args.checkpoints_all]
