@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import torch.autograd as autograd
 from torch.autograd import Variable
 import os
+import pdb
 import copy
 from torch.distributions.normal import Normal
 import numpy as np
@@ -117,15 +118,16 @@ class ERM(Algorithm):
     def _get_training_parameters(self):
         ## DiWA choose weights to be optimized ##
         if self._what_is_trainable in [0, "0", None]:
+            print("Learn featurizer and classifier")
             parameters_to_be_optimized = self.network.parameters()
         elif self._what_is_trainable == "clafrozen":
-            # linear probing
+            # useful for linear probing
             print("Learn only featurizer")
             parameters_to_be_optimized = self.featurizer.parameters()
         else:
             assert self._what_is_trainable in ["1", "clareset"]
-            # linear probing
-            print("Learn only last classification layer")
+            # useful when learning with fixed vocabulary
+            print("Learn only classifier")
             parameters_to_be_optimized = self.classifier.parameters()
         return parameters_to_be_optimized
 
@@ -181,7 +183,8 @@ class ERMG(ERM):
 
     def _init_optimizer(self):
         parameters_to_be_optimized = self._get_training_parameters()
-
+        if os.environ.get("DEBUG"):
+            pdb.set_trace()
         self.optimizers = [torch.optim.Adam(
             parameters_to_be_optimized,
             lr=self.hparams["lr"],
