@@ -23,11 +23,8 @@ from domainbed.lib.misc import (
 )
 
 ALGORITHMS = [
-    'ERM', "ERMG",
-    "ERMLasso",
-    "MA", 'Fish',
-    'IRM', 'GroupDRO', 'Mixup', 'CORAL', 'MMD', 'VREx', "Fishr",
-    "DARE", "DARESWAP"
+    'ERM', "ERMG", "ERMLasso", "MA", 'Fish', 'IRM', 'GroupDRO', 'Mixup', 'CORAL', 'MMD', 'VREx',
+    "Fishr", "DARE", "DARESWAP"
 ]
 
 
@@ -182,14 +179,16 @@ class ERMG(ERM):
     """
 
     def _init_optimizer(self):
-        parameters_to_be_optimized = self._get_training_parameters()
-        if os.environ.get("DEBUG"):
-            pdb.set_trace()
-        self.optimizers = [torch.optim.Adam(
-            parameters_to_be_optimized,
-            lr=self.hparams["lr"],
-            weight_decay=self.hparams['weight_decay']
-        ) for _ in range(self.num_domains)]
+        self.optimizers = []
+        for _ in range(self.num_domains):
+            parameters_to_be_optimized = self._get_training_parameters()
+            self.optimizers.append(
+                torch.optim.Adam(
+                    parameters_to_be_optimized,
+                    lr=self.hparams["lr"],
+                    weight_decay=self.hparams['weight_decay']
+                )
+            )
 
     def update(self, minibatches, unlabeled=None):
         losses = {}
@@ -208,6 +207,7 @@ class ERMG(ERM):
             losses[domain] = loss.item()
 
         return losses
+
 
 class ERMLasso(ERM):
 
@@ -677,9 +677,6 @@ class CORAL(AbstractMMD):
         AbstractMMD.__init__(self, False, *args, **kwargs)
 
 
-
-
-
 class Fishr(Algorithm):
     "Invariant Gradients variances for Out-of-distribution Generalization"
 
@@ -717,6 +714,7 @@ class Fishr(Algorithm):
             )
         )
         self.network = nn.Sequential(self.featurizer, self.classifier)
+
     def _load_network(self, path_for_init):
         return ERM._load_network(self, path_for_init)
 
