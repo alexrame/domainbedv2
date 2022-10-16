@@ -204,7 +204,7 @@ class ERMG(ERM):
             self.optimizers[domain].zero_grad()
             loss.backward()
             self.optimizers[domain].step()
-            losses[domain] = loss.item()
+            losses["loss" + str(domain)] = loss.item()
 
         return losses
 
