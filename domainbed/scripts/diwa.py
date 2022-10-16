@@ -5,6 +5,7 @@ import random
 import numpy as np
 import torch
 import time
+import pdb
 import torch.utils.data
 from domainbed import datasets, algorithms_inference
 from domainbed.lib import misc
@@ -55,6 +56,7 @@ def _get_args():
                 "type": "network"
             } for i in range(len(inf_args.checkpoints) // 2)
         ]
+    inf_args.checkpoints_all = [ckpt for ckpt in inf_args.checkpoints]
     inf_args.checkpoints = [ckpt for ckpt in inf_args.checkpoints if float(ckpt["weight"]) != 0][::-1]
     misc.print_args(inf_args)
     return inf_args
@@ -306,10 +308,13 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
             dict_results["step"] = int(dict_results["step"])
         except:
             pass
+    dict_results["testenv"] = inf_args.test_env
+    dict_results["topk"] = inf_args.topk
     if inf_args.checkpoints:
-        dict_results["robust"] = "-".join([
-            str(ckpt["weight"]) + "_" + str(ckpt["type"])
-            for ckpt in inf_args.checkpoints])
+        dict_results["robust"] = "-".join(
+            ["{w:.3f}".format(w=ckpt["weight"]) + "_" + str(ckpt["type"])
+             for ckpt in inf_args.checkpoints_all]
+        )
 
     return dict_results
 
