@@ -22,7 +22,7 @@ from domainbed.lib.misc import (
 )
 
 ALGORITHMS = [
-    'ERM', "ERMask",
+    'ERM', "ERMG",
     "ERMLasso",
     "MA", 'Fish',
     'IRM', 'GroupDRO', 'Mixup', 'CORAL', 'MMD', 'VREx', "Fishr",
@@ -114,7 +114,7 @@ class ERM(Algorithm):
                 print("Reset random classifier")
                 self.classifier.reset_parameters()
 
-    def _init_optimizer(self):
+    def _get_training_parameters(self):
         ## DiWA choose weights to be optimized ##
         if self._what_is_trainable in [0, "0", None]:
             parameters_to_be_optimized = self.network.parameters()
@@ -127,7 +127,10 @@ class ERM(Algorithm):
             # linear probing
             print("Learn only last classification layer")
             parameters_to_be_optimized = self.classifier.parameters()
+        return parameters_to_be_optimized
 
+    def _init_optimizer(self):
+        parameters_to_be_optimized = self._get_training_parameters()
         self.optimizer = torch.optim.Adam(
             parameters_to_be_optimized,
             lr=self.hparams["lr"],
@@ -170,6 +173,38 @@ class ERM(Algorithm):
             print(f"Save whole network at {path_for_save}")
             torch.save(self.network.state_dict(), path_for_save)
 
+
+class ERMG(ERM):
+    """
+    Empirical Risk Minimization (ERM) games
+    """
+
+    def _init_optimizer(self):
+        parameters_to_be_optimized = self._get_training_parameters()
+
+        self.optimizers = [torch.optim.Adam(
+            parameters_to_be_optimized,
+            lr=self.hparams["lr"],
+            weight_decay=self.hparams['weight_decay']
+        ) for _ in range(self.num_domains)]
+
+    def update(self, minibatches, unlabeled=None):
+        losses = {}
+        for domain in np.random.permutation(range(self.num_domains)):
+            x = minibatches[domain][0]
+            y = minibatches[domain][1]
+            features = self.featurizer(x)
+            if self._what_is_trainable in ["1", "clareset"]:
+                features = features.detach()
+            features = self.modify_features(features)
+            loss = F.cross_entropy(self.classifier(features), y)
+
+            self.optimizers[domain].zero_grad()
+            loss.backward()
+            self.optimizers[domain].step()
+            losses[domain] = loss.item()
+
+        return losses
 
 class ERMLasso(ERM):
 
@@ -684,6 +719,9 @@ class Fishr(Algorithm):
 
     def _init_optimizer(self):
         ERM._init_optimizer(self)
+
+    def _get_training_parameters(self):
+        return ERM._get_training_parameters(self)
 
     def update(self, minibatches, unlabeled=False):
         assert len(minibatches) == self.num_domains
