@@ -109,8 +109,10 @@ def create_splits(domain, inf_args, dataset, _filter, holdout_fraction):
 
 
 def get_checkpoint_from_folder(output_folder):
+
+    whichmodel = os.environ.get("WHICHMODEL", "best")
     name = None
-    if os.environ.get("WHICHMODEL", "best") in ['best', "stepbest"]:
+    if whichmodel in ['best', "stepbest"]:
         if "model_best.pkl" in os.listdir(output_folder):
             name = "model_best.pkl"
         elif "best" in os.listdir(output_folder):
@@ -118,16 +120,15 @@ def get_checkpoint_from_folder(output_folder):
             name = "model_with_weights.pkl"
         elif "model.pkl" in os.listdir(output_folder):
             name = "model.pkl"
-    elif os.environ.get("WHICHMODEL") in ['bestoracle', 'stepbestoracle']:
+    elif whichmodel in ['bestoracle', 'stepbestoracle']:
         name = "model_bestoracle.pkl"
+    elif whichmodel in ['last', "steplast"]:
+        name = "model_with_weights.pkl"
+        if name not in os.listdir(output_folder):
+            name = "model.pkl"
 
     if name is None:
-        if os.environ.get("WHICHMODEL", "last") in ['last', "steplast"]:
-            name = "model_with_weights.pkl"
-            if name not in os.listdir(output_folder):
-                name = "model.pkl"
-        elif os.environ.get("WHICHMODEL") not in ['best', "stepbest"]:
-            name = "model_" + os.environ.get("WHICHMODEL") + ".pkl"
+        name = "model_" + whichmodel + ".pkl"
 
     if name in os.listdir(output_folder):
         return os.path.join(output_folder, name)
@@ -395,8 +396,8 @@ def create_data_splits(inf_args, dataset):
             dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
     if os.environ.get("INCLUDETSV_UPTO", "0") != "0":
         for env_i in range(0, int(os.environ.get("INCLUDETSV_UPTO", "0"))):
-            dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
             dict_domain_to_filter["env_" + str(env_i) + "_in"] = "insmall"
+            dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
     if os.environ.get("INCLUDETRAIN_UPTO", "0") != "0":
         for env_i in range(0, int(os.environ.get("INCLUDETRAIN_UPTO", "0"))):
             dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"

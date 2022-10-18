@@ -5,7 +5,6 @@ import math
 import torch
 import torch.nn as nn
 import collections
-import random
 from domainbed import networks, algorithms
 from domainbed.lib import diversity_metrics
 
@@ -64,28 +63,52 @@ class DiWA(algorithms.ERM):
     def _update_product(net0, net1, weight0, weight1):
         if weight0 + weight1 == 0:
             return
+
+        merging_method_all = os.environ.get("MERGINGMETHOD", "product")
+        if merging_method_all == "sample":
+            merging_method_all = np.random.choice([
+                "mean",
+                "product",
+                "max",
+                "min",
+                "rand",
+            ])
+
         for param_0, param_1 in zip(net0.parameters(), net1.parameters()):
-            mask = (torch.sign(param_0.data) == torch.sign(param_1.data))
-            merging_method = os.environ.get("MERGINGMETHOD", "product")
-            if merging_method == "product":
-                product = torch.pow(torch.abs(
-                    param_0.data
-                ), weight0) * torch.pow(torch.abs(param_1.data), weight1)
-                new_data = mask * torch.sign(
-                    param_1.data
-                ) * torch.pow(product, 1 / (weight0 + weight1))
-            elif merging_method == "max":
-                new_data = torch.max(torch.abs(param_0.data), torch.abs(param_1.data))
-            elif merging_method == "min":
-                new_data = torch.min(torch.abs(param_0.data), torch.abs(param_1.data))
-            elif merging_method == "rand":
-                if random.random() < weight0/(weight0 + weight1):
-                    new_data = torch.abs(param_0.data)
-                else:
-                    new_data = torch.abs(param_1.data)
+            if merging_method_all == "sampleperlayer":
+                merging_method = np.random.choice([
+                    "mean",
+                    "product",
+                    "max",
+                    "min",
+                    "rand",
+                ])
             else:
-                raise ValueError("Unknown merging type: " + merging_method)
-            param_1.data = mask * torch.sign(param_1.data) * new_data
+                merging_method = merging_method_all
+
+            if merging_method == "mean":
+                param_1.data = (param_1.data * weight1 +
+                                param_0.data * weight0) / (weight0 + weight1)
+            else:
+                mask = (torch.sign(param_0.data) == torch.sign(param_1.data))
+                if merging_method == "product":
+                    product = torch.pow(torch.abs(param_0.data),
+                                        weight0) * torch.pow(torch.abs(param_1.data), weight1)
+                    new_data = mask * torch.sign(param_1.data
+                                                ) * torch.pow(product, 1 / (weight0 + weight1))
+                elif merging_method == "max":
+                    new_data = torch.max(torch.abs(param_0.data), torch.abs(param_1.data))
+                elif merging_method == "min":
+                    new_data = torch.min(torch.abs(param_0.data), torch.abs(param_1.data))
+                elif merging_method == "rand":
+                    if np.random.random() < weight0 / (weight0 + weight1):
+                        new_data = torch.abs(param_0.data)
+                    else:
+                        new_data = torch.abs(param_1.data)
+                else:
+                    raise ValueError("Unknown merging type: " + merging_method)
+
+                param_1.data = mask * torch.sign(param_1.data) * new_data
 
     @staticmethod
     def _update_mean(net0, net1, weight0, weight1):
@@ -109,9 +132,7 @@ class DiWA(algorithms.ERM):
     def update_mean_classifier(self, classifier, weight=1.):
         if self.classifier is None:
             self.classifier = copy.deepcopy(classifier)
-        self._update_mean(
-            classifier, self.classifier, weight, self.global_count_cla
-        )
+        self._update_mean(classifier, self.classifier, weight, self.global_count_cla)
         self.global_count_cla += weight
 
     def update_product_network(self, network, weight=1.):
@@ -123,7 +144,9 @@ class DiWA(algorithms.ERM):
     def update_product_featurizer(self, network, weight=1.):
         if self.featurizer_product is None:
             self.featurizer_product = copy.deepcopy(network)
-        self._update_product(network, self.featurizer_product, weight, self.global_count_feat_product)
+        self._update_product(
+            network, self.featurizer_product, weight, self.global_count_feat_product
+        )
         self.global_count_feat_product += weight
 
     def update_product_classifier(self, classifier, weight=1.):
@@ -188,9 +211,7 @@ class DiWA(algorithms.ERM):
             dict_predictions["prod"] = self.network_product(x)
             if "" in dict_predictions:
                 dict_predictions["ensprod"] = torch.mean(
-                    torch.stack(
-                        [dict_predictions[""],dict_predictions["prod"]], dim=0),
-                    0
+                    torch.stack([dict_predictions[""], dict_predictions["prod"]], dim=0), 0
                 )
 
         if len(self.networks) != 0:
@@ -290,10 +311,11 @@ class DiWA(algorithms.ERM):
 
     def get_dict_entropy(self, dict_stats, device):
         dict_results = {}
+
         def compute_entropy_predictions(x):
             #print(x)
             entropy = x * torch.log(x + 1e-10)  #bs * num_classes
-            return -1. * entropy.sum()/entropy.size(0)
+            return -1. * entropy.sum() / entropy.size(0)
 
         for key, value in dict_stats.items():
             if "probs" not in value:
@@ -301,7 +323,9 @@ class DiWA(algorithms.ERM):
                 continue
             probs = value["probs"]
             entropy = compute_entropy_predictions(probs)
-            dict_results["ent_" + key] = np.mean(entropy.float().cpu().numpy()) # mean just to get rid of array
+            dict_results["ent_" + key] = np.mean(
+                entropy.float().cpu().numpy()
+            )  # mean just to get rid of array
 
         return dict_results
 
