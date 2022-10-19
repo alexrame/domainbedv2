@@ -1,5 +1,6 @@
 import os
 import copy
+import pdb
 import numpy as np
 import math
 import torch
@@ -450,6 +451,8 @@ class TrainableDiWA(DiWA):
             optimizer.step()
             return loss.item()
 
+        if os.environ.get('DEBUG', False):
+            pdb.set_trace()
         for step in range(0, n_steps):
             x, y = next(loader_train)
             x = x.to(device)
@@ -458,4 +461,4 @@ class TrainableDiWA(DiWA):
             l = train_step(x, y, optimizer)
             print(step, l, self.lambdas)
 
-# MODEL_SELECTION=train WHICHMODEL=stepbest INCLUDEVAL_UPTO=4 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0  --output_dir /data/rame/experiments/domainbed/home0_ma_lp_0824 --trial_seed 0 --data_dir /data/rame/data/domainbed --checkpoints /data/rame/data/domainbed/inits/model_home0_ermll_saveall_si_0822.pkl 0 featurizer --what netm --topk 1
+# MODEL_SELECTION=train WHICHMODEL=stepbest INCLUDEVAL_UPTO=4 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0  --output_dir /data/rame/experiments/domainbed/home0_ma_lp_0824 --trial_seed 0 --data_dir /data/rame/data/domainbed --checkpoints /data/rame/data/domainbed/inits/model_home0_ermll_saveall_si_0822.pkl 0 featurizer --what addfeats --topk 1 --weight_selection train
