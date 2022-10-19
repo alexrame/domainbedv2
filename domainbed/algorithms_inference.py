@@ -453,8 +453,9 @@ class TrainableDiWA(DiWA):
 
         if os.environ.get('DEBUG', False):
             pdb.set_trace()
+        iter_loader_train = iter(loader_train)
         for step in range(0, n_steps):
-            x, y = next(loader_train)
+            x, y = next(iter_loader_train)
             x = x.to(device)
             y = y.to(device)
             optimizer = self.optimizer_classifier if step % 2 else self.optimizer_lambdas
