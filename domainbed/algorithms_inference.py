@@ -32,6 +32,10 @@ class DiWA(algorithms.ERM):
         """
         """
         algorithms.Algorithm.__init__(self, input_shape, num_classes, num_domains, hparams={})
+        self._init_counts()
+        self._create_network()
+
+    def _init_counts(self):
         self.global_count = 0
         self.global_count_feat = 0
         self.global_count_cla = 0
@@ -42,7 +46,6 @@ class DiWA(algorithms.ERM):
 
         self.global_count_ma = 0
         self.global_count_var = 0
-        self._create_network()
 
     def _create_network(self):
         self.network = None
@@ -56,6 +59,7 @@ class DiWA(algorithms.ERM):
         self.network_ma = None
         self.network_var = None
         self.networks = []
+        self.featurizers = []
         self.classifiers = []
         self.classifiers_weights = []
 
@@ -115,7 +119,8 @@ class DiWA(algorithms.ERM):
         if weight0 + weight1 == 0:
             return
         for param_0, param_1 in zip(net0.parameters(), net1.parameters()):
-            param_1.data = (param_1.data * weight1 + param_0.data * weight0) / (weight0 + weight1)
+            param_1.data = (param_1.data * weight1 + param_0.data * weight0) / (
+                weight0 + weight1)
 
     def update_mean_network(self, network, weight=1.):
         if self.network is None:
@@ -194,6 +199,9 @@ class DiWA(algorithms.ERM):
 
     def add_network(self, network):
         self.networks.append(network)
+
+    def add_featurizer(self, network):
+        self.featurizers.append(network)
 
     def add_classifier(self, classifier, weight=1):
         self.classifiers.append(classifier)
@@ -377,3 +385,77 @@ class DiWA(algorithms.ERM):
             dict_results["divp_netm"] = np.mean(np.apply_along_axis(div_pac, 1, tcps))
 
         return dict_results
+
+
+from torch import nn, optim
+
+class TrainableDiWA(DiWA):
+
+    def _create_network(self):
+        self.featurizer = None
+        self.classifier = None
+        self.featurizers = []
+
+    def train(self, *args):
+        algorithms.ERM.train(self, *args)
+        for featurizer in self.featurizers:
+            featurizer.train(*args)
+
+    def to(self, device):
+        algorithms.ERM.to(self, device)
+        for featurizer in self.featurizers:
+            featurizer.to(device)
+
+    def init_train(self):
+        self.num_featurizers = len(self.featurizers)
+        self.lambdas = [torch.tensor(0., requires_grad=True) for _ in range(self.num_featurizers)]
+        self.optimizer_lambdas = optim.Adam(self.lambdas, lr=1e-4)
+        self.optimizer_classifier = optim.Adam(self.classifier.parameters(), lr=1e-4)
+        self.loss_fn = nn.CrossEntropyLoss()
+        # torefine later
+
+    def set_not_trainable(self):
+        for net in [self.featurizer] + self.featurizers:
+            for param in net.parameters():
+                param.requires_grad = False
+
+    def get_wa_weights(self):
+        weights = {}
+        list_gen_named_params = [featurizer.named_parameters() for featurizer in self.featurizers]
+        for name_0, param_0 in self.featurizer.named_parameters():
+            named_params = [next(gen_named_params) for gen_named_params in list_gen_named_params]
+            new_data = param_0.data
+            sum_lambdas = 1.
+            for i in range(self.num_featurizers):
+                name_i, param_i = named_params[i]
+                assert name_0 == name_i
+                new_data = new_data + self.lambdas[i] * param_i
+            weights[name_0] = new_data/sum_lambdas
+        return weights
+
+    def train_unlabeled(self, loader_train, device, n_steps=100):
+        self.to(device)
+        self.eval()
+        self.init_train()
+        self.set_not_trainable()
+
+        def train_step(x, y, optimizer="lambda"):
+            optimizer.zero_grad()
+            weights = self.get_wa_weights()
+            feats = torch.nn.utils.stateless.functional_call(
+                self.featurizer, weights, x)
+            preds = self.classifier(feats)
+            loss = self.loss_fn(preds, y)
+            loss.backward(retain_graph=False)
+            optimizer.step()
+            return loss.item()
+
+        for step in range(0, n_steps):
+            x, y = next(loader_train)
+            x = x.to(device)
+            y = y.to(device)
+            optimizer = self.optimizer_classifier if step % 2 else self.optimizer_lambdas
+            l = train_step(x, y, optimizer)
+            print(step, l, self.lambdas)
+
+# MODEL_SELECTION=train WHICHMODEL=stepbest INCLUDEVAL_UPTO=4 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0  --output_dir /data/rame/experiments/domainbed/home0_ma_lp_0824 --trial_seed 0 --data_dir /data/rame/data/domainbed --checkpoints /data/rame/data/domainbed/inits/model_home0_ermll_saveall_si_0822.pkl 0 featurizer --what netm --topk 1

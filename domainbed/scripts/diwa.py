@@ -235,7 +235,8 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
                 )
             if "ma" in action:
                 wa_algorithm.update_mean_network_ma(algorithm.network_ma, weight=checkpoint_weight)
-            if "netm" in action:
+            if "addnet" in action:
+                # previously "netm"
                 wa_algorithm.add_network(algorithm.network)
             if "var" in action:
                 wa_algorithm.update_var_network(algorithm.network)
@@ -245,22 +246,47 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
                 wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight)
             if "featsproduct" in action:
                 wa_algorithm.update_product_featurizer(algorithm.featurizer, weight=checkpoint_weight)
+            if "addfeats" in action:
+                wa_algorithm.add_featurizer(algorithm.featurizer)
 
         if checkpoint_type in ["network", "classifier"]:
             if "cla" in action:
-                assert "feats" in action or "featsproduct" in action
+                # assert "feats" in action or "featsproduct" in action
                 wa_algorithm.update_mean_classifier(algorithm.classifier, weight=checkpoint_weight)
             if "claproduct" in action:
-                assert "feats" in action or "featsproduct" in action
+                # assert "feats" in action or "featsproduct" in action
                 wa_algorithm.update_product_classifier(algorithm.classifier, weight=checkpoint_weight)
-            if "clas" in action:
-                assert "feats" in action
+            if "addcla" in action:
                 wa_algorithm.add_classifier(algorithm.classifier, weight=checkpoint_weight)
 
         del algorithm
 
 
-def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits, device):
+def train_wa(selected_checkpoints, dataset, inf_args, data_evals, device):
+    wa_algorithm = algorithms_inference.TrainableDiWA(
+        dataset.input_shape,
+        dataset.num_classes,
+        len(dataset) - 1,
+    )
+    load_and_update_networks(
+        wa_algorithm, selected_checkpoints, dataset, action=["feats", "cla"], device=device
+    )
+    assert inf_args.what == ["addfeats"]
+    assert inf_args.checkpoints_all
+    assert [ckpt["type"] in ["featurizer", "featurizeronly"] for ckpt in inf_args.checkpoints_all]
+    print(f"Extending inf_args.checkpoints: {inf_args.checkpoints_all}")
+    load_and_update_networks(
+        wa_algorithm, inf_args.checkpoints_all, dataset, action=["addfeats"], device=device
+    )
+
+    loader_train = [loader for name, loader in data_evals if name == "test"][0]
+
+    wa_algorithm.train_unlabeled(loader_train, device)
+
+    return eval_after_loading_wa(wa_algorithm, data_evals, device, inf_args)
+
+
+def get_wa_results(good_checkpoints, dataset, inf_args, data_evals, device):
     wa_algorithm = algorithms_inference.DiWA(
         dataset.input_shape,
         dataset.num_classes,
@@ -279,15 +305,13 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
     wa_algorithm.eval()
     if inf_args.path_for_init:
         wa_algorithm.save_path_for_future_init(inf_args.path_for_init)
+    dict_results = eval_after_loading_wa(wa_algorithm, data_evals, device, inf_args)
+    dict_results["length"] = len(good_checkpoints)
+    return dict_results
 
-    data_loaders = [
-        FastDataLoader(dataset=split, batch_size=64, num_workers=dataset.N_WORKERS)
-        for split in data_splits
-    ]
 
-    data_evals = zip(data_names, data_loaders)
+def eval_after_loading_wa(wa_algorithm, data_evals, device, inf_args):
     dict_results = {}
-
     for name, loader in data_evals:
         print(f"Inference at {name}")
         _results_name = misc.results_ensembling(wa_algorithm, loader, device)
@@ -296,7 +320,7 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_names, data_splits,
             dict_results[new_key] = value
 
     # some hacky queries to enrich dict_results
-    dict_results["length"] = len(good_checkpoints)
+
     if "VARM" in os.environ:
         dict_results["varm"] = float(os.environ["VARM"])
     if "MAXM" in os.environ:
@@ -379,7 +403,7 @@ def create_data_splits(inf_args, dataset):
     # load data: test and optionally train_out for restricted weight selection
     data_splits, data_names = [], []
 
-    if misc.is_not_none(os.environ.get("INDOMAIN")):
+    if misc.is_not_none(os.environ.get("INDOMAIN")) or inf_args.weight_selection == "train":
         dict_domain_to_filter = {"test": "out", "testin": "in"}
     elif inf_args.test_env != -1:
         dict_domain_to_filter = {"test": "full"}
@@ -471,6 +495,12 @@ def main():
         inf_args, list_dict_checkpoint_to_score_i
     )
     data_splits, data_names = create_data_splits(inf_args, dataset)
+    data_loaders = [
+        FastDataLoader(dataset=split, batch_size=64, num_workers=dataset.N_WORKERS)
+        for split in data_splits
+    ]
+
+    data_evals = list(zip(data_names, data_loaders))
 
     # compute score after weight averaging
     if inf_args.weight_selection == "restricted":
@@ -501,7 +531,7 @@ def main():
             ]
 
             ood_results = get_wa_results(
-                selected_checkpoints, dataset, inf_args, data_names, data_splits, device
+                selected_checkpoints, dataset, inf_args, data_evals, device
             )
             ood_results["i"] = i
 
@@ -523,8 +553,7 @@ def main():
         ## print final scores
         dict_best_results["final"] = 1
         print_results(dict_best_results)
-
-    elif inf_args.weight_selection == "uniform":
+    else:
         selected_checkpoints = [
                 {
                     "name": checkpoint,
@@ -534,18 +563,22 @@ def main():
                     "type": "network"
                 } for checkpoint in sorted_checkpoints
             ]
-        if inf_args.checkpoints:
-            # normalizer = len(selected_checkpoints)/20 if len(selected_checkpoints) else 1.
-            print(f"Extending inf_args.checkpoints: {inf_args.checkpoints}")
-            selected_checkpoints.extend(inf_args.checkpoints)
 
-        dict_results = get_wa_results(
-            selected_checkpoints, dataset, inf_args, data_names, data_splits, device
-        )
-        print_results(dict_results)
-
-    else:
-        raise ValueError(inf_args.weight_selection)
+        if inf_args.weight_selection == "uniform":
+            if inf_args.checkpoints:
+                print(f"Extending inf_args.checkpoints: {inf_args.checkpoints}")
+                selected_checkpoints.extend(inf_args.checkpoints)
+            dict_results = get_wa_results(
+                selected_checkpoints, dataset, inf_args, data_evals, device
+            )
+            print_results(dict_results)
+        elif inf_args.weight_selection == "train":
+            dict_results = train_wa(
+                selected_checkpoints, dataset, inf_args, data_evals, device
+            )
+            print_results(dict_results)
+        else:
+            raise ValueError(inf_args.weight_selection)
 
 
 if __name__ == "__main__":
