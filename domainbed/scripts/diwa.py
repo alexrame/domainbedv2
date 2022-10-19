@@ -9,7 +9,7 @@ import pdb
 import torch.utils.data
 from domainbed import datasets, algorithms_inference
 from domainbed.lib import misc
-from domainbed.lib.fast_data_loader import FastDataLoader
+from domainbed.lib.fast_data_loader import FastDataLoader, InfiniteDataLoader
 from domainbed.lib import misc
 
 # MODEL_SELECTION=oracle WHICHMODEL=stepbest CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /data/rame/experiments/domainbed/home0_ma_lp_0824 --trial_seed 0 --data_dir /data/rame/data/domainbed --topk 2 --what mean product feats cla clas featsproduct claproduct netm
@@ -262,7 +262,7 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
         del algorithm
 
 
-def train_wa(selected_checkpoints, dataset, inf_args, data_evals, device):
+def train_wa(selected_checkpoints, dataset, inf_args, loader_train, data_evals, device):
     wa_algorithm = algorithms_inference.TrainableDiWA(
         dataset.input_shape,
         dataset.num_classes,
@@ -278,8 +278,6 @@ def train_wa(selected_checkpoints, dataset, inf_args, data_evals, device):
     load_and_update_networks(
         wa_algorithm, inf_args.checkpoints_all, dataset, action=["addfeats"], device=device
     )
-
-    loader_train = [loader for name, loader in data_evals if name == "test"][0]
 
     wa_algorithm.train_unlabeled(loader_train, device)
 
@@ -573,8 +571,14 @@ def main():
             )
             print_results(dict_results)
         elif inf_args.weight_selection == "train":
+            loader_train = [InfiniteDataLoader(
+                    dataset=split,
+                    weights=None,
+                    batch_size=32,
+                    num_workers=dataset.N_WORKERS
+                ) for split, name in zip(data_splits, data_names) if name == "test"][0]
             dict_results = train_wa(
-                selected_checkpoints, dataset, inf_args, data_evals, device
+                selected_checkpoints, dataset, inf_args, loader_train, data_evals, device
             )
             print_results(dict_results)
         else:

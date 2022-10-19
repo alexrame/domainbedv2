@@ -189,6 +189,7 @@ class ImageFolderHierarchy(DatasetFolder):
         is_valid_file=None,
         **kwargs
     ):
+        raise NotImplementedError("Implementation with pytorch version")
         super(ImageFolderHierarchy, self).__init__(
             root,
             loader,
