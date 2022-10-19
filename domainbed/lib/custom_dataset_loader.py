@@ -1,7 +1,10 @@
 import os
 from PIL import Image
 
-from torchvision.datasets import VisionDataset
+try:
+    from torchvision.datasets import VisionDataset
+except:
+    VisionDataset = int
 
 IMG_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', '.webp')
 
