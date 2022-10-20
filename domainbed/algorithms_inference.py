@@ -473,8 +473,6 @@ class TrainableDiWA(DiWA):
             optimizer.step()
             return {"loss": loss.item()}
 
-
-
         iter_loader_train = iter(loader_train)
 
         last_results_keys = []
@@ -492,18 +490,19 @@ class TrainableDiWA(DiWA):
                 results[f"lambda_{i}"] = self.lambdas[i]
             if step % 10 == 0:
                 for name, loader in data_evals:
-                    print(f"Inference at {name}")
-                    _results_name = misc.accuracy(self, loader, None, device)
-                    for key, value in _results_name.items():
-                        new_key = name + "_" + key if name != "test" else key
-                        results[new_key] = value
-                    self.eval()
-                results_keys = sorted(results.keys())
-                if results_keys != last_results_keys:
-                    misc.print_row(results_keys, colwidth=20)
-                    last_results_keys = results_keys
-
-                misc.print_row([results[key] for key in results_keys], colwidth=20)
-
-        misc.print_row([results[key] for key in results_keys], colwidth=20)
+                    if name in ["testin"]:
+                        print(f"Skip inference at {name}")
+                        continue
+                    else:
+                        print(f"Inference at {name}")
+                        _results_name = misc.accuracy(self, loader, None, device)
+                        for key, value in _results_name.items():
+                            new_key = name + "_" + key if name != "test" else key
+                            results[new_key] = value
+                        self.eval()
+            results_keys = sorted(results.keys())
+            if results_keys != last_results_keys:
+                misc.print_row(results_keys, colwidth=20)
+                last_results_keys = results_keys
+            misc.print_row([results[key] for key in results_keys], colwidth=20)
 # MODEL_SELECTION=train WHICHMODEL=stepbest INCLUDEVAL_UPTO=4 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0  --output_dir /data/rame/experiments/domainbed/home0_ma_lp_0824 --trial_seed 0 --data_dir /data/rame/data/domainbed --checkpoints /data/rame/data/domainbed/inits/model_home0_ermll_saveall_si_0822.pkl 0 featurizer --what addfeats --topk 1 --weight_selection train
