@@ -502,7 +502,7 @@ class TrainableDiWA(DiWA):
         objective = torch.stack(list(loss.values()), dim=0).sum(dim=0)
         objective.backward(retain_graph=False)
         optimizer.step()
-        return loss
+        return {key: value.item() for key, value in loss.items()}
 
     def tta_train(self, loader_train, device, data_evals):
         self.to(device)
