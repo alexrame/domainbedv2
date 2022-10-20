@@ -412,7 +412,7 @@ class TrainableDiWA(DiWA):
         self.num_aux = len(self.featurizers)
         self.classifier_task = copy.deepcopy(self.classifier)
         self.lambdas = torch.tensor([-5. for _ in range(self.num_aux)], requires_grad=True)
-        self.optimizer_lambdas = optim.Adam(self.lambdas, lr=1e-4)
+        self.optimizer_lambdas = optim.Adam([self.lambdas], lr=1e-4)
         self.optimizer_classifier = optim.Adam(self.classifier.parameters(), lr=1e-4)
         self.loss_fn = nn.CrossEntropyLoss()
         # torefine later
