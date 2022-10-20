@@ -441,10 +441,10 @@ class TrainableDiWA(DiWA):
         features_task = self.featurizer(x)
 
         # w for wa, t for task
-        dict_predictions["ww"] = self.classifier(features_wa)
-        dict_predictions["wt"] = self.classifier_task(features_wa)
-        dict_predictions["tw"] = self.classifier(features_task)
-        dict_predictions["tt"] = self.classifier_task(features_task)
+        dict_predictions["11"] = self.classifier(features_wa)
+        dict_predictions["10"] = self.classifier_task(features_wa)
+        dict_predictions["01"] = self.classifier(features_task)
+        dict_predictions["00"] = self.classifier_task(features_task)
         return dict_predictions
 
     def _init_train(self):
@@ -456,9 +456,20 @@ class TrainableDiWA(DiWA):
 
         lrl = self.hparams.get("lrl", 1e-4)
         lrc = self.hparams.get("lrc", 1e-4)
-        self.optimizer_lambdas = optim.Adam([self.lambdas], lr=lrl)
-        self.optimizer_classifier = optim.Adam(self.classifier.parameters(), lr=lrc)
+        if lrl != 0:
+            self.optimizer_lambdas = optim.Adam([self.lambdas], lr=lrl)
+        else:
+            self.optimizer_lambdas = None
+        if lrc != 0:
+            self.optimizer_classifier = optim.Adam(self.classifier.parameters(), lr=lrc)
+        else:
+            self.optimizer_classifier = None
         # to refine hperparames
+
+    def optimizer_classifier(self, step):
+        if step % 2:
+            return self.optimizer_classifier or self.optimizer_lambdas
+        return self.optimizer_lambdas or self.optimizer_classifier
 
     def compute_loss(self, preds, y):
         if self.hparams.get("suploss"):
@@ -483,7 +494,7 @@ class TrainableDiWA(DiWA):
             ent_loss -= div_weight * torch.sum(-msoftmax * torch.log(msoftmax + 1e-5))
         return ent_loss
 
-    def train_step(self, x, y, optimizer="lambda"):
+    def train_step(self, x, y, optimizer):
         optimizer.zero_grad()
         wa_weights = self.get_wa_weights()
         feats = torch.nn.utils.stateless.functional_call(self.featurizer, wa_weights, x)
@@ -507,7 +518,7 @@ class TrainableDiWA(DiWA):
             x, y = next(iter_loader_train)
             x = x.to(device)
             y = y.to(device)
-            optimizer = self.optimizer_classifier if step % 2 else self.optimizer_lambdas
+            optimizer = self.get_optimizer_at_step(step)
             l = self.train_step(x, y, optimizer)
             results = {'step': step}
             results.update(l)
