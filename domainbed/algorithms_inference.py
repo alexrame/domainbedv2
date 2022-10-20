@@ -488,7 +488,7 @@ class TrainableDiWA(DiWA):
             results = {'step': step}
             results.update(l)
             for i in enumerate(range(self.num_aux)):
-                results[f"lambda_{i}"] = self.lambdas[i].item()
+                results[f"lambda_{i}"] = self.lambdas[i]
             if step % 10 == 0:
                 for name, loader in data_evals:
                     print(f"Inference at {name}")
