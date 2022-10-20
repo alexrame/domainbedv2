@@ -472,27 +472,26 @@ class TrainableDiWA(DiWA):
         return self.optimizer_lambdas or self.optimizer_classifier
 
     def compute_loss(self, preds, y):
+        dict_loss = {}
+
         if self.hparams.get("suploss"):
-            loss = nn.CrossEntropyLoss()(preds, y)
-            return loss
+            dict_loss["ce"] = nn.CrossEntropyLoss()(preds, y)
+            return dict_loss
 
         def entropy_loss(v):
             """
             Entropy loss for probabilistic prediction vectors
             """
-            return torch.mean(
-                torch.sum(
+            return torch.mean(torch.sum(
                     -nn.functional.softmax(v, dim=1) * nn.functional.log_softmax(v, dim=1),
-                    1
-                )
-            )
+                    1))
 
-        ent_loss = entropy_loss(preds)
+        dict_loss["ent"] = entropy_loss(preds)
         div_weight = self.hparams.get("divloss")
         if div_weight:
             msoftmax = nn.Softmax(dim=1)(preds).mean(dim=0)
-            ent_loss -= div_weight * torch.sum(-msoftmax * torch.log(msoftmax + 1e-5))
-        return ent_loss
+            dict_loss["div"] = div_weight * torch.sum(msoftmax * torch.log(msoftmax + 1e-5))
+        return dict_loss
 
     def train_step(self, x, y, optimizer):
         optimizer.zero_grad()
@@ -500,9 +499,10 @@ class TrainableDiWA(DiWA):
         feats = torch.nn.utils.stateless.functional_call(self.featurizer, wa_weights, x)
         preds = self.classifier(feats)
         loss = self.compute_loss(preds, y)
-        loss.backward(retain_graph=False)
+        objective = torch.sum(list(loss.values()))
+        objective.backward(retain_graph=False)
         optimizer.step()
-        return {"loss": loss.item()}
+        return loss
 
     def tta_train(self, loader_train, device, data_evals):
         self.to(device)
