@@ -581,7 +581,7 @@ def main():
                     dataset=split,
                     weights=None,
                     batch_size=32,
-                    num_workers=dataset.N_WORKERS
+                    num_workers=0
                 ) for split, name in zip(data_splits, data_names) if name == "test"][0]
             dict_results = train_wa(
                 selected_checkpoints, dataset, inf_args, loader_train, data_evals, device
