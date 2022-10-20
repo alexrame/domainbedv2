@@ -471,7 +471,7 @@ class TrainableDiWA(DiWA):
             """
             return torch.mean(
                 torch.sum(
-                    -nn.functional.softmax(v, dim=1) * nn.functional.softmax.log_softmax(v, dim=1),
+                    -nn.functional.softmax(v, dim=1) * nn.functional.log_softmax(v, dim=1),
                     1
                 )
             )
