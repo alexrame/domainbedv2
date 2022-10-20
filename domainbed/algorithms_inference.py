@@ -415,7 +415,7 @@ class TrainableDiWA(DiWA):
         self.num_aux = len(self.featurizers)
         self.classifier_task = copy.deepcopy(self.classifier)
         self.lambdas = torch.tensor(
-            [self.featurizers_weights[i]
+            [float(self.featurizers_weights[i])
              for i in range(self.num_aux)], requires_grad=True)
         self.optimizer_lambdas = optim.Adam([self.lambdas], lr=1e-4)
         self.optimizer_classifier = optim.Adam(self.classifier.parameters(), lr=1e-4)
