@@ -31,6 +31,7 @@ def _get_args():
     )
     parser.add_argument("--checkpoints", nargs='+', default=[])
     parser.add_argument('--weighting', type=str, default="norm")
+    parser.add_argument('--hparams', type=json.loads, default="{}")
 
     # select which checkpoints
     parser.add_argument('--weight_selection', type=str, default="uniform")  # or "restricted"
@@ -58,6 +59,7 @@ def _get_args():
         ]
     inf_args.checkpoints_all = [ckpt for ckpt in inf_args.checkpoints]
     inf_args.checkpoints = [ckpt for ckpt in inf_args.checkpoints if float(ckpt["weight"]) != 0][::-1]
+
     misc.print_args(inf_args)
     return inf_args
 
@@ -185,7 +187,8 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
 
 
 def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="mean", device="gpu"):
-    model_hparams = {"nonlinear_classifier": False, "resnet18": False, "resnet_dropout": 0}
+    model_hparams = {
+        "nonlinear_classifier": False, "resnet18": False, "resnet_dropout": 0}
 
     for ckpt in good_checkpoints:
         checkpoint = ckpt["name"]
@@ -267,6 +270,7 @@ def train_wa(selected_checkpoints, dataset, inf_args, loader_train, data_evals, 
         dataset.input_shape,
         dataset.num_classes,
         len(dataset) - 1,
+        hparams=inf_args.hparams
     )
     load_and_update_networks(
         wa_algorithm, selected_checkpoints, dataset, action=["feats", "cla"], device=device
@@ -290,6 +294,7 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_evals, device):
         dataset.input_shape,
         dataset.num_classes,
         len(dataset) - 1,
+        hparams=inf_args.hparams
     )
     print("selected_checkpoints: ", good_checkpoints)
     load_and_update_networks(

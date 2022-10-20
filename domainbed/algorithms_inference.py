@@ -29,10 +29,10 @@ class ERM(algorithms.ERM):
 
 class DiWA(algorithms.ERM):
 
-    def __init__(self, input_shape, num_classes, num_domains):
+    def __init__(self, input_shape, num_classes, num_domains, hparams={}):
         """
         """
-        algorithms.Algorithm.__init__(self, input_shape, num_classes, num_domains, hparams={})
+        algorithms.Algorithm.__init__(self, input_shape, num_classes, num_domains, hparams=hparams)
         self._init_counts()
         self._create_network()
 
@@ -393,6 +393,7 @@ class DiWA(algorithms.ERM):
 from torch import nn, optim
 
 class TrainableDiWA(DiWA):
+    # hparams: lrl, lrc, suploss, divloss
 
     def _create_network(self):
         self.featurizer = None
@@ -410,17 +411,6 @@ class TrainableDiWA(DiWA):
         algorithms.ERM.to(self, device)
         for featurizer in self.featurizers:
             featurizer.to(device)
-
-    def init_train(self):
-        self.num_aux = len(self.featurizers)
-        self.classifier_task = copy.deepcopy(self.classifier)
-        self.lambdas = torch.tensor(
-            [float(self.featurizers_weights[i])
-             for i in range(self.num_aux)], requires_grad=True)
-        self.optimizer_lambdas = optim.Adam([self.lambdas], lr=1e-4)
-        self.optimizer_classifier = optim.Adam(self.classifier.parameters(), lr=1e-4)
-        self.loss_fn = nn.CrossEntropyLoss()
-        # torefine later
 
     def set_not_trainable(self):
         for net in [self.featurizer] + self.featurizers:
@@ -457,21 +447,57 @@ class TrainableDiWA(DiWA):
         dict_predictions["tt"] = self.classifier_task(features_task)
         return dict_predictions
 
-    def train_unlabeled(self, loader_train, device, data_evals, n_steps=100):
+    def _init_train(self):
+        self.num_aux = len(self.featurizers)
+        self.classifier_task = copy.deepcopy(self.classifier)
+        self.lambdas = torch.tensor(
+            [float(self.featurizers_weights[i])
+             for i in range(self.num_aux)], requires_grad=True)
+
+        lrl = self.hparams.get("lrl", 1e-4)
+        lrc = self.hparams.get("lrc", 1e-4)
+        self.optimizer_lambdas = optim.Adam([self.lambdas], lr=lrl)
+        self.optimizer_classifier = optim.Adam(self.classifier.parameters(), lr=lrc)
+        # to refine hperparames
+
+    def compute_loss(self, preds, y):
+        if self.hparams.get("suploss"):
+            loss = nn.CrossEntropyLoss()(preds, y)
+            return loss
+
+        def entropy_loss(v):
+            """
+            Entropy loss for probabilistic prediction vectors
+            """
+            return torch.mean(
+                torch.sum(
+                    -nn.functional.softmax(v, dim=1) * nn.functional.softmax.log_softmax(v, dim=1),
+                    1
+                )
+            )
+
+        ent_loss = entropy_loss(preds)
+        div_weight = self.hparams.get("divloss")
+        if div_weight:
+            msoftmax = nn.Softmax(dim=1)(preds).mean(dim=0)
+            ent_loss -= div_weight * torch.sum(-msoftmax * torch.log(msoftmax + 1e-5))
+        return ent_loss
+
+    def train_step(self, x, y, optimizer="lambda"):
+        optimizer.zero_grad()
+        wa_weights = self.get_wa_weights()
+        feats = torch.nn.utils.stateless.functional_call(self.featurizer, wa_weights, x)
+        preds = self.classifier(feats)
+        loss = self.compute_loss(preds, y)
+        loss.backward(retain_graph=False)
+        optimizer.step()
+        return {"loss": loss.item()}
+
+    def train(self, loader_train, device, data_evals, n_steps=100):
         self.to(device)
         self.eval()
-        self.init_train()
+        self._init_train()
         self.set_not_trainable()
-
-        def train_step(x, y, optimizer="lambda"):
-            optimizer.zero_grad()
-            wa_weights = self.get_wa_weights()
-            feats = torch.nn.utils.stateless.functional_call(self.featurizer, wa_weights, x)
-            preds = self.classifier(feats)
-            loss = self.loss_fn(preds, y)
-            loss.backward(retain_graph=False)
-            optimizer.step()
-            return {"loss": loss.item()}
 
         iter_loader_train = iter(loader_train)
 
@@ -481,7 +507,7 @@ class TrainableDiWA(DiWA):
             x = x.to(device)
             y = y.to(device)
             optimizer = self.optimizer_classifier if step % 2 else self.optimizer_lambdas
-            l = train_step(x, y, optimizer)
+            l = self.train_step(x, y, optimizer)
             results = {'step': step}
             results.update(l)
             # if os.environ.get('DEBUG', "0") != "0":
