@@ -393,7 +393,7 @@ class DiWA(algorithms.ERM):
 from torch import nn, optim
 
 class TrainableDiWA(DiWA):
-    # hparams: lrl, lrc, suploss, divloss
+    # hparams: lrl, lrc, suploss, divloss, nsteps
 
     def _create_network(self):
         self.featurizer = None
