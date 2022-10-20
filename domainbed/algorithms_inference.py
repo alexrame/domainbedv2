@@ -493,7 +493,7 @@ class TrainableDiWA(DiWA):
             if step % 10 == 0:
                 for name, loader in data_evals:
                     print(f"Inference at {name}")
-                    _results_name = misc.accuracy(self, loader, device)
+                    _results_name = misc.accuracy(self, loader, None, device)
                     for key, value in _results_name.items():
                         new_key = name + "_" + key if name != "test" else key
                         results[new_key] = value
