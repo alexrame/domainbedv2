@@ -279,8 +279,9 @@ def train_wa(selected_checkpoints, dataset, inf_args, loader_train, data_evals, 
         wa_algorithm, inf_args.checkpoints_all, dataset, action=["addfeats"], device=device
     )
 
-    wa_algorithm.train_unlabeled(loader_train, device)
-
+    wa_algorithm.train_unlabeled(loader_train, device, data_evals)
+    if inf_args.path_for_init:
+        wa_algorithm.save_path_for_future_init(inf_args.path_for_init)
     return eval_after_loading_wa(wa_algorithm, data_evals, device, inf_args)
 
 

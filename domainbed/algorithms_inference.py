@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import collections
 from domainbed import networks, algorithms
-from domainbed.lib import diversity_metrics
+from domainbed.lib import misc, diversity_metrics
 
 
 class ERM(algorithms.ERM):
@@ -340,7 +340,7 @@ class DiWA(algorithms.ERM):
 
     def get_dict_diversity(self, dict_stats, targets, device):
         dict_diversity = collections.defaultdict(list)
-        num_classifiers = int(min(len(self.classifiers), float(os.environ.get("MAXM", math.inf))))
+        # num_classifiers = int(min(len(self.classifiers), float(os.environ.get("MAXM", math.inf))))
         num_members = int(min(len(self.networks), float(os.environ.get("MAXM", math.inf))))
         regexes = [("waens", "wa_ens"), ("waprod", "wa_prod")]
         # regexes = [("netcla0", "net0_cla0"), ("netcla1", "net1_cla1"), ("netcla2", "net2_cla2")]
@@ -396,6 +396,7 @@ class TrainableDiWA(DiWA):
         self.featurizer = None
         self.classifier = None
         self.featurizers = []
+        self.networks = []
 
     def train(self, *args):
         algorithms.ERM.train(self, *args)
@@ -408,8 +409,9 @@ class TrainableDiWA(DiWA):
             featurizer.to(device)
 
     def init_train(self):
-        self.num_featurizers = len(self.featurizers)
-        self.lambdas = [torch.tensor(0., requires_grad=True) for _ in range(self.num_featurizers)]
+        self.num_aux = len(self.featurizers)
+        self.classifier_task = copy.deepcopy(self.classifier)
+        self.lambdas = torch.tensor([-5. for _ in range(self.num_aux)], requires_grad=True)
         self.optimizer_lambdas = optim.Adam(self.lambdas, lr=1e-4)
         self.optimizer_classifier = optim.Adam(self.classifier.parameters(), lr=1e-4)
         self.loss_fn = nn.CrossEntropyLoss()
@@ -427,14 +429,30 @@ class TrainableDiWA(DiWA):
             named_params = [next(gen_named_params) for gen_named_params in list_gen_named_params]
             new_data = param_0.data
             sum_lambdas = 1.
-            for i in range(self.num_featurizers):
+            for i in range(self.num_aux):
                 name_i, param_i = named_params[i]
                 assert name_0 == name_i
-                new_data = new_data + self.lambdas[i] * param_i
+                exp_lambda_i = torch.exp(self.lambdas[i])
+                new_data = new_data + exp_lambda_i * param_i
+                sum_lambdas += exp_lambda_i
             weights[name_0] = new_data/sum_lambdas
         return weights
 
-    def train_unlabeled(self, loader_train, device, n_steps=100):
+    def predict(self, x):
+        dict_predictions = {}
+        wa_weights = self.get_wa_weights()
+        features_wa = torch.nn.utils.stateless.functional_call(
+                self.featurizer, wa_weights, x)
+        features_task = self.featurizer(x)
+
+        # w for wa, t for task
+        dict_predictions["ww"] = self.classifier(features_wa)
+        dict_predictions["wt"] = self.classifier_task(features_wa)
+        dict_predictions["tw"] = self.classifier(features_task)
+        dict_predictions["tt"] = self.classifier_task(features_task)
+        return dict_predictions
+
+    def train_unlabeled(self, loader_train, device, data_evals, n_steps=100):
         self.to(device)
         self.eval()
         self.init_train()
@@ -442,24 +460,44 @@ class TrainableDiWA(DiWA):
 
         def train_step(x, y, optimizer="lambda"):
             optimizer.zero_grad()
-            weights = self.get_wa_weights()
-            feats = torch.nn.utils.stateless.functional_call(
-                self.featurizer, weights, x)
+            wa_weights = self.get_wa_weights()
+            feats = torch.nn.utils.stateless.functional_call(self.featurizer, wa_weights, x)
             preds = self.classifier(feats)
             loss = self.loss_fn(preds, y)
             loss.backward(retain_graph=False)
             optimizer.step()
-            return loss.item()
+            return {"loss": loss.item()}
 
-        if os.environ.get('DEBUG', False):
-            pdb.set_trace()
+        # if os.environ.get('DEBUG', "0") != "0":
+        #     pdb.set_trace()
+
         iter_loader_train = iter(loader_train)
+
+        last_results_keys = []
         for step in range(0, n_steps):
             x, y = next(iter_loader_train)
             x = x.to(device)
             y = y.to(device)
             optimizer = self.optimizer_classifier if step % 2 else self.optimizer_lambdas
             l = train_step(x, y, optimizer)
-            print(step, l, self.lambdas)
+            results = {'step': step}
+            results.update(l)
+            for i in enumerate(self.num_aux):
+                results[f"lambda_{i}"] = self.lambdas[i].item()
+            if step % 10 == 0:
+                for name, loader in data_evals:
+                    print(f"Inference at {name}")
+                    _results_name = misc.accuracy(self, loader, device)
+                    for key, value in _results_name.items():
+                        new_key = name + "_" + key if name != "test" else key
+                        results[new_key] = value
+                    self.eval()
+                results_keys = sorted(results.keys())
+                if results_keys != last_results_keys:
+                    misc.print_row(results_keys, colwidth=20)
+                    last_results_keys = results_keys
 
+                misc.print_row([results[key] for key in results_keys], colwidth=20)
+
+        misc.print_row([results[key] for key in results_keys], colwidth=20)
 # MODEL_SELECTION=train WHICHMODEL=stepbest INCLUDEVAL_UPTO=4 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0  --output_dir /data/rame/experiments/domainbed/home0_ma_lp_0824 --trial_seed 0 --data_dir /data/rame/data/domainbed --checkpoints /data/rame/data/domainbed/inits/model_home0_ermll_saveall_si_0822.pkl 0 featurizer --what addfeats --topk 1 --weight_selection train
