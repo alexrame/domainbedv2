@@ -516,7 +516,7 @@ class TrainableDiWA(DiWA):
                 results[f"lambda_{i}"] = self.lambdas[i].detach().float().cpu().numpy()
             if step % 10 == 0:
                 for name, loader in data_evals:
-                    if name in ["testin"]:
+                    if name in ["test"]:
                         print(f"Skip inference at {name}")
                         continue
                     else:
