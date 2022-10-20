@@ -61,6 +61,7 @@ class DiWA(algorithms.ERM):
         self.network_var = None
         self.networks = []
         self.featurizers = []
+        self.featurizers_weights = []
         self.classifiers = []
         self.classifiers_weights = []
 
@@ -201,8 +202,9 @@ class DiWA(algorithms.ERM):
     def add_network(self, network):
         self.networks.append(network)
 
-    def add_featurizer(self, network):
+    def add_featurizer(self, network, weight):
         self.featurizers.append(network)
+        self.featurizers_weights.append(weight)
 
     def add_classifier(self, classifier, weight=1):
         self.classifiers.append(classifier)
@@ -396,6 +398,7 @@ class TrainableDiWA(DiWA):
         self.featurizer = None
         self.classifier = None
         self.featurizers = []
+        self.featurizers_weights = []
         self.networks = []
 
     def train(self, *args):
@@ -482,7 +485,7 @@ class TrainableDiWA(DiWA):
             l = train_step(x, y, optimizer)
             results = {'step': step}
             results.update(l)
-            for i in enumerate(self.num_aux):
+            for i in enumerate(range(self.num_aux)):
                 results[f"lambda_{i}"] = self.lambdas[i].item()
             if step % 10 == 0:
                 for name, loader in data_evals:
