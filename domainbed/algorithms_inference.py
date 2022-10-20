@@ -466,7 +466,7 @@ class TrainableDiWA(DiWA):
             self.optimizer_classifier = None
         # to refine hperparames
 
-    def optimizer_classifier(self, step):
+    def get_optimizer_at_step(self, step):
         if step % 2:
             return self.optimizer_classifier or self.optimizer_lambdas
         return self.optimizer_lambdas or self.optimizer_classifier
