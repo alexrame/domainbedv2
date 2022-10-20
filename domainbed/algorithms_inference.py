@@ -531,4 +531,4 @@ class TrainableDiWA(DiWA):
                 misc.print_row(results_keys, colwidth=20)
                 last_results_keys = results_keys
             misc.print_row([results[key] for key in results_keys], colwidth=20)
-# MODEL_SELECTION=train WHICHMODEL=stepbest INCLUDEVAL_UPTO=4 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0  --output_dir /data/rame/experiments/domainbed/home0_ma_lp_0824 --trial_seed 0 --data_dir /data/rame/data/domainbed --checkpoints /data/rame/data/domainbed/inits/model_home0_ermll_saveall_si_0822.pkl 0 featurizer --what addfeats --topk 1 --weight_selection train
+# MODEL_SELECTION=train WHICHMODEL=stepbest INCLUDEVAL_UPTO=0 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0  --output_dir /data/rame/experiments/domainbed/home0_ma_lp_0824 --trial_seed 0 --data_dir /data/rame/data/domainbed --checkpoints /data/rame/data/domainbed/inits/model_home0_ermll_saveall_si_0822.pkl 0 featurizer --what addfeats --topk 1 --weight_selection train
