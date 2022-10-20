@@ -473,8 +473,7 @@ class TrainableDiWA(DiWA):
             optimizer.step()
             return {"loss": loss.item()}
 
-        # if os.environ.get('DEBUG', "0") != "0":
-        #     pdb.set_trace()
+
 
         iter_loader_train = iter(loader_train)
 
@@ -487,7 +486,9 @@ class TrainableDiWA(DiWA):
             l = train_step(x, y, optimizer)
             results = {'step': step}
             results.update(l)
-            for i in enumerate(range(self.num_aux)):
+            # if os.environ.get('DEBUG', "0") != "0":
+            #     pdb.set_trace()
+            for i in range(self.num_aux):
                 results[f"lambda_{i}"] = self.lambdas[i]
             if step % 10 == 0:
                 for name, loader in data_evals:
