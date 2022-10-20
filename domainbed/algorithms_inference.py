@@ -493,7 +493,7 @@ class TrainableDiWA(DiWA):
         optimizer.step()
         return {"loss": loss.item()}
 
-    def train(self, loader_train, device, data_evals, n_steps=100):
+    def tta_train(self, loader_train, device, data_evals, n_steps=100):
         self.to(device)
         self.eval()
         self._init_train()
