@@ -499,7 +499,7 @@ class TrainableDiWA(DiWA):
         feats = torch.nn.utils.stateless.functional_call(self.featurizer, wa_weights, x)
         preds = self.classifier(feats)
         loss = self.compute_loss(preds, y)
-        objective = torch.sum(list(loss.values()))
+        objective = torch.stack(list(loss.values()), dim=0).sum(dim=0)
         objective.backward(retain_graph=False)
         optimizer.step()
         return loss
