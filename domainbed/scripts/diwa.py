@@ -248,8 +248,9 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
 
         if checkpoint_type in ["network", "classifier"]:
             if "cla" in action:
-                if os.environ.get("ONLYFIRSTCLA"):
+                if os.environ.get("ONLYFIRSTCLA", "0") != "0":
                     checkpoint_weight_cla = checkpoint_weight if i == 0 else 0
+                    print("new weight: ", checkpoint_weight_cla, "for: ", i)
                 else:
                     checkpoint_weight_cla = checkpoint_weight
                 # assert "feats" in action or "featsproduct" in action
