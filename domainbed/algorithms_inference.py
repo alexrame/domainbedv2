@@ -392,7 +392,7 @@ class DiWA(algorithms.ERM):
 from torch import nn, optim
 
 class TrainableDiWA(DiWA):
-    # hparams: lrl, lrc, suploss, divloss, nsteps
+    # hparams: lrl, lrc, suploss, entloss, bdiloss, nsteps (100)
 
     def _create_network(self):
         self.featurizer = None
@@ -453,8 +453,8 @@ class TrainableDiWA(DiWA):
             [float(self.featurizers_weights[i])
              for i in range(self.num_aux)], requires_grad=True)
 
-        lrl = self.hparams.get("lrl", 1e-4)
-        lrc = self.hparams.get("lrc", 1e-4)
+        lrl = self.hparams.get("lrl", 0.)
+        lrc = self.hparams.get("lrc", 0.)
         if lrl != 0:
             self.optimizer_lambdas = optim.Adam([self.lambdas], lr=lrl)
         else:
