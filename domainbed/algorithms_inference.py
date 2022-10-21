@@ -473,7 +473,7 @@ class TrainableDiWA(DiWA):
     def compute_loss(self, logits, y):
         dict_loss = {}
 
-        dict_loss["ce"] = nn.CrossEntropyLoss()(preds, y)
+        dict_loss["ce"] = nn.CrossEntropyLoss()(logits, y)
         dict_loss["ent"] = misc.get_entropy_loss(logits)
         dict_loss["bdi"] = misc.get_batchdiversity_loss(logits)
 
