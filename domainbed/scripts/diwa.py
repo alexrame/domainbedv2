@@ -459,19 +459,17 @@ def create_data_splits(inf_args, dataset):
             dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
 
     for domain in dict_domain_to_filter:
-        holdout_fraction = float(os.environ.get("HOLDOUT", 0.2))
         _data_splits = create_splits(
             domain,
             inf_args,
             dataset,
             dict_domain_to_filter[domain],
-            holdout_fraction=holdout_fraction
+            holdout_fraction=inf_args.hparams.get("holdout_fraction", 0.2)
         )
         if domain == "train":
-            data_splits = misc.MergeDataset(_data_splits)
+            dict_data_splits[domain] = misc.MergeDataset(_data_splits)
         else:
-            data_splits = data_splits[0]
-        dict_data_splits[domain] = data_splits
+            dict_data_splits[domain] = _data_splits[0]
     return dict_data_splits
 
 
