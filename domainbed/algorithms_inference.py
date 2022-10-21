@@ -486,9 +486,9 @@ class TrainableDiWA(DiWA):
         logits = self.classifier(feats)
         dict_loss = self.compute_loss(logits, y)
         objective = (
-            self.hparams.get("suploss", 0.) * dict_loss["ce"] +
-            self.hparams.get("entloss", 0.) * dict_loss["ent"] +
-            self.hparams.get("bdiloss", 0.) * dict_loss["bdi"]
+            float(self.hparams.get("suploss", 0.)) * dict_loss["ce"] +
+            float(self.hparams.get("entloss", 0.)) * dict_loss["ent"] +
+            float(self.hparams.get("bdiloss", 0.)) * dict_loss["bdi"]
         )
         # objective = torch.stack(list(loss.values()), dim=0).sum(dim=0)
         objective.backward(retain_graph=False)
@@ -537,3 +537,5 @@ class TrainableDiWA(DiWA):
                 last_results_keys = results_keys
             misc.print_row([results[key] for key in results_keys], colwidth=20)
 # MODEL_SELECTION=train WHICHMODEL=stepbest INCLUDEVAL_UPTO=0 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0  --output_dir /data/rame/experiments/domainbed/home0_ma_lp_0824 --trial_seed 0 --data_dir /data/rame/data/domainbed --checkpoints /data/rame/data/domainbed/inits/model_home0_ermll_saveall_si_0822.pkl 0 featurizer --what addfeats --topk 1 --weight_selection train
+
+# MODEL_SELECTION=train WHICHMODEL=stepbest CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0  --output_dir /data/rame/experiments/domainbed/home0_ma_lp_0824 --trial_seed 0 --data_dir /data/rame/data/domainbed --checkpoints /data/rame/data/domainbed/inits/model_home0_ermll_saveall_si_0822.pkl -5 featurizer --what addfeats --topk 1 --weight_selection train --hparams '{"suploss": 0, "entloss": 1., "bdiloss": 1.}'
