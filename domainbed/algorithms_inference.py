@@ -292,17 +292,17 @@ class DiWA(algorithms.ERM):
                     logits = prediction[key]
                     if key not in dict_stats:
                         dict_stats[key] = {
-                            # "logits": [],
-                            "probs": [],
+                            "logits": [],
+                            # "probs": [],
                             "preds": [],
                             "correct": [],
                             # "tcp": []
                             # "confs": [],
                         }
                     preds = logits.argmax(1)
-                    probs = torch.softmax(logits, dim=1)
-                    # dict_stats[key]["logits"].append(logits.cpu())
-                    dict_stats[key]["probs"].append(probs.cpu())
+                    # probs = torch.softmax(logits, dim=1)
+                    dict_stats[key]["logits"].append(logits.cpu())
+                    # dict_stats[key]["probs"].append(probs.cpu())
                     dict_stats[key]["preds"].append(preds.cpu())
                     dict_stats[key]["correct"].append(preds.eq(y).float().cpu())
 
@@ -323,21 +323,20 @@ class DiWA(algorithms.ERM):
     def get_dict_entropy(self, dict_stats, device):
         dict_results = {}
 
-        def compute_entropy_predictions(x):
-            #print(x)
-            entropy = x * torch.log(x + 1e-10)  #bs * num_classes
-            return -1. * entropy.sum() / entropy.size(0)
-
         for key, value in dict_stats.items():
-            if "probs" not in value:
+            if "logits" not in value:
                 print(value.keys())
                 continue
-            probs = value["probs"]
-            entropy = compute_entropy_predictions(probs)
+            logits = value["logits"]
+            entropy = misc.get_entropy_loss(logits)
+            batchdiv = misc.get_batchdiversity_loss(logits)
+
             dict_results["ent_" + key] = np.mean(
                 entropy.float().cpu().numpy()
             )  # mean just to get rid of array
-
+            dict_results["bdi_" + key] = np.mean(
+                batchdiv.float().cpu().numpy()
+            )  # mean just to get rid of array
         return dict_results
 
     def get_dict_diversity(self, dict_stats, targets, device):
@@ -471,38 +470,30 @@ class TrainableDiWA(DiWA):
             return self.optimizer_classifier or self.optimizer_lambdas
         return self.optimizer_lambdas or self.optimizer_classifier
 
-    def compute_loss(self, preds, y):
+    def compute_loss(self, logits, y):
         dict_loss = {}
 
-        if self.hparams.get("suploss"):
-            dict_loss["ce"] = nn.CrossEntropyLoss()(preds, y)
-            return dict_loss
+        dict_loss["ce"] = nn.CrossEntropyLoss()(preds, y)
+        dict_loss["ent"] = misc.get_entropy_loss(logits)
+        dict_loss["bdi"] = misc.get_batchdiversity_loss(logits)
 
-        def entropy_loss(v):
-            """
-            Entropy loss for probabilistic prediction vectors
-            """
-            return torch.mean(torch.sum(
-                    -nn.functional.softmax(v, dim=1) * nn.functional.log_softmax(v, dim=1),
-                    1))
-
-        dict_loss["ent"] = entropy_loss(preds)
-        div_weight = self.hparams.get("divloss")
-        if div_weight:
-            msoftmax = nn.Softmax(dim=1)(preds).mean(dim=0)
-            dict_loss["div"] = div_weight * torch.sum(msoftmax * torch.log(msoftmax + 1e-5))
         return dict_loss
 
     def train_step(self, x, y, optimizer):
         optimizer.zero_grad()
         wa_weights = self.get_wa_weights()
         feats = torch.nn.utils.stateless.functional_call(self.featurizer, wa_weights, x)
-        preds = self.classifier(feats)
-        loss = self.compute_loss(preds, y)
-        objective = torch.stack(list(loss.values()), dim=0).sum(dim=0)
+        logits = self.classifier(feats)
+        dict_loss = self.compute_loss(logits, y)
+        objective = (
+            self.hparams.get("suploss", 0.) * dict_loss["ce"] +
+            self.hparams.get("entloss", 0.) * dict_loss["ent"] +
+            self.hparams.get("bdiloss", 0.) * dict_loss["bdi"]
+        )
+        # objective = torch.stack(list(loss.values()), dim=0).sum(dim=0)
         objective.backward(retain_graph=False)
         optimizer.step()
-        return {key: value.item() for key, value in loss.items()}
+        return {key: value.item() for key, value in dict_loss.items()}
 
     def tta_train(self, loader_train, device, data_evals):
         self.to(device)
@@ -534,7 +525,8 @@ class TrainableDiWA(DiWA):
                         continue
                     else:
                         print(f"Inference at {name}")
-                        _results_name = misc.accuracy(self, loader, None, device)
+                        _results_name = misc.results_ensembling(
+                            self, loader, device, do_div=False, do_ent=True)
                         for key, value in _results_name.items():
                             new_key = name + "_" + key if name != "test" else key
                             results[new_key] = value

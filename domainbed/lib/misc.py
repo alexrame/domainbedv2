@@ -18,9 +18,29 @@ import operator
 
 import numpy as np
 import torch
+import torch.nn as nn
 import tqdm
 import socket
 from collections import Counter
+
+
+def get_batchdiversity_loss(logits):
+    msoftmax = nn.Softmax(dim=1)(logits).mean(dim=0)
+    return torch.sum(msoftmax * torch.log(msoftmax + 1e-5))
+
+def get_entropy_loss(logits):
+    """
+    Entropy loss for probabilistic prediction vectors
+    """
+    return torch.mean(
+        torch.sum(
+            -nn.functional.softmax(logits, dim=1) * nn.functional.log_softmax(logits, dim=1), 1
+        )
+    )
+# def compute_entropy_predictions(x):
+#     #print(x)
+#     entropy = x * torch.log(x + 1e-10)  #bs * num_classes
+#     return -1. * entropy.sum() / entropy.size(0)
 
 
 def is_float(element):
@@ -245,13 +265,14 @@ def print_args(args):
     _print_dict(_dict)
 
 
-def results_ensembling(algorithm, loader, device):
+def results_ensembling(algorithm, loader, device, do_div=False, do_ent=False):
     algorithm.eval()
     dict_stats, batch_classes = algorithm.get_dict_prediction_stats(loader, device)
     dict_results = {}
     for key in dict_stats:
         dict_results[("acc_" + key if key != "" else "acc")] = sum(
             dict_stats[key]["correct"].numpy()) / len(dict_stats[key]["correct"].numpy())
+
     if len(algorithm.networks):
         dict_results["acc_netm"] = np.mean(
             [
@@ -264,13 +285,15 @@ def results_ensembling(algorithm, loader, device):
             for key in range(int(min(len(algorithm.networks), float(os.environ.get("MAXM", math.inf))))):
                 del dict_results[f"acc_net{key}"]
 
-    targets = torch.cat(batch_classes).cpu().numpy()
-    # print("Compute diversity")
-    dict_diversity = algorithm.get_dict_diversity(dict_stats, targets, device)
-    dict_results.update(dict_diversity)
-    # print("Compute prediction entropy")
-    # dict_entropy = algorithm.get_dict_entropy(dict_stats, device)
-    # dict_results.update(dict_entropy)
+    if do_div:
+        print("Compute prediction diversity")
+        targets = torch.cat(batch_classes).cpu().numpy()
+        dict_diversity = algorithm.get_dict_diversity(dict_stats, targets, device)
+        dict_results.update(dict_diversity)
+    if do_ent:
+        print("Compute prediction entropy")
+        dict_entropy = algorithm.get_dict_entropy(dict_stats, device)
+        dict_results.update(dict_entropy)
     return dict_results
 
 
