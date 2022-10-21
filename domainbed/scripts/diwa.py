@@ -293,7 +293,7 @@ def tta_wa(selected_checkpoints, dataset, inf_args, dict_data_splits, device):
             batch_size=32,
             num_workers=0
         )
-    if "train" in train_loader:
+    if "train" in dict_data_splits:
         train_loader = InfiniteDataLoader(
                 dataset=dict_data_splits["train"],
                 weights=None,
