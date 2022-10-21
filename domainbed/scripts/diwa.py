@@ -265,13 +265,14 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
         del algorithm
 
 
-def train_wa(selected_checkpoints, dataset, inf_args, loader_train, data_evals, device):
+def tta_wa(selected_checkpoints, dataset, inf_args, dict_data_splits, device):
     wa_algorithm = algorithms_inference.TrainableDiWA(
         dataset.input_shape,
         dataset.num_classes,
         len(dataset) - 1,
         hparams=inf_args.hparams
     )
+
     load_and_update_networks(
         wa_algorithm, selected_checkpoints, dataset, action=["feats", "cla"], device=device
     )
@@ -282,20 +283,45 @@ def train_wa(selected_checkpoints, dataset, inf_args, loader_train, data_evals, 
     load_and_update_networks(
         wa_algorithm, inf_args.checkpoints_all, dataset, action=["addfeats"], device=device
     )
+    dict_data_loaders = {
+        name: FastDataLoader(dataset=split, batch_size=64, num_workers=dataset.N_WORKERS)
+        for name, split in dict_data_splits.items()
+    }
+    tta_loader = InfiniteDataLoader(
+            dataset=dict_data_splits["testout"],
+            weights=None,
+            batch_size=32,
+            num_workers=0
+        )
+    if "train" in train_loader:
+        train_loader = InfiniteDataLoader(
+                dataset=dict_data_splits["train"],
+                weights=None,
+                batch_size=32,
+                num_workers=0
+            )
+    else:
+        train_loader = None
 
-    wa_algorithm.tta_train(loader_train, device, data_evals)
+    wa_algorithm.test_time_training(
+        tta_loader, device, dict_data_loaders, train_loader=train_loader
+    )
     if inf_args.path_for_init:
         wa_algorithm.save_path_for_future_init(inf_args.path_for_init)
-    return eval_after_loading_wa(wa_algorithm, data_evals, device, inf_args)
+    return eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args)
 
 
-def get_wa_results(good_checkpoints, dataset, inf_args, data_evals, device):
+def get_wa_results(good_checkpoints, dataset, inf_args, dict_data_splits, device):
     wa_algorithm = algorithms_inference.DiWA(
         dataset.input_shape,
         dataset.num_classes,
         len(dataset) - 1,
         hparams=inf_args.hparams
     )
+    dict_data_loaders = {
+        name: FastDataLoader(dataset=split, batch_size=64, num_workers=dataset.N_WORKERS)
+        for name, split in dict_data_splits.items()
+    }
     print("selected_checkpoints: ", good_checkpoints)
     load_and_update_networks(
         wa_algorithm, good_checkpoints, dataset, action=["mean"] + inf_args.what, device=device
@@ -309,14 +335,14 @@ def get_wa_results(good_checkpoints, dataset, inf_args, data_evals, device):
     wa_algorithm.eval()
     if inf_args.path_for_init:
         wa_algorithm.save_path_for_future_init(inf_args.path_for_init)
-    dict_results = eval_after_loading_wa(wa_algorithm, data_evals, device, inf_args)
+    dict_results = eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args)
     dict_results["length"] = len(good_checkpoints)
     return dict_results
 
 
-def eval_after_loading_wa(wa_algorithm, data_evals, device, inf_args):
+def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
     dict_results = {}
-    for name, loader in data_evals:
+    for name, loader in dict_data_loaders.items():
         print(f"Inference at {name}")
         _results_name = misc.results_ensembling(wa_algorithm, loader, device)
         for key, value in _results_name.items():
@@ -405,7 +431,7 @@ def merge_checkpoints(inf_args, list_dict_checkpoint_to_score_i):
 
 def create_data_splits(inf_args, dataset):
     # load data: test and optionally train_out for restricted weight selection
-    data_splits, data_names = [], []
+    dict_data_splits = {}
 
     if misc.is_not_none(os.environ.get("INDOMAIN")) or inf_args.weight_selection == "train":
         dict_domain_to_filter = {"testout": "out", "test": "in"} # "testins": "insmall",
@@ -414,9 +440,8 @@ def create_data_splits(inf_args, dataset):
     else:
         dict_domain_to_filter = {}
 
-    # if os.environ.get("INCLUDE_TRAIN", "0") != "0":
-    #     assert inf_args.trial_seed != -1
-    #     dict_domain_to_filter["train"] = "out"
+    if inf_args.weight_selection == "train" and inf_args.hparams.get("coralloss", None) is not None:
+        dict_domain_to_filter["train"] = "out"
 
     if os.environ.get("INCLUDE_UPTO", "0") != "0":
         for env_i in range(0, int(os.environ.get("INCLUDE_UPTO", "0"))):
@@ -443,11 +468,11 @@ def create_data_splits(inf_args, dataset):
             holdout_fraction=holdout_fraction
         )
         if domain == "train":
-            data_splits.append(misc.MergeDataset(_data_splits))
+            data_splits = misc.MergeDataset(_data_splits)
         else:
-            data_splits.append(_data_splits[0])
-        data_names.append(domain)
-    return data_splits, data_names
+            data_splits = data_splits[0]
+        dict_data_splits[domain] = data_splits
+    return dict_data_splits
 
 
 def main():
@@ -498,13 +523,7 @@ def main():
     dict_checkpoint_to_score, sorted_checkpoints = merge_checkpoints(
         inf_args, list_dict_checkpoint_to_score_i
     )
-    data_splits, data_names = create_data_splits(inf_args, dataset)
-    data_loaders = [
-        FastDataLoader(dataset=split, batch_size=64, num_workers=dataset.N_WORKERS)
-        for split in data_splits
-    ]
-
-    data_evals = list(zip(data_names, data_loaders))
+    dict_data_splits = create_data_splits(inf_args, dataset)
 
     # compute score after weight averaging
     if inf_args.weight_selection == "restricted":
@@ -535,7 +554,7 @@ def main():
             ]
 
             ood_results = get_wa_results(
-                selected_checkpoints, dataset, inf_args, data_evals, device
+                selected_checkpoints, dataset, inf_args, dict_data_splits, device
             )
             ood_results["i"] = i
 
@@ -573,18 +592,13 @@ def main():
                 print(f"Extending inf_args.checkpoints: {inf_args.checkpoints}")
                 selected_checkpoints.extend(inf_args.checkpoints)
             dict_results = get_wa_results(
-                selected_checkpoints, dataset, inf_args, data_evals, device
+                selected_checkpoints, dataset, inf_args, dict_data_splits, device
             )
             print_results(dict_results)
         elif inf_args.weight_selection == "train":
-            loader_train = [InfiniteDataLoader(
-                    dataset=split,
-                    weights=None,
-                    batch_size=32,
-                    num_workers=0
-                ) for split, name in zip(data_splits, data_names) if name == "testout"][0]
-            dict_results = train_wa(
-                selected_checkpoints, dataset, inf_args, loader_train, data_evals, device
+
+            dict_results = tta_wa(
+                selected_checkpoints, dataset, inf_args, dict_data_splits, device
             )
             print_results(dict_results)
         else:

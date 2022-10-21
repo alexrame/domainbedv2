@@ -392,7 +392,7 @@ class DiWA(algorithms.ERM):
 from torch import nn, optim
 
 class TrainableDiWA(DiWA):
-    # hparams: lrl, lrc, suploss, entloss, bdiloss, nsteps (100)
+    # hparams: suploss, entloss, bdiloss, lrl, lrc, nsteps (1000)
 
     def _create_network(self):
         self.featurizer = None
@@ -441,9 +441,9 @@ class TrainableDiWA(DiWA):
 
         # w for wa, t for task
         dict_predictions["11"] = self.classifier(features_wa)
-        dict_predictions["10"] = self.classifier_task(features_wa)
-        dict_predictions["01"] = self.classifier(features_task)
-        dict_predictions["00"] = self.classifier_task(features_task)
+        # dict_predictions["10"] = self.classifier_task(features_wa)
+        # dict_predictions["01"] = self.classifier(features_task)
+        # dict_predictions["00"] = self.classifier_task(features_task)
         return dict_predictions
 
     def _init_train(self):
@@ -479,48 +479,78 @@ class TrainableDiWA(DiWA):
 
         return dict_loss
 
-    def train_step(self, x, y, optimizer):
+    def compute_loss_t(self, feats_0, feats_1):
+        x0 = torch.mean(feats_0, dim=0)
+        x1 = torch.mean(feats_1, dim=0)
+        # todo
+
+        mean_x0 = x0.mean(0, keepdim=True)
+        mean_x1 = x1.mean(0, keepdim=True)
+        cent_x0 = x0 - mean_x0
+        cent_x1 = x1 - mean_x1
+        cova_x0 = (cent_x0.t() @ cent_x0) / (len(x0) - 1)
+        cova_x1 = (cent_x1.t() @ cent_x1) / (len(x1) - 1)
+
+        dict_loss_t = {}
+        dict_loss_t["coral"] = (mean_x0 - mean_x1).pow(2).mean()
+        dict_loss_t["coralv"] = (cova_x0 - cova_x1).pow(2).mean()
+        return dict_loss_t
+
+    def train_step(self, x, y, optimizer, xt=None, yt=None):
         optimizer.zero_grad()
         wa_weights = self.get_wa_weights()
         feats = torch.nn.utils.stateless.functional_call(self.featurizer, wa_weights, x)
         logits = self.classifier(feats)
         dict_loss = self.compute_loss(logits, y)
+
+        if xt is not None:
+            featst = torch.nn.utils.stateless.functional_call(self.featurizer, wa_weights, xt)
+            dict_loss_t = self.compute_loss_t(feats, featst)
+            dict_loss.update(dict_loss_t)
+
         objective = (
             float(self.hparams.get("suploss", 0.)) * dict_loss["ce"] +
             float(self.hparams.get("entloss", 0.)) * dict_loss["ent"] +
-            float(self.hparams.get("bdiloss", 0.)) * dict_loss["bdi"]
+            float(self.hparams.get("bdiloss", 0.)) * dict_loss["bdi"] +
+            float(self.hparams.get("coralloss", 0.)) * dict_loss.get("coral", 0.)
         )
         # objective = torch.stack(list(loss.values()), dim=0).sum(dim=0)
         objective.backward(retain_graph=False)
         optimizer.step()
         return {key: value.item() for key, value in dict_loss.items()}
 
-    def tta_train(self, loader_train, device, data_evals):
+    def test_time_training(self, tta_loader, device, dict_data_loaders, train_loader=None):
         self.to(device)
         self.eval()
         self._init_train()
         self.set_not_trainable()
 
-        iter_loader_train = iter(loader_train)
-
+        iter_tta_loader = iter(tta_loader)
+        if train_loader is not None:
+            iter_train_loader = iter(train_loader)
         last_results_keys = []
-        n_steps = self.hparams.get("nsteps", 100)
-        for step in range(0, n_steps):
-            x, y = next(iter_loader_train)
-            x = x.to(device)
-            y = y.to(device)
-            optimizer = self.get_optimizer_at_step(step)
-            l = self.train_step(x, y, optimizer)
+
+        for step in range(0, self.hparams.get("nsteps", 1000) + 1):
             results = {'step': step}
-            results.update(l)
-            # if os.environ.get('DEBUG', "0") != "0":
-            #     pdb.set_trace()
+            if step != 0:
+                x, y = next(iter_tta_loader)
+                x, y = x.to(device), y.to(device)
+                if train_loader is not None:
+                    xt, _ = next(iter_train_loader)
+                    xt, yt = xt.to(device), yt.to(device)
+                else:
+                    xt, yt = None, None
+
+                optimizer = self.get_optimizer_at_step(step)
+                l = self.train_step(x, y, optimizer, xt, yt)
+                results.update(l)
+
             for i in range(self.num_aux):
                 results[f"lambda_{i}"] = self.lambdas[i].detach().float().cpu().numpy()
+
             if step % 10 == 0:
-                for name, loader in data_evals:
+                for name, loader in dict_data_loaders.items():
                     if name in []:
-                        #"test"]:
                         print(f"Skip inference at {name}")
                         continue
                     else:
