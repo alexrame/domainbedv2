@@ -190,7 +190,7 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
     model_hparams = {
         "nonlinear_classifier": False, "resnet18": False, "resnet_dropout": 0}
 
-    for ckpt in good_checkpoints:
+    for i, ckpt in enumerate(good_checkpoints):
         checkpoint = ckpt["name"]
         checkpoint_weight = ckpt["weight"]
         checkpoint_type  = ckpt["type"]
@@ -208,24 +208,18 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
             len(dataset) - 1, model_hparams
         )
         algorithm.eval()
-        try:
-            if "model_dict" in save_dict:
-                algorithm.load_state_dict(save_dict["model_dict"], strict=False)
-            elif checkpoint_type in ["network", "networknotclassifier", "classifier", "featurizer"]:
-                print(f"Load network {checkpoint} {checkpoint_weight} {checkpoint_type}")
-                if "network_dict" in save_dict:
-                    algorithm.network.load_state_dict(save_dict["network_dict"])
-                else:
-                    algorithm.network.load_state_dict(save_dict)
+        if "model_dict" in save_dict:
+            algorithm.load_state_dict(save_dict["model_dict"], strict=False)
+        elif checkpoint_type in ["network", "networknotclassifier", "classifier", "featurizer"]:
+            print(f"Load network {checkpoint} {checkpoint_weight} {checkpoint_type}")
+            if "network_dict" in save_dict:
+                algorithm.network.load_state_dict(save_dict["network_dict"])
             else:
-                assert checkpoint_type in ["featurizeronly"]
-                print(f"Load featurizer {checkpoint} {checkpoint_weight} {checkpoint_type}")
-                algorithm.featurizer.load_state_dict(save_dict)
-
-        except Exception as e:
-            print(f"Failed when trying to load {checkpoint} {checkpoint_weight} {checkpoint_type}")
-            time.sleep(1)
-            raise e
+                algorithm.network.load_state_dict(save_dict)
+        else:
+            assert checkpoint_type in ["featurizeronly"]
+            print(f"Load featurizer {checkpoint} {checkpoint_weight} {checkpoint_type}")
+            algorithm.featurizer.load_state_dict(save_dict)
 
         if checkpoint_type in ["network", "networknotclassifier"]:
             if "mean" in action:
@@ -254,8 +248,12 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
 
         if checkpoint_type in ["network", "classifier"]:
             if "cla" in action:
+                if os.environ.get("ONLYFIRSTCLA"):
+                    checkpoint_weight_cla = checkpoint_weight if i == 0 else 0
+                else:
+                    checkpoint_weight_cla = checkpoint_weight
                 # assert "feats" in action or "featsproduct" in action
-                wa_algorithm.update_mean_classifier(algorithm.classifier, weight=checkpoint_weight)
+                wa_algorithm.update_mean_classifier(algorithm.classifier, weight=checkpoint_weight_cla)
             if "claproduct" in action:
                 # assert "feats" in action or "featsproduct" in action
                 wa_algorithm.update_product_classifier(algorithm.classifier, weight=checkpoint_weight)
