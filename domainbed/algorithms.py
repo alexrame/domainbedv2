@@ -108,14 +108,14 @@ class ERM(Algorithm):
             else:
                 self.network.load_state_dict(saved_dict)
 
-            if self._what_is_trainable == "clareset":
+            if self._what_is_trainable in ["clareset", "0reset"]:
                 # or os.environ.get("RESET_CLASSIFIER"):
                 print("Reset random classifier")
                 self.classifier.reset_parameters()
 
     def _get_training_parameters(self):
         ## DiWA choose weights to be optimized ##
-        if self._what_is_trainable in [0, "0", None]:
+        if self._what_is_trainable in [0, "0", None, "0reset"]:
             print("Learn featurizer and classifier")
             parameters_to_be_optimized = self.network.parameters()
         elif self._what_is_trainable == "clafrozen":
