@@ -107,6 +107,7 @@ class ERM(Algorithm):
                 self.featurizer.load_state_dict(saved_dict)
             else:
                 self.network.load_state_dict(saved_dict)
+
             if self._what_is_trainable == "clareset":
                 # or os.environ.get("RESET_CLASSIFIER"):
                 print("Reset random classifier")
