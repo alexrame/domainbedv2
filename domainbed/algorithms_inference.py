@@ -292,6 +292,8 @@ class DiWA(algorithms.ERM):
                 bs = x.size(0)
                 for domain in self.domain_to_mean_feats.keys():
                     domain_feats = self.domain_to_mean_feats[domain].reshape(1, -1).tile((bs, 1))
+                    if os.environ.get("DEBUG"):
+                        pdb.set_trace()
                     diff_feats = (feats - domain_feats).pow(2).mean()
                     key = "diff_feats_" + domain
                     if key not in aux_dict_stats:
