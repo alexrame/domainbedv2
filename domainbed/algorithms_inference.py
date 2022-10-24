@@ -285,18 +285,39 @@ class DiWA(algorithms.ERM):
     def get_dict_features_stats(self, loader, device):
         aux_dict_stats = {}
         with torch.no_grad():
-            for i, (x, y) in enumerate(loader):
+            i = 0
+            for x, y in loader:
                 x = x.to(device)
                 feats = self.predict(x, return_type="feats")
-                mean_feats, _ = self.get_mean_cov_feats(feats)
-
+                bs = x.size(0)
                 for domain in self.domain_to_mean_feats.keys():
-                    diff_feats = (mean_feats - self.domain_to_mean_feats[domain]).pow(2).mean()
+                    domain_feats = self.domain_to_mean_feats[domain].reshape(1, -1).tile((bs, 1))
+                    diff_feats = (feats - domain_feats).pow(2).mean()
+                    # diff_feats = (mean_feats - self.domain_to_mean_feats[domain]).pow(2).mean()
                     key = "diff_feats_" + domain
                     if key not in aux_dict_stats:
                         aux_dict_stats[key] = 0.
-                    aux_dict_stats[key] = (aux_dict_stats[key] * i + diff_feats) / (i + 1)
+                    aux_dict_stats[key] = (aux_dict_stats[key] * i + diff_feats * bs) / (i + bs)
+                i += float(bs)
         return aux_dict_stats
+
+
+    # def get_dict_features_stats(self, loader, device):
+    #     aux_dict_stats = {}
+    #     with torch.no_grad():
+    #         for i, (x, y) in enumerate(loader):
+    #             x = x.to(device)
+    #             feats = self.predict(x, return_type="feats")
+    #             # mean_feats, _ = self.get_mean_cov_feats(feats)
+
+    #             for domain in self.domain_to_mean_feats.keys():
+    #                 diff_feats = (feats - self.domain_to_mean_feats[domain]).pow(2).mean()
+    #                 # diff_feats = (mean_feats - self.domain_to_mean_feats[domain]).pow(2).mean()
+    #                 key = "diff_feats_" + domain
+    #                 if key not in aux_dict_stats:
+    #                     aux_dict_stats[key] = 0.
+    #                 aux_dict_stats[key] = (aux_dict_stats[key] * i + diff_feats) / (i + 1)
+    #     return aux_dict_stats
 
     def get_dict_prediction_stats(
         self,
@@ -307,15 +328,19 @@ class DiWA(algorithms.ERM):
         dict_stats = {}
         aux_dict_stats = {"batch_classes": []}
         with torch.no_grad():
-
-            for i, (x, y) in enumerate(loader):
+            i = 0.
+            for x, y in loader:
                 x = x.to(device)
+                bs = x.size(0)
                 if self.hparams.get("do_feats"):
                     prediction, feats = self.predict(x, return_type="pred_feats")
                     mean_feats, _ = self.get_mean_cov_feats(feats)
                     if "mean_feats" not in aux_dict_stats:
                         aux_dict_stats["mean_feats"] = torch.zeros_like(mean_feats)
-                    aux_dict_stats["mean_feats"] = (aux_dict_stats["mean_feats"] * i + mean_feats) / (i + 1)
+                    aux_dict_stats["mean_feats"] = (
+                        aux_dict_stats["mean_feats"] * i + mean_feats * bs
+                    ) / (i + bs)
+                    i += float(bs)
                 else:
                     prediction = self.predict(x)
 
@@ -603,6 +628,3 @@ class TrainableDiWA(DiWA):
                 misc.print_row(results_keys, colwidth=20)
                 last_results_keys = results_keys
             misc.print_row([results[key] for key in results_keys], colwidth=20)
-# MODEL_SELECTION=train WHICHMODEL=stepbest INCLUDEVAL_UPTO=0 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0  --output_dir /data/rame/experiments/domainbed/home0_ma_lp_0824 --trial_seed 0 --data_dir /data/rame/data/domainbed --checkpoints /data/rame/data/domainbed/inits/model_home0_ermll_saveall_si_0822.pkl 0 featurizer --what addfeats --topk 1 --weight_selection train
-
-# MODEL_SELECTION=train WHICHMODEL=stepbest CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0  --output_dir /data/rame/experiments/domainbed/home0_ma_lp_0824 --trial_seed 0 --data_dir /data/rame/data/domainbed --checkpoints /data/rame/data/domainbed/inits/model_home0_ermll_saveall_si_0822.pkl -5 featurizer --what addfeats --topk 1 --weight_selection train --hparams '{"suploss": 0, "entloss": 1., "bdiloss": 1.}'

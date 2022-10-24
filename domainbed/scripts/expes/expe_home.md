@@ -354,4 +354,12 @@ sbatch -A gtw@v100 enspacs_erm0123wn_idn1erm0921r20top1_lp_0916_r20.slurm
 
 
 
-# inf0: lp + features from domainnet
+# MODEL_SELECTION=train WHICHMODEL=stepbest INCLUDEVAL_UPTO=0 CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0  --output_dir /data/rame/experiments/domainbed/home0_ma_lp_0824 --trial_seed 0 --data_dir /data/rame/data/domainbed --checkpoints /data/rame/data/domainbed/inits/model_home0_ermll_saveall_si_0822.pkl 0 featurizer --what addfeats --topk 1 --weight_selection train
+
+# MODEL_SELECTION=train WHICHMODEL=stepbest CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0  --output_dir /data/rame/experiments/domainbed/home0_ma_lp_0824 --trial_seed 0 --data_dir /data/rame/data/domainbed --checkpoints /data/rame/data/domainbed/inits/model_home0_ermll_saveall_si_0822.pkl -5 featurizer --what addfeats --topk 1 --weight_selection train --hparams '{"suploss": 0, "entloss": 1., "bdiloss": 1.}'
+
+# tta
+
+
+acc_cla               df_0_0                df_0_1                df_0_2                df_1_0                df_1_1                df_1_2                df_2_0                df_2_1                df_2_2                env_0_out_acc_cla     env_1_out_acc_cla     env_2_out_acc_cla     length                robust                step                  testenv               topk
+0.6390605686          0.0011117256          0.00045739525         0.00043065738         0.001068139           0.00041127444         0.00038388933         0.0010371739          0.0003933505          0.0003692967          0.6515463918          0.7709049255          0.9098083427          1                     0.000_featurizer      best                  0                     1
