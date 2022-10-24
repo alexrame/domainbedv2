@@ -392,7 +392,7 @@ class DiWA(algorithms.ERM):
 from torch import nn, optim
 
 class TrainableDiWA(DiWA):
-    # hparams: suploss, entloss, bdiloss, lrl, lrc, nsteps (1000)
+    # hparams: suploss, entloss, bdiloss, coralloss, lrl, lrc, nsteps (1000)
 
     def _create_network(self):
         self.featurizer = None
@@ -536,7 +536,7 @@ class TrainableDiWA(DiWA):
                 x, y = next(iter_tta_loader)
                 x, y = x.to(device), y.to(device)
                 if train_loader is not None:
-                    xt, _ = next(iter_train_loader)
+                    xt, yt = next(iter_train_loader)
                     xt, yt = xt.to(device), yt.to(device)
                 else:
                     xt, yt = None, None
