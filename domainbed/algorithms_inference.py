@@ -371,6 +371,7 @@ class DiWA(algorithms.ERM):
                     # )
                     # dict_stats[key]["confs"].append(probs.max(dim=1)[0].cpu())
                 if os.environ.get("DEBUG"):
+                    pdb.set_trace()
                     break
 
         for key0 in dict_stats:

@@ -453,7 +453,7 @@ def create_data_splits(inf_args, dataset):
 
     if misc.is_not_none(os.environ.get("INDOMAIN")) or inf_args.weight_selection == "train":
         dict_domain_to_filter = {"testout": "out", "test": "in"} # "testins": "insmall",
-    elif inf_args.test_env != -1:
+    elif inf_args.test_env != -1 and os.environ.get("NOTEST") != "1":
         dict_domain_to_filter = {"test": "full"}
     else:
         dict_domain_to_filter = {}
