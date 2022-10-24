@@ -248,13 +248,13 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
 
         if checkpoint_type in ["network", "classifier"]:
             if "cla" in action:
-                if os.environ.get("ONLYFIRSTCLA", "0") != "0":
-                    checkpoint_weight_cla = checkpoint_weight if i == 0 else 0
-                    print("new weight: ", checkpoint_weight_cla, "for: ", i)
-                else:
-                    checkpoint_weight_cla = checkpoint_weight
+                # if os.environ.get("ONLYFIRSTCLA", "0") != "0":
+                #     checkpoint_weight_cla = checkpoint_weight if i == 0 else 0
+                #     print("new weight: ", checkpoint_weight_cla, "for: ", i)
+                # else:
+                # checkpoint_weight_cla = checkpoint_weight
                 # assert "feats" in action or "featsproduct" in action
-                wa_algorithm.update_mean_classifier(algorithm.classifier, weight=checkpoint_weight_cla)
+                wa_algorithm.update_mean_classifier(algorithm.classifier, weight=checkpoint_weight)
             if "claproduct" in action:
                 # assert "feats" in action or "featsproduct" in action
                 wa_algorithm.update_product_classifier(algorithm.classifier, weight=checkpoint_weight)
@@ -358,7 +358,9 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
                 for keyaux in aux_dict_stats.keys():
                     if keyaux.startswith("diff_feats_"):
                         new_domain = keyaux.split("_")[2]
-                        dict_results["df_" + domain + "_" + new_domain] = aux_dict_stats[keyaux]
+                        dict_results[
+                            "df_" + domain + "_" +
+                            new_domain] = aux_dict_stats[keyaux].detach().float().cpu().numpy()
 
     # some hacky queries to enrich dict_results
 

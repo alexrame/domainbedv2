@@ -567,7 +567,7 @@ class TrainableDiWA(DiWA):
 
                 optimizer = self.get_optimizer_at_step(step)
                 l = self.train_step(x, y, optimizer, xt, yt)
-                results.update(l)
+                # results.update(l)
 
             for i in range(self.num_aux):
                 results[f"lambda_{i}"] = self.lambdas[i].detach().float().cpu().numpy()
