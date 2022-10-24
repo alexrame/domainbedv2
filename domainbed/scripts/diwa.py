@@ -366,9 +366,8 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
             for keyaux in aux_dict_stats.keys():
                 if keyaux.startswith("diff_feats_"):
                     new_domain = keyaux.split("_")[2]
-                    dict_results[
-                        "df_" + domain + "_" +
-                        new_domain] = aux_dict_stats[keyaux].detach().float().cpu().numpy()
+                    dict_results["df_" + domain + "_" + new_domain] = np.mean(
+                            aux_dict_stats[keyaux].detach().float().cpu().numpy())
 
     # some hacky queries to enrich dict_results
 

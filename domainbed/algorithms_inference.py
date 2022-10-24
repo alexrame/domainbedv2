@@ -286,7 +286,7 @@ class DiWA(algorithms.ERM):
         aux_dict_stats = {}
         with torch.no_grad():
             i = 0
-            for x, y in loader:
+            for x, _ in loader:
                 x = x.to(device)
                 feats = self.predict(x, return_type="feats")
                 bs = x.size(0)
@@ -340,10 +340,10 @@ class DiWA(algorithms.ERM):
                     aux_dict_stats["mean_feats"] = (
                         aux_dict_stats["mean_feats"] * i + mean_feats * bs
                     ) / (i + bs)
-                    i += float(bs)
                 else:
                     prediction = self.predict(x)
 
+                i += float(bs)
                 y = y.to(device)
                 aux_dict_stats["batch_classes"].append(y)
                 for key in prediction.keys():
@@ -369,13 +369,10 @@ class DiWA(algorithms.ERM):
                     #           torch.flatten(y)].flatten().cpu()
                     # )
                     # dict_stats[key]["confs"].append(probs.max(dim=1)[0].cpu())
+
         for key0 in dict_stats:
             for key1 in dict_stats[key0]:
-                try:
-                    dict_stats[key0][key1] = torch.cat(dict_stats[key0][key1])
-                except:
-                    import pdb
-                    pdb.set_trace()
+                dict_stats[key0][key1] = torch.cat(dict_stats[key0][key1])
 
         return dict_stats, aux_dict_stats
 
