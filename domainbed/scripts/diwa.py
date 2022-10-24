@@ -349,6 +349,9 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
         for key, value in _results_name.items():
             new_key = name + "_" + key if name != "test" else key
             dict_results[new_key] = value
+        if inf_args.hparams.get("do_feats"):
+            if (name.startswith("env_") and name.endswith("_out")):
+                wa_algorithm.domain_to_mean_feats[domain] = aux_dict_stats["mean_feats"]
 
     if inf_args.hparams.get("do_feats"):
         for name in dict_data_loaders.keys():
@@ -357,8 +360,7 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
             domain = name.split("_")[1]
             wa_algorithm.eval()
             aux_dict_stats = wa_algorithm.get_dict_features_stats(loader, device)
-            assert "mean_feats" in aux_dict_stats
-            wa_algorithm.domain_to_mean_feats[domain] = aux_dict_stats["mean_feats"]
+
             for keyaux in aux_dict_stats.keys():
                 if keyaux.startswith("diff_feats_"):
                     new_domain = keyaux.split("_")[2]

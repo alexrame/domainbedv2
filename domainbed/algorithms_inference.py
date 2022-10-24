@@ -35,7 +35,6 @@ class DiWA(algorithms.ERM):
         algorithms.Algorithm.__init__(self, input_shape, num_classes, num_domains, hparams=hparams)
         self._init_counts()
         self._create_network()
-        self.analyze_feats = self.hparams.get("feats")
         self.domain_to_mean_feats = {}
 
     def _init_counts(self):
@@ -213,7 +212,7 @@ class DiWA(algorithms.ERM):
         self.classifiers.append(classifier)
         self.classifiers_weights.append(weight)
 
-    def predict(self, x, return_feats=False):
+    def predict(self, x, return_type="pred"):
         if self.network_ma is not None:
             dict_predictions = {"": self.network_ma(x)}
         elif self.classifier is None or os.environ.get("NETWORKINFERENCE", "0") == "1":
@@ -262,7 +261,9 @@ class DiWA(algorithms.ERM):
             if self.classifier_product is not None:
                 dict_predictions["claprod"] = self.classifier_product(features_product)
 
-        if return_feats:
+        if return_type == "pred_feats":
+            return dict_predictions, features
+        elif return_type == "feats":
             return features
         else:
             return dict_predictions
@@ -287,11 +288,9 @@ class DiWA(algorithms.ERM):
             for i, (x, y) in enumerate(loader):
                 x = x.to(device)
                 assert self.analyze_feats
-                feats = self.predict(x, return_feats=True)
+                feats = self.predict(x, return_type="feats")
                 mean_feats, _ = self.get_mean_cov_feats(feats)
-                if "mean_feats" not in aux_dict_stats:
-                    aux_dict_stats["mean_feats"] = torch.zeros_like(mean_feats)
-                aux_dict_stats["mean_feats"] = (aux_dict_stats["mean_feats"] * i + mean_feats) / (i + 1)
+
                 for domain in self.domain_to_mean_feats.keys():
                     diff_feats = (mean_feats - self.domain_to_mean_feats[domain]).pow(2).mean()
                     key = "diff_feats_" + domain
@@ -307,14 +306,22 @@ class DiWA(algorithms.ERM):
     ):
 
         dict_stats = {}
-        batch_classes = []
+        aux_dict_stats = {"batch_classes": []}
         with torch.no_grad():
+
             for i, (x, y) in enumerate(loader):
                 x = x.to(device)
-                prediction = self.predict(x)
+                if self.hparams.get("do_feats"):
+                    prediction, feats = self.predict(x, return_type="pred_feats")
+                    mean_feats, _ = self.get_mean_cov_feats(feats)
+                    if "mean_feats" not in aux_dict_stats:
+                        aux_dict_stats["mean_feats"] = torch.zeros_like(mean_feats)
+                    aux_dict_stats["mean_feats"] = (aux_dict_stats["mean_feats"] * i + mean_feats) / (i + 1)
+                else:
+                    prediction = self.predict(x)
 
                 y = y.to(device)
-                batch_classes.append(y)
+                aux_dict_stats["batch_classes"].append(y)
                 for key in prediction.keys():
                     logits = prediction[key]
                     if key not in dict_stats:
@@ -346,7 +353,7 @@ class DiWA(algorithms.ERM):
                     import pdb
                     pdb.set_trace()
 
-        return dict_stats, batch_classes
+        return dict_stats, aux_dict_stats
 
     def get_dict_entropy(self, dict_stats, device):
         dict_results = {}
@@ -467,19 +474,21 @@ class TrainableDiWA(DiWA):
             weights[name_0] = new_data/sum_lambdas
         return weights
 
-    def predict(self, x, return_feats=False):
+    def predict(self, x, return_type="preds"):
         dict_predictions = {}
         wa_weights = self.get_wa_weights()
         features_wa = torch.nn.utils.stateless.functional_call(
                 self.featurizer, wa_weights, x)
-        features_task = self.featurizer(x)
+        # features_task = self.featurizer(x)
 
         # w for wa, t for task
         dict_predictions["11"] = self.classifier(features_wa)
         # dict_predictions["10"] = self.classifier_task(features_wa)
         # dict_predictions["01"] = self.classifier(features_task)
         # dict_predictions["00"] = self.classifier_task(features_task)
-        if return_feats:
+        if return_type == "pred_feats":
+            return dict_predictions, features_wa
+        elif return_type == "feats":
             return features_wa
         else:
             return dict_predictions
