@@ -267,7 +267,7 @@ def print_args(args):
 
 def results_ensembling(algorithm, loader, device, do_div=False, do_ent=False):
     algorithm.eval()
-    dict_stats, batch_classes = algorithm.get_dict_prediction_stats(loader, device)
+    dict_stats, aux_dict_stats = algorithm.get_dict_prediction_stats(loader, device)
     dict_results = {}
     for key in dict_stats:
         dict_results[("acc_" + key if key != "" else "acc")] = sum(
@@ -287,14 +287,14 @@ def results_ensembling(algorithm, loader, device, do_div=False, do_ent=False):
 
     if do_div:
         print("Compute prediction diversity")
-        targets = torch.cat(batch_classes).cpu().numpy()
+        targets = torch.cat(aux_dict_stats["batch_classes"]).cpu().numpy()
         dict_diversity = algorithm.get_dict_diversity(dict_stats, targets, device)
         dict_results.update(dict_diversity)
     if do_ent:
         print("Compute prediction entropy")
         dict_entropy = algorithm.get_dict_entropy(dict_stats, device)
         dict_results.update(dict_entropy)
-    return dict_results
+    return dict_results, aux_dict_stats
 
 
 def accuracy(algorithm, loader, weights, device):

@@ -35,6 +35,8 @@ class DiWA(algorithms.ERM):
         algorithms.Algorithm.__init__(self, input_shape, num_classes, num_domains, hparams=hparams)
         self._init_counts()
         self._create_network()
+        self.analyze_feats = self.hparams.get("feats")
+        self.domain_to_mean_feats = {}
 
     def _init_counts(self):
         self.global_count = 0
@@ -60,6 +62,7 @@ class DiWA(algorithms.ERM):
         self.network_ma = None
         self.network_var = None
         self.networks = []
+
         self.featurizers = []
         self.featurizers_weights = []
         self.classifiers = []
@@ -210,7 +213,7 @@ class DiWA(algorithms.ERM):
         self.classifiers.append(classifier)
         self.classifiers_weights.append(weight)
 
-    def predict(self, x):
+    def predict(self, x, return_feats=False):
         if self.network_ma is not None:
             dict_predictions = {"": self.network_ma(x)}
         elif self.classifier is None or os.environ.get("NETWORKINFERENCE", "0") == "1":
@@ -259,7 +262,11 @@ class DiWA(algorithms.ERM):
             if self.classifier_product is not None:
                 dict_predictions["claprod"] = self.classifier_product(features_product)
 
-        return dict_predictions
+        if return_feats:
+            assert self.featurizer is not None
+            return dict_predictions, features
+        else:
+            return dict_predictions
 
     def train(self, *args):
         algorithms.ERM.train(self, *args)
@@ -280,14 +287,29 @@ class DiWA(algorithms.ERM):
         loader,
         device,
     ):
-        batch_classes = []
+
         dict_stats = {}
+        aux_dict_stats = {"batch_classes": []}
         with torch.no_grad():
-            for x, y in loader:
+            for i, (x, y) in enumerate(loader):
                 x = x.to(device)
-                prediction = self.predict(x)
+                if self.analyze_feats:
+                    prediction, feats = self.predict(x, return_feats=True)
+                    mean_feats, _ = self.get_mean_cov_feats(feats)
+                    if "mean_feats" not in aux_dict_stats:
+                        aux_dict_stats["mean_feats"] = torch.zeros_like(mean_feats)
+                    aux_dict_stats["mean_feats"] = (aux_dict_stats["mean_feats"] * i + mean_feats) / (i + 1)
+                    for domain in self.domain_to_mean_feats.keys():
+                        diff_feats = (mean_feats - self.domain_to_mean_feats[domain]).pow(2).mean()
+                        key = "diff_feats_" + domain
+                        if key not in aux_dict_stats:
+                            aux_dict_stats[key] = 0.
+                        aux_dict_stats[key] = (aux_dict_stats[key] * i + diff_feats) / (i + 1)
+                else:
+                    prediction = self.predict(x)
+
                 y = y.to(device)
-                batch_classes.append(y)
+                aux_dict_stats["batch_classes"].append(y)
                 for key in prediction.keys():
                     logits = prediction[key]
                     if key not in dict_stats:
@@ -318,7 +340,8 @@ class DiWA(algorithms.ERM):
                 except:
                     import pdb
                     pdb.set_trace()
-        return dict_stats, batch_classes
+
+        return dict_stats, aux_dict_stats
 
     def get_dict_entropy(self, dict_stats, device):
         dict_results = {}
@@ -388,6 +411,13 @@ class DiWA(algorithms.ERM):
 
         return dict_results
 
+    def get_mean_cov_feats(self, feats_0):
+        x0 = torch.mean(feats_0, dim=0)
+        mean_x0 = x0.mean(0, keepdim=True)
+        cent_x0 = x0 - mean_x0
+        cova_x0 = (cent_x0.t() @ cent_x0) / (len(x0) - 1)
+        return mean_x0, cova_x0
+
 
 from torch import nn, optim
 
@@ -432,7 +462,7 @@ class TrainableDiWA(DiWA):
             weights[name_0] = new_data/sum_lambdas
         return weights
 
-    def predict(self, x):
+    def predict(self, x, return_feats=False):
         dict_predictions = {}
         wa_weights = self.get_wa_weights()
         features_wa = torch.nn.utils.stateless.functional_call(
@@ -444,7 +474,10 @@ class TrainableDiWA(DiWA):
         # dict_predictions["10"] = self.classifier_task(features_wa)
         # dict_predictions["01"] = self.classifier(features_task)
         # dict_predictions["00"] = self.classifier_task(features_task)
-        return dict_predictions
+        if return_feats:
+            return dict_predictions, features_wa
+        else:
+            return dict_predictions
 
     def _init_train(self):
         self.num_aux = len(self.featurizers)
@@ -480,17 +513,8 @@ class TrainableDiWA(DiWA):
         return dict_loss
 
     def compute_loss_t(self, feats_0, feats_1):
-        x0 = torch.mean(feats_0, dim=0)
-        x1 = torch.mean(feats_1, dim=0)
-        # todo
-
-        mean_x0 = x0.mean(0, keepdim=True)
-        mean_x1 = x1.mean(0, keepdim=True)
-        cent_x0 = x0 - mean_x0
-        cent_x1 = x1 - mean_x1
-        cova_x0 = (cent_x0.t() @ cent_x0) / (len(x0) - 1)
-        cova_x1 = (cent_x1.t() @ cent_x1) / (len(x1) - 1)
-
+        mean_x0, cova_x0 = self.get_mean_cov_feats(feats_0)
+        mean_x1, cova_x1 = self.get_mean_cov_feats(feats_1)
         dict_loss_t = {}
         dict_loss_t["coral"] = (mean_x0 - mean_x1).pow(2).mean()
         dict_loss_t["coralv"] = (cova_x0 - cova_x1).pow(2).mean()
@@ -555,7 +579,7 @@ class TrainableDiWA(DiWA):
                         continue
                     else:
                         print(f"Inference at {name}")
-                        _results_name = misc.results_ensembling(
+                        _results_name, _ = misc.results_ensembling(
                             self, loader, device, do_div=False, do_ent=True)
                         for key, value in _results_name.items():
                             new_key = name + "_" + key if name != "test" else key

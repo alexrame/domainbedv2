@@ -341,12 +341,24 @@ def get_wa_results(good_checkpoints, dataset, inf_args, dict_data_splits, device
 
 def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
     dict_results = {}
-    for name, loader in dict_data_loaders.items():
+    names_test = ["test", "env_" + str(inf_args.test_env) + "_out", "env_" + str(inf_args.test_env) + "_in", "testout", "testins"]
+    names_to_eval = [key for key in dict_data_loaders.keys() if key not in names_test] + [key for key in dict_data_loaders.keys() if key in names_test]
+
+    for name in names_to_eval:
+        loader = dict_data_loaders[name]
         print(f"Inference at {name}")
-        _results_name = misc.results_ensembling(wa_algorithm, loader, device)
+        _results_name, aux_dict_stats = misc.results_ensembling(wa_algorithm, loader, device)
         for key, value in _results_name.items():
             new_key = name + "_" + key if name != "test" else key
             dict_results[new_key] = value
+        if "mean_feats" in aux_dict_stats:
+            if name.startswith("env_") and name.endswith("_out"):
+                domain = name.split("_")[1]
+                wa_algorithm.domain_to_mean_feats[domain] = aux_dict_stats["mean_feats"]
+                for keyaux in aux_dict_stats.keys():
+                    if keyaux.startswith("diff_feats_"):
+                        new_domain = keyaux.split("_")[2]
+                        dict_results["df_" + domain + "_" + new_domain] = aux_dict_stats[keyaux]
 
     # some hacky queries to enrich dict_results
 
