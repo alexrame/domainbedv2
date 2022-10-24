@@ -340,8 +340,8 @@ class DiWA(algorithms.ERM):
                     aux_dict_stats["mean_feats"] = (
                         aux_dict_stats["mean_feats"] * i + mean_feats * bs
                     ) / (i + bs)
-                    if os.environ.get("DEBUG"):
-                        pdb.set_trace()
+                    # if os.environ.get("DEBUG"):
+                    #     pdb.set_trace()
                 else:
                     prediction = self.predict(x)
 
