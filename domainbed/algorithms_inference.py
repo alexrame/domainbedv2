@@ -293,14 +293,12 @@ class DiWA(algorithms.ERM):
                 for domain in self.domain_to_mean_feats.keys():
                     domain_feats = self.domain_to_mean_feats[domain].reshape(1, -1).tile((bs, 1))
                     diff_feats = (feats - domain_feats).pow(2).mean()
-                    # diff_feats = (mean_feats - self.domain_to_mean_feats[domain]).pow(2).mean()
                     key = "diff_feats_" + domain
                     if key not in aux_dict_stats:
                         aux_dict_stats[key] = 0.
                     aux_dict_stats[key] = (aux_dict_stats[key] * i + diff_feats * bs) / (i + bs)
                 i += float(bs)
         return aux_dict_stats
-
 
     # def get_dict_features_stats(self, loader, device):
     #     aux_dict_stats = {}
@@ -335,11 +333,14 @@ class DiWA(algorithms.ERM):
                 if self.hparams.get("do_feats"):
                     prediction, feats = self.predict(x, return_type="pred_feats")
                     mean_feats, _ = self.get_mean_cov_feats(feats)
+                    mean_feats = mean_feats[0]
                     if "mean_feats" not in aux_dict_stats:
                         aux_dict_stats["mean_feats"] = torch.zeros_like(mean_feats)
                     aux_dict_stats["mean_feats"] = (
                         aux_dict_stats["mean_feats"] * i + mean_feats * bs
                     ) / (i + bs)
+                    if os.environ.get("DEBUG"):
+                        pdb.set_trace()
                 else:
                     prediction = self.predict(x)
 
