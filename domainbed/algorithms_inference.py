@@ -333,7 +333,6 @@ class DiWA(algorithms.ERM):
                 if self.hparams.get("do_feats"):
                     prediction, feats = self.predict(x, return_type="pred_feats")
                     mean_feats, _ = self.get_mean_cov_feats(feats)
-                    mean_feats = mean_feats[0]
                     if "mean_feats" not in aux_dict_stats:
                         aux_dict_stats["mean_feats"] = torch.zeros_like(mean_feats)
                     aux_dict_stats["mean_feats"] = (
@@ -445,8 +444,8 @@ class DiWA(algorithms.ERM):
 
         return dict_results
 
-    def get_mean_cov_feats(self, feats_0):
-        x0 = torch.mean(feats_0, dim=0)
+    def get_mean_cov_feats(self, x0):
+        # x0 = torch.mean(feats_0, dim=0)
         mean_x0 = x0.mean(0, keepdim=True)
         cent_x0 = x0 - mean_x0
         cova_x0 = (cent_x0.t() @ cent_x0) / (len(x0) - 1)
