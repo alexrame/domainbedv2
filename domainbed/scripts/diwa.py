@@ -351,6 +351,7 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
             dict_results[new_key] = value
         if inf_args.hparams.get("do_feats"):
             if (name.startswith("env_") and name.endswith("_out")):
+                domain = name.split("_")[1]
                 wa_algorithm.domain_to_mean_feats[domain] = aux_dict_stats["mean_feats"]
 
     if inf_args.hparams.get("do_feats"):
