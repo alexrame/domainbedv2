@@ -370,8 +370,8 @@ class DiWA(algorithms.ERM):
                     #           torch.flatten(y)].flatten().cpu()
                     # )
                     # dict_stats[key]["confs"].append(probs.max(dim=1)[0].cpu())
-                    if os.environ.get("DEBUG"):
-                        break
+                if os.environ.get("DEBUG"):
+                    break
 
         for key0 in dict_stats:
             for key1 in dict_stats[key0]:
