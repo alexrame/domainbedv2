@@ -295,10 +295,9 @@ class DiWA(algorithms.ERM):
                     if os.environ.get("DEBUG"):
                         pdb.set_trace()
                     diff_feats = (feats - domain_feats).pow(2).mean()
-                    key = "diff_feats_" + domain
-                    if key not in aux_dict_stats:
-                        aux_dict_stats[key] = 0.
-                    aux_dict_stats[key] = (aux_dict_stats[key] * i + diff_feats * bs) / (i + bs)
+                    if domain not in aux_dict_stats:
+                        aux_dict_stats[domain] = 0.
+                    aux_dict_stats[domain] = (aux_dict_stats[domain] * i + diff_feats * bs) / (i + bs)
                 i += float(bs)
         return aux_dict_stats
 
@@ -371,6 +370,8 @@ class DiWA(algorithms.ERM):
                     #           torch.flatten(y)].flatten().cpu()
                     # )
                     # dict_stats[key]["confs"].append(probs.max(dim=1)[0].cpu())
+                    if os.environ.get("DEBUG"):
+                        break
 
         for key0 in dict_stats:
             for key1 in dict_stats[key0]:
