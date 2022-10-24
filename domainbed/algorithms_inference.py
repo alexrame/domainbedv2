@@ -287,7 +287,6 @@ class DiWA(algorithms.ERM):
         with torch.no_grad():
             for i, (x, y) in enumerate(loader):
                 x = x.to(device)
-                assert self.analyze_feats
                 feats = self.predict(x, return_type="feats")
                 mean_feats, _ = self.get_mean_cov_feats(feats)
 
