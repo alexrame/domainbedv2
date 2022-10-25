@@ -359,10 +359,11 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
                 continue
             print(f"Features at {name}")
             domain = name.split("_")[1]
+            loader = dict_data_loaders[name]
             wa_algorithm.eval()
             loader.restart()
-            aux_dict_stats = wa_algorithm.get_dict_features_stats(loader, device)
-            for new_domain, value in aux_dict_stats.items():
+            aux_dict_feats_stats = wa_algorithm.get_dict_features_stats(loader, device)
+            for new_domain, value in aux_dict_feats_stats.items():
                 if new_domain == "mean_feats":
                     continue
                 else:
@@ -370,7 +371,6 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
                         "df_" + domain + "_" + new_domain] = np.mean(value.detach().float().cpu().numpy())
 
     # some hacky queries to enrich dict_results
-
     if "VARM" in os.environ:
         dict_results["varm"] = float(os.environ["VARM"])
     if "MAXM" in os.environ:
