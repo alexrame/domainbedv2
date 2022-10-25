@@ -367,6 +367,7 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
             dict_stats_feats, aux_dict_feats_stats = wa_algorithm.get_dict_prediction_stats(
                 loader,
                 device,
+                predict_kwargs={"domain": domain},
                 what=["mean_feats", "cov_feats", "l2_feats", "l2var_feats", "cos_feats"],
             )
             for new_key, value in aux_dict_feats_stats.items():

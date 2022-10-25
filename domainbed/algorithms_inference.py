@@ -350,6 +350,30 @@ class DiWA(algorithms.ERM):
                             aux_dict_stats[distkey] = (
                                 aux_dict_stats[distkey] * i + l2_feats * bs
                             ) / (i + bs)
+                    if "l2var_feats" in what:
+                        var_feats = torch.diag(self.domain_to_cov_feats[predict_kwargs.get("domain")]).reshape(1, -1).tile((bs, 1))
+                        for domain in self.domain_to_mean_feats.keys():
+                            domain_feats = self.domain_to_mean_feats[domain].reshape(1, -1).tile(
+                                (bs, 1)
+                            )
+                            l2_feats = torch.div((feats - domain_feats).pow(2), var_feats).mean()
+                            distkey = "l2var_" + domain
+                            if distkey not in aux_dict_stats:
+                                aux_dict_stats[distkey] = 0.
+                            aux_dict_stats[distkey] = (aux_dict_stats[distkey] * i +
+                                                       l2_feats * bs) / (i + bs)
+
+                    if "cos_feats" in what:
+                        for domain in self.domain_to_mean_feats.keys():
+                            domain_feats = self.domain_to_mean_feats[domain].reshape(1, -1).tile((bs, 1))
+                            l2_feats = nn.CosineSimilarity(dim=1)(feats, domain_feats).mean()
+                            distkey = "l2_" + domain
+                            if distkey not in aux_dict_stats:
+                                aux_dict_stats[distkey] = 0.
+                            aux_dict_stats[distkey] = (
+                                aux_dict_stats[distkey] * i + l2_feats * bs
+                            ) / (i + bs)
+
                     # todo cos and l2varfeats
 
                 i += float(bs)
