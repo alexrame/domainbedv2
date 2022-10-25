@@ -265,9 +265,9 @@ def print_args(args):
     _print_dict(_dict)
 
 
-def results_ensembling(algorithm, loader, device, do_div=False, do_ent=False):
+def results_ensembling(algorithm, loader, device, what=[], do_div=False, do_ent=False):
     algorithm.eval()
-    dict_stats, aux_dict_stats = algorithm.get_dict_prediction_stats(loader, device)
+    dict_stats, aux_dict_stats = algorithm.get_dict_prediction_stats(loader, device, what=what)
     dict_results = {}
     for key in dict_stats:
         dict_results[("acc_" + key if key != "" else "acc")] = sum(

@@ -219,16 +219,16 @@ class DiWA(algorithms.ERM):
             named_params = [next(gen_named_params) for gen_named_params in list_gen_named_params]
             new_data = param_0.data
             sum_lambdas = 1.
-            for i in range(self.num_aux):
+            for i, lambda_i in enumerate(lambda_interpolation):
                 name_i, param_i = named_params[i]
                 assert name_0 == name_i
-                exp_lambda_i = lambda_interpolation[i]
-                new_data = new_data + exp_lambda_i * param_i
-                sum_lambdas += exp_lambda_i
+                lambda_i = lambda_interpolation[i]
+                new_data = new_data + lambda_i * param_i
+                sum_lambdas += lambda_i
             weights[name_0] = new_data/sum_lambdas
         return weights
 
-    def predict(self, x, return_type="pred"):
+    def predict(self, x, **kwargs):
         if self.network_ma is not None:
             dict_predictions = {"": self.network_ma(x)}
         elif self.classifier is None or os.environ.get("NETWORKINFERENCE", "0") == "1":
@@ -255,6 +255,7 @@ class DiWA(algorithms.ERM):
         if self.featurizer is not None:
             logits_enscla = []
             features = self.featurizer(x)
+            dict_predictions["feats"] = features
             if self.classifier is not None:
                 dict_predictions["cla"] = self.classifier(features)
 
@@ -277,16 +278,14 @@ class DiWA(algorithms.ERM):
             if self.classifier_product is not None:
                 dict_predictions["claprod"] = self.classifier_product(features_product)
 
-        if return_type == "pred_feats":
-            return dict_predictions, features
-        elif return_type == "feats":
-            return features
-        elif return_type == "preds":
-            return dict_predictions
-        else:
-            wa_weights = self.get_wa_weights(lambda_interpolation=return_type)
-            return torch.nn.utils.stateless.functional_call(
+        if kwargs.get("lambdas") is not None:
+            wa_weights = self.get_wa_weights(lambda_interpolation=kwargs.get("lambdas"))
+            features_wa = torch.nn.utils.stateless.functional_call(
                     self.featurizer, wa_weights, x)
+            dict_predictions["feats"] = features_wa
+            dict_predictions["clawa"] = self.classifier(features)
+
+        return dict_predictions
 
     def train(self, *args):
         algorithms.ERM.train(self, *args)
@@ -302,54 +301,12 @@ class DiWA(algorithms.ERM):
         for classifier in self.classifiers:
             classifier.to(device)
 
-    def get_dict_features_stats(self, loader, device, return_type="feats"):
-        aux_dict_stats = {}
-        with torch.no_grad():
-            i = 0
-            for x, y in loader:
-                x = x.to(device)
-                feats = self.predict(x, return_type=return_type)
-                mean_feats = torch.mean(feats, 0)
-                bs = x.size(0)
-
-                if "mean_feats" not in aux_dict_stats:
-                    aux_dict_stats["mean_feats"] = torch.zeros_like(mean_feats)
-                aux_dict_stats["mean_feats"] = (
-                    aux_dict_stats["mean_feats"] * i + mean_feats * bs
-                ) / (i + bs)
-
-                for domain in self.domain_to_mean_feats.keys():
-                    domain_feats = self.domain_to_mean_feats[domain].reshape(1, -1).tile((bs, 1))
-                    if os.environ.get("DEBUG"):
-                        pdb.set_trace()
-                    diff_feats = (feats - domain_feats).pow(2).mean()
-                    if domain not in aux_dict_stats:
-                        aux_dict_stats[domain] = 0.
-                    aux_dict_stats[domain] = (aux_dict_stats[domain] * i + diff_feats * bs) / (i + bs)
-                i += float(bs)
-        return aux_dict_stats
-
-    # def get_dict_features_stats(self, loader, device):
-    #     aux_dict_stats = {}
-    #     with torch.no_grad():
-    #         for i, (x, y) in enumerate(loader):
-    #             x = x.to(device)
-    #             feats = self.predict(x, return_type="feats")
-    #             # mean_feats, _ = self.get_mean_cov_feats(feats)
-
-    #             for domain in self.domain_to_mean_feats.keys():
-    #                 diff_feats = (feats - self.domain_to_mean_feats[domain]).pow(2).mean()
-    #                 # diff_feats = (mean_feats - self.domain_to_mean_feats[domain]).pow(2).mean()
-    #                 key = "diff_feats_" + domain
-    #                 if key not in aux_dict_stats:
-    #                     aux_dict_stats[key] = 0.
-    #                 aux_dict_stats[key] = (aux_dict_stats[key] * i + diff_feats) / (i + 1)
-    #     return aux_dict_stats
-
     def get_dict_prediction_stats(
         self,
         loader,
         device,
+        what=[],
+        predict_kwargs={},
     ):
 
         dict_stats = {}
@@ -359,21 +316,32 @@ class DiWA(algorithms.ERM):
             for x, y in loader:
                 x = x.to(device)
                 bs = x.size(0)
-                if self.hparams.get("do_feats"):
-                    prediction, feats = self.predict(x, return_type="pred_feats")
+                prediction = self.predict(x, **predict_kwargs)
+
+                if "meanfeats" in what:
+                    feats = prediction["feats"]
                     mean_feats, _ = self.get_mean_cov_feats(feats)
                     if "mean_feats" not in aux_dict_stats:
                         aux_dict_stats["mean_feats"] = torch.zeros_like(mean_feats)
                     aux_dict_stats["mean_feats"] = (
                         aux_dict_stats["mean_feats"] * i + mean_feats * bs
                     ) / (i + bs)
-                else:
-                    prediction = self.predict(x)
+
+                    if "l2feats" in what:
+                        for domain in self.domain_to_mean_feats.keys():
+                            domain_feats = self.domain_to_mean_feats[domain].reshape(1, -1).tile((bs, 1))
+                            l2_feats = (feats - domain_feats).pow(2).mean()
+                            l2_feats_key = "l2_" + domain
+                            if l2_feats_key not in aux_dict_stats:
+                                aux_dict_stats[l2_feats_key] = 0.
+                            aux_dict_stats[l2_feats_key] = (aux_dict_stats[domain] * i + l2_feats * bs) / (i + bs)
 
                 i += float(bs)
                 y = y.to(device)
                 aux_dict_stats["batch_classes"].append(y)
                 for key in prediction.keys():
+                    if key in ["feats"]:
+                        continue
                     logits = prediction[key]
                     if key not in dict_stats:
                         dict_stats[key] = {
@@ -509,7 +477,7 @@ class TrainableDiWA(DiWA):
             for param in net.parameters():
                 param.requires_grad = False
 
-    def predict(self, x, return_type="preds"):
+    def predict(self, x, **kwargs):
         dict_predictions = {}
         wa_weights = self.get_wa_weights(lambda_interpolation=[torch.exp(lam) for lam in self.lambdas])
         features_wa = torch.nn.utils.stateless.functional_call(
@@ -517,18 +485,12 @@ class TrainableDiWA(DiWA):
         # features_task = self.featurizer(x)
 
         # w for wa, t for task
+        dict_predictions["feats"] = features_wa
         dict_predictions["11"] = self.classifier(features_wa)
         # dict_predictions["10"] = self.classifier_task(features_wa)
         # dict_predictions["01"] = self.classifier(features_task)
         # dict_predictions["00"] = self.classifier_task(features_task)
-        if return_type == "pred_feats":
-            return dict_predictions, features_wa
-        elif return_type == "feats":
-            return features_wa
-        elif return_type == "preds":
-            return dict_predictions
-        else:
-            raise ValueError()
+        return dict_predictions
 
     def _init_train(self):
         self.num_aux = len(self.featurizers)
