@@ -40,6 +40,7 @@ class DiWA(algorithms.ERM):
     def _init_counts(self):
         self.global_count = 0
         self.global_count_feat = 0
+        self.global_count_feat_core = 0
         self.global_count_cla = 0
 
         self.global_count_product = 0
@@ -51,6 +52,7 @@ class DiWA(algorithms.ERM):
 
     def _create_network(self):
         self.network = None
+        self.featurizer_core = None
         self.featurizer = None
         self.classifier = None
 
@@ -137,6 +139,12 @@ class DiWA(algorithms.ERM):
             self.featurizer = copy.deepcopy(network)
         self._update_mean(network, self.featurizer, weight, self.global_count_feat)
         self.global_count_feat += weight
+
+    def update_core_featurizer(self, network, weight=1.):
+        if self.featurizer_core is None:
+            self.featurizer_core = copy.deepcopy(network)
+        self._update_mean(network, self.featurizer_core, weight, self.global_count_feat_core)
+        self.global_count_feat_core += weight
 
     def update_mean_classifier(self, classifier, weight=1.):
         if self.classifier is None:
