@@ -283,7 +283,7 @@ class DiWA(algorithms.ERM):
             features_wa = torch.nn.utils.stateless.functional_call(
                     self.featurizer, wa_weights, x)
             dict_predictions["feats"] = features_wa
-            dict_predictions["clawa"] = self.classifier(features)
+            dict_predictions["clawa"] = self.classifier(features_wa)
 
         return dict_predictions
 
@@ -381,6 +381,8 @@ class DiWA(algorithms.ERM):
         for key0 in dict_stats:
             for key1 in dict_stats[key0]:
                 dict_stats[key0][key1] = torch.cat(dict_stats[key0][key1])
+            dict_stats[key0]["acc"] = sum(dict_stats[key0]["correct"].numpy()) / len(
+                dict_stats[key0]["correct"].numpy())
 
         return dict_stats, aux_dict_stats
 

@@ -272,8 +272,7 @@ def results_ensembling(algorithm, loader, device, what=[], do_div=False, do_ent=
     )
     dict_results = {}
     for key in dict_stats:
-        dict_results[("acc_" + key if key != "" else "acc")] = sum(
-            dict_stats[key]["correct"].numpy()) / len(dict_stats[key]["correct"].numpy())
+        dict_results[("acc_" + key if key != "" else "acc")] = dict_stats[key]["acc"]
 
     if len(algorithm.networks):
         dict_results["acc_netm"] = np.mean(
