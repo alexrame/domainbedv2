@@ -357,7 +357,7 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
             wa_algorithm.domain_to_cov_feats[domain] = dict_stats["cov_feats"]
 
     for name in dict_data_loaders.keys():
-        if inf_args.hparams.get("do_feats") and name.startswith("env_") and name.endswith("_out"):1
+        if inf_args.hparams.get("do_feats") and name.startswith("env_") and name.endswith("_out"):
             print(f"Features at {name}")
             domain = name.split("_")[1]
             loader = dict_data_loaders[name]
