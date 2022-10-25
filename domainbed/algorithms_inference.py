@@ -324,12 +324,20 @@ class DiWA(algorithms.ERM):
 
                 if "meanfeats" in what:
                     feats = prediction["feats"]
-                    mean_feats, _ = self.get_mean_cov_feats(feats)
+                    mean_feats, cov_feats = self.get_mean_cov_feats(
+                        feats, true_mean=self.domain_to_mean_feats.get(predict_kwargs.get("domain_cov")))
                     if "mean_feats" not in aux_dict_stats:
                         aux_dict_stats["mean_feats"] = torch.zeros_like(mean_feats)
                     aux_dict_stats["mean_feats"] = (
                         aux_dict_stats["mean_feats"] * i + mean_feats * bs
                     ) / (i + bs)
+
+                    if "covfeats" in what:
+                        if "cov_feats" not in aux_dict_stats:
+                            aux_dict_stats["cov_feats"] = torch.zeros_like(cov_feats)
+                        aux_dict_stats["cov_feats"] = (
+                            aux_dict_stats["cov_feats"] * i + cov_feats * bs
+                        ) / (i + bs)
 
                     if "l2feats" in what:
                         for domain in self.domain_to_mean_feats.keys():
@@ -454,11 +462,15 @@ class DiWA(algorithms.ERM):
 
         return dict_results
 
-    def get_mean_cov_feats(self, x0):
+    def get_mean_cov_feats(self, x0, true_mean=None):
         # x0 = torch.mean(feats_0, dim=0)
         mean_x0 = x0.mean(0, keepdim=True)
-        cent_x0 = x0 - mean_x0
-        cova_x0 = (cent_x0.t() @ cent_x0) / (len(x0) - 1)
+        if true_mean is None:
+            cent_x0 = x0 - mean_x0
+            cova_x0 = (cent_x0.t() @ cent_x0) / (len(x0) - 1)
+        else:
+            cent_x0 = x0 - true_mean
+            cova_x0 = (cent_x0.t() @ cent_x0) / len(x0)
         return mean_x0, cova_x0
 
 

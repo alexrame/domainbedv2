@@ -363,7 +363,7 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
             wa_algorithm.eval()
             loader.restart()
             dict_stats_feats, aux_dict_feats_stats = wa_algorithm.get_dict_prediction_stats(
-                loader, device, what=["meanfeats", "l2feats"]
+                loader, device, what=["meanfeats", "l2feats"],
             )
             for new_domain, value in aux_dict_feats_stats.items():
                 if new_domain.startswith("l2_"):
