@@ -346,7 +346,7 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
         print(f"Prediction at {name}")
         do_feats = inf_args.hparams.get("do_feats") and name.startswith("env_") and name.endswith("_out")
         _results_name, dict_stats = misc.results_ensembling(
-            wa_algorithm, loader, device, what=["meanfeats"] if do_feats else [])
+            wa_algorithm, loader, device, what=["mean_feats", "cov_feats"] if do_feats else [])
         for key, value in _results_name.items():
             new_key = name + "_" + key if name != "test" else key
             dict_results[new_key] = value
@@ -354,6 +354,7 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
             domain = name.split("_")[1]
             assert domain not in wa_algorithm.domain_to_mean_feats
             wa_algorithm.domain_to_mean_feats[domain] = dict_stats["mean_feats"]
+            wa_algorithm.domain_to_cov_feats[domain] = dict_stats["cov_feats"]
 
     for name in dict_data_loaders.keys():
         if inf_args.hparams.get("do_feats") and name.startswith("env_") and name.endswith("_out"):
@@ -362,13 +363,16 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
             loader = dict_data_loaders[name]
             wa_algorithm.eval()
             loader.restart()
+
             dict_stats_feats, aux_dict_feats_stats = wa_algorithm.get_dict_prediction_stats(
-                loader, device, what=["meanfeats", "l2feats"],
+                loader,
+                device,
+                what=["mean_feats", "cov_feats", "l2_feats", "l2var_feats", "cos_feats"],
             )
-            for new_domain, value in aux_dict_feats_stats.items():
-                if new_domain.startswith("l2_"):
+            for new_key, value in aux_dict_feats_stats.items():
+                if new_key.startswith("l2") or new_key.startswith("cos_"):
                     dict_results[
-                        "l2_" + domain + "_" + new_domain] = np.mean(value.detach().float().cpu().numpy())
+                        new_key + "_to_" + domain] = np.mean(value.detach().float().cpu().numpy())
 
     # some hacky queries to enrich dict_results
     if "VARM" in os.environ:

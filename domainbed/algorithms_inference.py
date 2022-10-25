@@ -36,6 +36,7 @@ class DiWA(algorithms.ERM):
         self._init_counts()
         self._create_network()
         self.domain_to_mean_feats = {}
+        self.domain_to_cov_feats = {}
 
     def _init_counts(self):
         self.global_count = 0
@@ -322,33 +323,34 @@ class DiWA(algorithms.ERM):
                 bs = x.size(0)
                 prediction = self.predict(x, **predict_kwargs)
 
-                if "meanfeats" in what:
+                if "mean_feats" in what:
                     feats = prediction["feats"]
                     mean_feats, cov_feats = self.get_mean_cov_feats(
-                        feats, true_mean=self.domain_to_mean_feats.get(predict_kwargs.get("domain_cov")))
+                        feats, true_mean=self.domain_to_mean_feats.get(predict_kwargs.get("domain")))
                     if "mean_feats" not in aux_dict_stats:
                         aux_dict_stats["mean_feats"] = torch.zeros_like(mean_feats)
                     aux_dict_stats["mean_feats"] = (
                         aux_dict_stats["mean_feats"] * i + mean_feats * bs
                     ) / (i + bs)
 
-                    if "covfeats" in what:
+                    if "cov_feats" in what:
                         if "cov_feats" not in aux_dict_stats:
                             aux_dict_stats["cov_feats"] = torch.zeros_like(cov_feats)
                         aux_dict_stats["cov_feats"] = (
                             aux_dict_stats["cov_feats"] * i + cov_feats * bs
                         ) / (i + bs)
 
-                    if "l2feats" in what:
+                    if "l2_feats" in what:
                         for domain in self.domain_to_mean_feats.keys():
                             domain_feats = self.domain_to_mean_feats[domain].reshape(1, -1).tile((bs, 1))
                             l2_feats = (feats - domain_feats).pow(2).mean()
-                            l2_feats_key = "l2_" + domain
-                            if l2_feats_key not in aux_dict_stats:
-                                aux_dict_stats[l2_feats_key] = 0.
-                            aux_dict_stats[l2_feats_key] = (
-                                aux_dict_stats[l2_feats_key] * i + l2_feats * bs
+                            distkey = "l2_" + domain
+                            if distkey not in aux_dict_stats:
+                                aux_dict_stats[distkey] = 0.
+                            aux_dict_stats[distkey] = (
+                                aux_dict_stats[distkey] * i + l2_feats * bs
                             ) / (i + bs)
+                    # todo cos and l2varfeats
 
                 i += float(bs)
                 y = y.to(device)
