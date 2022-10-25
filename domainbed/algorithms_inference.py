@@ -286,7 +286,7 @@ class DiWA(algorithms.ERM):
         aux_dict_stats = {}
         with torch.no_grad():
             i = 0
-            for x, _ in loader:
+            for x, y in loader:
                 x = x.to(device)
                 feats = self.predict(x, return_type="feats")
                 bs = x.size(0)
