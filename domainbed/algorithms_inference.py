@@ -219,7 +219,7 @@ class DiWA(algorithms.ERM):
         for name_0, param_0 in self.featurizer.named_parameters():
             named_params = [next(gen_named_params) for gen_named_params in list_gen_named_params]
             new_data = torch.zeros_like(param_0.data)
-            sum_lambdas = 1.
+            sum_lambdas = 0.
             for i, lambda_i in enumerate(lambda_interpolation):
                 name_i, param_i = named_params[i]
                 assert name_0 == name_i
@@ -531,12 +531,12 @@ class TrainableDiWA(DiWA):
         return dict_predictions
 
     def _init_lambdas(self):
+        self.num_aux = len(self.featurizers)
         self.lambdas = torch.tensor(
             [float(self.featurizers_weights[i])
              for i in range(self.num_aux)], requires_grad=True)
 
     def _init_train(self):
-        self.num_aux = len(self.featurizers)
         self.classifier_task = copy.deepcopy(self.classifier)
         self._init_lambdas()
         lrl = self.hparams.get("lrl", 0.)
@@ -570,7 +570,7 @@ class TrainableDiWA(DiWA):
         dict_loss_t = {}
         dict_loss_t["coral"] = (mean_x0 - mean_x1).pow(2).mean()
         dict_loss_t["coralv"] = (cova_x0 - cova_x1).pow(2).mean()
-        return dict_loss_t
+        return dict_loss_ta
 
     def train_step(self, x, y, optimizer, xt=None, yt=None):
         optimizer.zero_grad()
