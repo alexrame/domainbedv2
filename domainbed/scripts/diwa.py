@@ -55,8 +55,8 @@ def _get_args():
                 "type": "network"
             } for i in range(len(inf_args.checkpoints) // 2)
         ]
-    inf_args.checkpoints_all = [ckpt for ckpt in inf_args.checkpoints]
-    inf_args.checkpoints = [ckpt for ckpt in inf_args.checkpoints if float(ckpt["weight"]) != 0][::-1]
+    # inf_args.checkpoints = [ckpt for ckpt in inf_args.checkpoints]
+    inf_args.checkpoints = [ckpt for ckpt in inf_args.checkpoints if float(ckpt["weight"]) != 0 or os.environ.get("FILTERZERO") == "1"][::-1]
 
     misc.print_args(inf_args)
     return inf_args
@@ -275,11 +275,11 @@ def tta_wa(selected_checkpoints, dataset, inf_args, dict_data_splits, device):
         wa_algorithm, selected_checkpoints, dataset, action=["feats", "cla"], device=device
     )
     assert inf_args.what == ["addfeats"]
-    assert inf_args.checkpoints_all
-    assert [ckpt["type"] in ["featurizer", "featurizeronly"] for ckpt in inf_args.checkpoints_all]
-    print(f"Extending inf_args.checkpoints: {inf_args.checkpoints_all}")
+    assert inf_args.checkpoints
+    assert [ckpt["type"] in ["featurizer", "featurizeronly"] for ckpt in inf_args.checkpoints]
+    print(f"Extending inf_args.checkpoints: {inf_args.checkpoints}")
     load_and_update_networks(
-        wa_algorithm, inf_args.checkpoints_all, dataset, action=["addfeats"], device=device
+        wa_algorithm, inf_args.checkpoints, dataset, action=["addfeats"], device=device
     )
     dict_data_loaders = {
         name: FastDataLoader(dataset=split, batch_size=64, num_workers=dataset.N_WORKERS, use_random=False)
@@ -357,7 +357,7 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
             wa_algorithm.domain_to_cov_feats[domain] = dict_stats["cov_feats"]
 
     for name in dict_data_loaders.keys():
-        if inf_args.hparams.get("do_feats") and name.startswith("env_") and name.endswith("_out"):
+        if inf_args.hparams.get("do_feats") and name.startswith("env_") and name.endswith("_out"):1
             print(f"Features at {name}")
             domain = name.split("_")[1]
             loader = dict_data_loaders[name]
@@ -390,10 +390,10 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
             pass
     dict_results["testenv"] = inf_args.test_env
     dict_results["topk"] = inf_args.topk
-    if inf_args.checkpoints_all:
+    if inf_args.checkpoints:
         dict_results["robust"] = "-".join(
             ["{w:.3f}".format(w=ckpt["weight"]) + "_" + str(ckpt["type"])
-             for ckpt in inf_args.checkpoints_all]
+             for ckpt in inf_args.checkpoints]
         )
 
     return dict_results

@@ -350,6 +350,7 @@ class DiWA(algorithms.ERM):
                             aux_dict_stats[distkey] = (
                                 aux_dict_stats[distkey] * i + l2_feats * bs
                             ) / (i + bs)
+
                     if "l2var_feats" in what:
                         var_feats = torch.diag(self.domain_to_cov_feats[predict_kwargs.get("domain")]).reshape(1, -1).tile((bs, 1))
                         for domain in self.domain_to_mean_feats.keys():
@@ -367,7 +368,7 @@ class DiWA(algorithms.ERM):
                         for domain in self.domain_to_mean_feats.keys():
                             domain_feats = self.domain_to_mean_feats[domain].reshape(1, -1).tile((bs, 1))
                             l2_feats = nn.CosineSimilarity(dim=1)(feats, domain_feats).mean()
-                            distkey = "l2_" + domain
+                            distkey = "cos_" + domain
                             if distkey not in aux_dict_stats:
                                 aux_dict_stats[distkey] = 0.
                             aux_dict_stats[distkey] = (
@@ -419,25 +420,6 @@ class DiWA(algorithms.ERM):
                 dict_stats[key0]["correct"].numpy())
 
         return dict_stats, aux_dict_stats
-
-    def get_dict_entropy(self, dict_stats, device):
-        dict_results = {}
-
-        for key, value in dict_stats.items():
-            if "logits" not in value:
-                print(value.keys())
-                continue
-            logits = value["logits"]
-            entropy = misc.get_entropy_loss(logits)
-            batchdiv = misc.get_batchdiversity_loss(logits)
-
-            dict_results["ent_" + key] = np.mean(
-                entropy.float().cpu().numpy()
-            )  # mean just to get rid of array
-            dict_results["bdi_" + key] = np.mean(
-                batchdiv.float().cpu().numpy()
-            )  # mean just to get rid of array
-        return dict_results
 
     def get_dict_diversity(self, dict_stats, targets, device):
         dict_diversity = collections.defaultdict(list)
@@ -529,7 +511,13 @@ class TrainableDiWA(DiWA):
 
     def predict(self, x, **kwargs):
         dict_predictions = {}
-        wa_weights = self.get_wa_weights(lambda_interpolation=[torch.exp(lam) for lam in self.lambdas])
+
+        if kwargs.get("lambdas") is not None:
+            lambda_interpolation = kwargs.get("lambdas")
+        else:
+            lambda_interpolation = [torch.exp(lam) for lam in self.lambdas]
+
+        wa_weights = self.get_wa_weights(lambda_interpolation=lambda_interpolation)
         features_wa = torch.nn.utils.stateless.functional_call(
                 self.featurizer, wa_weights, x)
         # features_task = self.featurizer(x)

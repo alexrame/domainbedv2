@@ -265,6 +265,26 @@ def print_args(args):
     _print_dict(_dict)
 
 
+def get_dict_entropy(dict_stats, device):
+    dict_results = {}
+
+    for key, value in dict_stats.items():
+        if "logits" not in value:
+            print(value.keys())
+            continue
+        logits = value["logits"]
+        entropy = get_entropy_loss(logits)
+        batchdiv = get_batchdiversity_loss(logits)
+
+        dict_results["ent_" + key] = np.mean(
+            entropy.float().cpu().numpy()
+        )  # mean just to get rid of array
+        dict_results["bdi_" + key] = np.mean(
+            batchdiv.float().cpu().numpy()
+        )  # mean just to get rid of array
+    return dict_results
+
+
 def results_ensembling(algorithm, loader, device, what=[], do_div=False, do_ent=False):
     algorithm.eval()
     dict_stats, aux_dict_stats = algorithm.get_dict_prediction_stats(
@@ -293,7 +313,7 @@ def results_ensembling(algorithm, loader, device, what=[], do_div=False, do_ent=
         dict_results.update(dict_diversity)
     if do_ent:
         print("Compute prediction entropy")
-        dict_entropy = algorithm.get_dict_entropy(dict_stats, device)
+        dict_entropy = get_dict_entropy(dict_stats, device)
         dict_results.update(dict_entropy)
     return dict_results, aux_dict_stats
 
