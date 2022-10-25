@@ -289,7 +289,15 @@ class DiWA(algorithms.ERM):
             for x, y in loader:
                 x = x.to(device)
                 feats = self.predict(x, return_type="feats")
+                mean_feats = torch.mean(feats, 0)
                 bs = x.size(0)
+
+                if "mean_feats" not in aux_dict_stats:
+                    aux_dict_stats["mean_feats"] = torch.zeros_like(mean_feats)
+                aux_dict_stats["mean_feats"] = (
+                    aux_dict_stats["mean_feats"] * i + mean_feats * bs
+                ) / (i + bs)
+
                 for domain in self.domain_to_mean_feats.keys():
                     domain_feats = self.domain_to_mean_feats[domain].reshape(1, -1).tile((bs, 1))
                     if os.environ.get("DEBUG"):

@@ -363,8 +363,11 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
             loader.restart()
             aux_dict_stats = wa_algorithm.get_dict_features_stats(loader, device)
             for new_domain, value in aux_dict_stats.items():
-                dict_results[
-                    "df_" + domain + "_" + new_domain] = np.mean(value.detach().float().cpu().numpy())
+                if new_domain == "mean_feats":
+                    continue
+                else:
+                    dict_results[
+                        "df_" + domain + "_" + new_domain] = np.mean(value.detach().float().cpu().numpy())
 
     # some hacky queries to enrich dict_results
 
