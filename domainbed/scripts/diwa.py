@@ -4,8 +4,6 @@ import json
 import random
 import numpy as np
 import torch
-import time
-import pdb
 import torch.utils.data
 from domainbed import datasets, algorithms_inference
 from domainbed.lib import misc
@@ -283,7 +281,7 @@ def tta_wa(selected_checkpoints, dataset, inf_args, dict_data_splits, device):
         wa_algorithm, inf_args.checkpoints_all, dataset, action=["addfeats"], device=device
     )
     dict_data_loaders = {
-        name: FastDataLoader(dataset=split, batch_size=64, num_workers=dataset.N_WORKERS)
+        name: FastDataLoader(dataset=split, batch_size=64, num_workers=dataset.N_WORKERS, use_random=False)
         for name, split in dict_data_splits.items()
     }
     tta_loader = InfiniteDataLoader(
@@ -318,7 +316,7 @@ def get_wa_results(good_checkpoints, dataset, inf_args, dict_data_splits, device
         hparams=inf_args.hparams
     )
     dict_data_loaders = {
-        name: FastDataLoader(dataset=split, batch_size=64, num_workers=dataset.N_WORKERS)
+        name: FastDataLoader(dataset=split, batch_size=64, num_workers=dataset.N_WORKERS, use_random=False)
         for name, split in dict_data_splits.items()
     }
     print("selected_checkpoints: ", good_checkpoints)
@@ -514,6 +512,7 @@ def main():
 
     # load individual folders and their corresponding scores on train_out
     list_dict_checkpoint_to_score_i = []
+
     if inf_args.output_dir[0] == "no":
         assert len(inf_args.output_dir) == 1
         assert len(inf_args.checkpoints) != 0

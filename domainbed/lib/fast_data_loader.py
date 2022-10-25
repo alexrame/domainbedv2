@@ -48,11 +48,16 @@ class InfiniteDataLoader:
 class FastDataLoader:
     """DataLoader wrapper with slightly improved speed by not respawning worker
     processes at every epoch."""
-    def __init__(self, dataset, batch_size, num_workers):
+    def __init__(self, dataset, batch_size, num_workers, use_random=True):
         super().__init__()
 
+        if use_random:
+            _sampler = torch.utils.data.RandomSampler(dataset, replacement=False)
+        else:
+            _sampler = torch.utils.data.SequentialSampler(dataset)
+
         batch_sampler = torch.utils.data.BatchSampler(
-            torch.utils.data.RandomSampler(dataset, replacement=False),
+            _sampler,
             batch_size=batch_size,
             drop_last=False
         )
