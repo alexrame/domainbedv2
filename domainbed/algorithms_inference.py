@@ -291,6 +291,8 @@ class DiWA(algorithms.ERM):
         algorithms.ERM.train(self, *args)
         for network in self.networks:
             network.train(*args)
+        for featurizer in self.featurizers:
+            featurizer.train(*args)
         for classifier in self.classifiers:
             classifier.train(*args)
 
@@ -298,6 +300,8 @@ class DiWA(algorithms.ERM):
         algorithms.ERM.to(self, device)
         for network in self.networks:
             network.to(device)
+        for featurizer in self.featurizers:
+            featurizer.to(device)
         for classifier in self.classifiers:
             classifier.to(device)
 
@@ -310,7 +314,7 @@ class DiWA(algorithms.ERM):
     ):
 
         dict_stats = {}
-        aux_dict_stats = {"batch_classes": []}
+        aux_dict_stats = {}
         with torch.no_grad():
             i = 0.
             for x, y in loader:
@@ -340,7 +344,11 @@ class DiWA(algorithms.ERM):
 
                 i += float(bs)
                 y = y.to(device)
-                aux_dict_stats["batch_classes"].append(y)
+                if "classes" in what:
+                    if "batch_classes" not in aux_dict_stats:
+                        aux_dict_stats["batch_classes"] = []
+                    aux_dict_stats["batch_classes"].append(y)
+
                 for key in prediction.keys():
                     if key in ["feats"]:
                         continue
