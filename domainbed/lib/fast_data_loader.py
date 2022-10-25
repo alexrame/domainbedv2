@@ -51,6 +51,10 @@ class FastDataLoader:
     def __init__(self, dataset, batch_size, num_workers, use_random=True):
         super().__init__()
 
+        self.dataset = dataset
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.use_random = use_random
         if use_random:
             _sampler = torch.utils.data.RandomSampler(dataset, replacement=False)
         else:
@@ -69,6 +73,9 @@ class FastDataLoader:
         ))
 
         self._length = len(batch_sampler)
+
+    def restart(self):
+        self.__init__(self, self.dataset, self.batch_size, self.num_workers, use_random=self.use_random)
 
     def __iter__(self):
         for _ in range(len(self)):

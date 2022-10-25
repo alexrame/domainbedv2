@@ -343,7 +343,7 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
     for name in dict_data_loaders.keys():
         loader = dict_data_loaders[name]
         print(f"Prediction at {name}")
-        _results_name, aux_dict_stats = misc.results_ensembling(wa_algorithm, loader, device)
+        _results_name, dict_stats = misc.results_ensembling(wa_algorithm, loader, device)
         for key, value in _results_name.items():
             new_key = name + "_" + key if name != "test" else key
             dict_results[new_key] = value
@@ -351,7 +351,7 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
             if (name.startswith("env_") and name.endswith("_out")):
                 domain = name.split("_")[1]
                 assert domain not in wa_algorithm.domain_to_mean_feats
-                wa_algorithm.domain_to_mean_feats[domain] = aux_dict_stats["mean_feats"]
+                wa_algorithm.domain_to_mean_feats[domain] = dict_stats["mean_feats"]
 
     if inf_args.hparams.get("do_feats"):
         for name in dict_data_loaders.keys():
