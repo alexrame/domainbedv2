@@ -218,7 +218,7 @@ class DiWA(algorithms.ERM):
         list_gen_named_params = [featurizer.named_parameters() for featurizer in self.featurizers]
         for name_0, param_0 in self.featurizer.named_parameters():
             named_params = [next(gen_named_params) for gen_named_params in list_gen_named_params]
-            new_data = param_0.data
+            new_data = torch.zeros_like(param_0.data)
             sum_lambdas = 1.
             for i, lambda_i in enumerate(lambda_interpolation):
                 name_i, param_i = named_params[i]
