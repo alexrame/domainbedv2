@@ -271,6 +271,8 @@ class DiWA(algorithms.ERM):
 
         if return_type == "pred_feats":
             return dict_predictions, features
+        elif return_type == "featscore":
+            return self.featurizer_core(x)
         elif return_type == "feats":
             return features
         else:
@@ -290,13 +292,13 @@ class DiWA(algorithms.ERM):
         for classifier in self.classifiers:
             classifier.to(device)
 
-    def get_dict_features_stats(self, loader, device):
+    def get_dict_features_stats(self, loader, device, return_type="feats"):
         aux_dict_stats = {}
         with torch.no_grad():
             i = 0
             for x, y in loader:
                 x = x.to(device)
-                feats = self.predict(x, return_type="feats")
+                feats = self.predict(x, return_type=return_type)
                 mean_feats = torch.mean(feats, 0)
                 bs = x.size(0)
 
@@ -527,6 +529,8 @@ class TrainableDiWA(DiWA):
         # dict_predictions["00"] = self.classifier_task(features_task)
         if return_type == "pred_feats":
             return dict_predictions, features_wa
+        elif return_type == "featscore":
+            raise ValueError()
         elif return_type == "feats":
             return features_wa
         else:
