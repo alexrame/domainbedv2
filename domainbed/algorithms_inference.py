@@ -40,7 +40,6 @@ class DiWA(algorithms.ERM):
     def _init_counts(self):
         self.global_count = 0
         self.global_count_feat = 0
-        self.global_count_feat_core = 0
         self.global_count_cla = 0
 
         self.global_count_product = 0
@@ -52,7 +51,6 @@ class DiWA(algorithms.ERM):
 
     def _create_network(self):
         self.network = None
-        self.featurizer_core = None
         self.featurizer = None
         self.classifier = None
 
@@ -140,12 +138,6 @@ class DiWA(algorithms.ERM):
         self._update_mean(network, self.featurizer, weight, self.global_count_feat)
         self.global_count_feat += weight
 
-    def update_core_featurizer(self, network, weight=1.):
-        if self.featurizer_core is None:
-            self.featurizer_core = copy.deepcopy(network)
-        self._update_mean(network, self.featurizer_core, weight, self.global_count_feat_core)
-        self.global_count_feat_core += weight
-
     def update_mean_classifier(self, classifier, weight=1.):
         if self.classifier is None:
             self.classifier = copy.deepcopy(classifier)
@@ -220,6 +212,22 @@ class DiWA(algorithms.ERM):
         self.classifiers.append(classifier)
         self.classifiers_weights.append(weight)
 
+    def get_wa_weights(self, lambda_interpolation):
+        weights = {}
+        list_gen_named_params = [featurizer.named_parameters() for featurizer in self.featurizers]
+        for name_0, param_0 in self.featurizer.named_parameters():
+            named_params = [next(gen_named_params) for gen_named_params in list_gen_named_params]
+            new_data = param_0.data
+            sum_lambdas = 1.
+            for i in range(self.num_aux):
+                name_i, param_i = named_params[i]
+                assert name_0 == name_i
+                exp_lambda_i = lambda_interpolation[i]
+                new_data = new_data + exp_lambda_i * param_i
+                sum_lambdas += exp_lambda_i
+            weights[name_0] = new_data/sum_lambdas
+        return weights
+
     def predict(self, x, return_type="pred"):
         if self.network_ma is not None:
             dict_predictions = {"": self.network_ma(x)}
@@ -271,12 +279,14 @@ class DiWA(algorithms.ERM):
 
         if return_type == "pred_feats":
             return dict_predictions, features
-        elif return_type == "featscore":
-            return self.featurizer_core(x)
         elif return_type == "feats":
             return features
-        else:
+        elif return_type == "preds":
             return dict_predictions
+        else:
+            wa_weights = self.get_wa_weights(lambda_interpolation=return_type)
+            return torch.nn.utils.stateless.functional_call(
+                    self.featurizer, wa_weights, x)
 
     def train(self, *args):
         algorithms.ERM.train(self, *args)
@@ -499,25 +509,9 @@ class TrainableDiWA(DiWA):
             for param in net.parameters():
                 param.requires_grad = False
 
-    def get_wa_weights(self):
-        weights = {}
-        list_gen_named_params = [featurizer.named_parameters() for featurizer in self.featurizers]
-        for name_0, param_0 in self.featurizer.named_parameters():
-            named_params = [next(gen_named_params) for gen_named_params in list_gen_named_params]
-            new_data = param_0.data
-            sum_lambdas = 1.
-            for i in range(self.num_aux):
-                name_i, param_i = named_params[i]
-                assert name_0 == name_i
-                exp_lambda_i = torch.exp(self.lambdas[i])
-                new_data = new_data + exp_lambda_i * param_i
-                sum_lambdas += exp_lambda_i
-            weights[name_0] = new_data/sum_lambdas
-        return weights
-
     def predict(self, x, return_type="preds"):
         dict_predictions = {}
-        wa_weights = self.get_wa_weights()
+        wa_weights = self.get_wa_weights(lambda_interpolation=[torch.exp(lam) for lam in self.lambdas])
         features_wa = torch.nn.utils.stateless.functional_call(
                 self.featurizer, wa_weights, x)
         # features_task = self.featurizer(x)
@@ -529,12 +523,12 @@ class TrainableDiWA(DiWA):
         # dict_predictions["00"] = self.classifier_task(features_task)
         if return_type == "pred_feats":
             return dict_predictions, features_wa
-        elif return_type == "featscore":
-            raise ValueError()
         elif return_type == "feats":
             return features_wa
-        else:
+        elif return_type == "preds":
             return dict_predictions
+        else:
+            raise ValueError()
 
     def _init_train(self):
         self.num_aux = len(self.featurizers)
@@ -562,7 +556,6 @@ class TrainableDiWA(DiWA):
 
     def compute_loss(self, logits, y):
         dict_loss = {}
-
         dict_loss["ce"] = nn.CrossEntropyLoss()(logits, y)
         dict_loss["ent"] = misc.get_entropy_loss(logits)
         dict_loss["bdi"] = misc.get_batchdiversity_loss(logits)

@@ -239,10 +239,6 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
         if checkpoint_type in ["network", "networknotclassifier", "featurizer", "featurizeronly"]:
             if "feats" in action:
                 wa_algorithm.update_mean_featurizer(algorithm.featurizer, weight=checkpoint_weight)
-                if checkpoint_type == "network":
-                    wa_algorithm.update_core_featurizer(
-                        algorithm.featurizer, weight=checkpoint_weight
-                    )
             if "featsproduct" in action:
                 wa_algorithm.update_product_featurizer(algorithm.featurizer, weight=checkpoint_weight)
             if "addfeats" in action:
