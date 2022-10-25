@@ -360,6 +360,7 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
             print(f"Features at {name}")
             domain = name.split("_")[1]
             wa_algorithm.eval()
+            loader.restart()
             aux_dict_stats = wa_algorithm.get_dict_features_stats(loader, device)
             for new_domain, value in aux_dict_stats.items():
                 dict_results[
