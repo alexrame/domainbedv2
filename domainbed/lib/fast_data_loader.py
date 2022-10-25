@@ -48,6 +48,7 @@ class InfiniteDataLoader:
 class FastDataLoader:
     """DataLoader wrapper with slightly improved speed by not respawning worker
     processes at every epoch."""
+
     def __init__(self, dataset, batch_size, num_workers, use_random=True):
         super().__init__()
 
@@ -75,7 +76,7 @@ class FastDataLoader:
         self._length = len(batch_sampler)
 
     def restart(self):
-        self.__init__(self, self.dataset, self.batch_size, self.num_workers, use_random=self.use_random)
+        self.__init__(self.dataset, self.batch_size, self.num_workers, use_random=self.use_random)
 
     def __iter__(self):
         for _ in range(len(self)):
