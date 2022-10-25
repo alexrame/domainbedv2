@@ -530,13 +530,15 @@ class TrainableDiWA(DiWA):
         # dict_predictions["00"] = self.classifier_task(features_task)
         return dict_predictions
 
-    def _init_train(self):
-        self.num_aux = len(self.featurizers)
-        self.classifier_task = copy.deepcopy(self.classifier)
+    def _init_lambdas(self):
         self.lambdas = torch.tensor(
             [float(self.featurizers_weights[i])
              for i in range(self.num_aux)], requires_grad=True)
 
+    def _init_train(self):
+        self.num_aux = len(self.featurizers)
+        self.classifier_task = copy.deepcopy(self.classifier)
+        self._init_lambdas()
         lrl = self.hparams.get("lrl", 0.)
         lrc = self.hparams.get("lrc", 0.)
         if lrl != 0:
