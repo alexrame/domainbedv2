@@ -334,7 +334,9 @@ class DiWA(algorithms.ERM):
                             l2_feats_key = "l2_" + domain
                             if l2_feats_key not in aux_dict_stats:
                                 aux_dict_stats[l2_feats_key] = 0.
-                            aux_dict_stats[l2_feats_key] = (aux_dict_stats[domain] * i + l2_feats * bs) / (i + bs)
+                            aux_dict_stats[l2_feats_key] = (
+                                aux_dict_stats[l2_feats_key] * i + l2_feats * bs
+                            ) / (i + bs)
 
                 i += float(bs)
                 y = y.to(device)

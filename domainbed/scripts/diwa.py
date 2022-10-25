@@ -344,22 +344,19 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
     for name in dict_data_loaders.keys():
         loader = dict_data_loaders[name]
         print(f"Prediction at {name}")
-        what = ["meanfeats"] if inf_args.hparams.get("do_feats") else []
+        do_feats = inf_args.hparams.get("do_feats") and name.startswith("env_") and name.endswith("_out")
         _results_name, dict_stats = misc.results_ensembling(
-            wa_algorithm, loader, device, what=what)
+            wa_algorithm, loader, device, what=["meanfeats"] if do_feats else [])
         for key, value in _results_name.items():
             new_key = name + "_" + key if name != "test" else key
             dict_results[new_key] = value
-        if inf_args.hparams.get("do_feats"):
-            if (name.startswith("env_") and name.endswith("_out")):
-                domain = name.split("_")[1]
-                assert domain not in wa_algorithm.domain_to_mean_feats
-                wa_algorithm.domain_to_mean_feats[domain] = dict_stats["mean_feats"]
+        if do_feats:
+            domain = name.split("_")[1]
+            assert domain not in wa_algorithm.domain_to_mean_feats
+            wa_algorithm.domain_to_mean_feats[domain] = dict_stats["mean_feats"]
 
-    if inf_args.hparams.get("do_feats"):
-        for name in dict_data_loaders.keys():
-            if not (name.startswith("env_") and name.endswith("_out")):
-                continue
+    for name in dict_data_loaders.keys():
+        if inf_args.hparams.get("do_feats") and name.startswith("env_") and name.endswith("_out"):
             print(f"Features at {name}")
             domain = name.split("_")[1]
             loader = dict_data_loaders[name]
