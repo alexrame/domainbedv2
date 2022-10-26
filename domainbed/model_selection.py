@@ -3,10 +3,15 @@ import os
 import itertools
 import numpy as np
 
-def get_test_records(records):
+def get_test_records_old(records):
     """Given records with a common test env, get the test records (i.e. the
     records with *only* that single test env and no other test envs)"""
     return records.filter(lambda r: len(r['args']['test_envs']) == 1)
+
+def get_test_records(records):
+    """Given records with a common test env, get the test records (i.e. the
+    records with that test env)"""
+    return records.filter(lambda r: len(r['args']['test_envs']) >= 1)
 
 class SelectionMethod:
     """Abstract class whose subclasses implement strategies for model
@@ -44,6 +49,7 @@ class SelectionMethod:
         Given all records from a single (dataset, algorithm, test env) pair,
         return a sorted list of (run_acc, records) tuples.
         """
+        keysort = os.environ.get("KEYSORT", "val")
         accs = (records.group('args.hparams_seed')
             .map(lambda _, run_records:
                 (
@@ -51,11 +57,11 @@ class SelectionMethod:
                     run_records
                 )
             ).filter(lambda x: x[0] is not None)
-            .sorted(key=lambda x: x[0]['val_acc'])
+            .sorted(key=lambda x: x[0][keysort + '_acc'])
         )
-        test_env = accs[0][1][0]["args"]["test_envs"][0]
-        trial_seed = accs[0][1][0]["args"]["trial_seed"]
-        print(f"len(accs): {len(accs)} for test_env: {test_env} and trial_seed: {trial_seed} for dataset: {accs[0][1][0]['args']['dataset']}")
+        # test_env = accs[0][1][0]["args"]["test_envs"][0]
+        # trial_seed = accs[0][1][0]["args"]["trial_seed"]
+        # print(f"len(accs): {len(accs)} for test_env: {test_env} and trial_seed: {trial_seed} for dataset: {accs[0][1][0]['args']['dataset']}")
         return accs[::-1]
 
     @classmethod
@@ -103,7 +109,7 @@ class IIDAccuracySelectionMethod(SelectionMethod):
     name = "training-domain validation set"
 
     @classmethod
-    def _step_acc(self, record):
+    def _step_acc_old(self, record):
         """Given a single record, return a {val_acc, test_acc} dict."""
         test_env = record['args']['test_envs'][0]
         val_env_keys = []
@@ -125,6 +131,37 @@ class IIDAccuracySelectionMethod(SelectionMethod):
         return {
             'val_acc': np.mean([record[key] for key in val_env_keys]),
             'test_acc': record[test_in_acc_key]
+        }
+
+    @classmethod
+    def _step_acc(self, record):
+        """Given a single record, return a {val_acc, test_acc} dict."""
+        test_envs = record['args']['test_envs']
+        train_env_keys = []
+        val_env_keys = []
+        test_env_keys = []
+        keyacc = os.environ.get("KEYACC", "")
+        if keyacc:
+            keyacc = "_" + keyacc
+
+        for i in itertools.count():
+            if f'env{i}_out_acc' + keyacc not in record:
+                break
+
+            if i not in test_envs:
+                train_env_keys.append(f'env{i}_in_acc' + keyacc)
+                val_env_keys.append(f'env{i}_out_acc' + keyacc)
+            else:
+                if os.environ.get("TESTOUT"):
+                    test_env_keys.append(f'env{i}_out_acc' + keyacc)
+                else:
+                    test_env_keys.append(f'env{i}_in_acc' + keyacc)
+
+
+        return {
+            'train_acc': np.mean([record[key] for key in train_env_keys]),
+            'val_acc': np.mean([record[key] for key in val_env_keys]),
+            'test_acc': np.mean([record[key] for key in test_env_keys]),
         }
 
     @classmethod
