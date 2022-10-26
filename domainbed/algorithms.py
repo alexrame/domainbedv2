@@ -164,7 +164,7 @@ class ERM(Algorithm):
         if os.environ.get('SAVE_FEATURES_CLASSIFIERS', "0") != "0":
             # for algorithms inference with decouplage of classifiers and network
             print(f"Save features extractor and classifier at {path_for_save}")
-            network = nn.Sequential(self.featurizer, self.classifiers[0])
+            network = nn.Sequential(self.featurizer, self.classifier)
             torch.save(network.state_dict(), path_for_save)
         elif os.environ.get("SAVE_ONLY_FEATURES", "0") != "0":
             print(f"Save only features extractor at {path_for_save}")
