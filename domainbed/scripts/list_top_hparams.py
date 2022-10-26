@@ -130,7 +130,7 @@ if __name__ == "__main__":
     SELECTION_METHODS = [
         model_selection.IIDAccuracySelectionMethod,
         # model_selection.LeaveOneOutSelectionMethod,
-        # model_selection.OracleSelectionMethod,
+        model_selection.OracleSelectionMethod,
     ]
 
     for selection_method in SELECTION_METHODS:
