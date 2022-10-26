@@ -106,7 +106,7 @@ class ERM(Algorithm):
             else:
                 self.network.load_state_dict(saved_dict)
 
-            if self._what_is_trainable in ["clareset", "0reset"]:
+            if self._what_is_trainable in ["clareset", "0reset", "allreset"]:
                 # or os.environ.get("RESET_CLASSIFIER"):
                 print("Reset random classifier")
                 self.classifier.reset_parameters()
@@ -221,10 +221,10 @@ class TWA(ERM):
 
     def _get_training_parameters(self):
         parameters_to_be_optimized = []
-        if self._what_is_trainable in ["all", "lambdas"]:
+        if self._what_is_trainable in ["all", "allreset", "lambdas"]:
             print("Learn lambdas")
             parameters_to_be_optimized.append({"params": [self.lambdas], "lr": 0.01})
-        if self._what_is_trainable in ["1", "cla", "clareset", "all"]:
+        if self._what_is_trainable in ["1", "cla", "clareset", "all", "allreset"]:
             print("Learn classifier")
             parameters_to_be_optimized.append({"params": self.classifier.parameters()})
 
