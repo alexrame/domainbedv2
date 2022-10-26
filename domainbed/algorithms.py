@@ -18,12 +18,10 @@ except:
     backpack = None
 
 from domainbed import networks
-from domainbed.lib.misc import (
-    random_pairs_of_minibatches, ParamDict, MovingAverage, l2_between_dicts, is_not_none, is_none
-)
+from domainbed.lib import misc
 
 ALGORITHMS = [
-    'ERM', "ERMG", "ERMLasso", "MA", 'Fish', 'IRM', 'GroupDRO', 'Mixup', 'CORAL', 'MMD', 'VREx',
+    'ERM', "ERMG", "TWA", "ERMLasso", "MA", 'Fish', 'IRM', 'GroupDRO', 'Mixup', 'CORAL', 'MMD', 'VREx',
     "Fishr", "DARE", "DARESWAP"
 ]
 
@@ -95,7 +93,7 @@ class ERM(Algorithm):
 
     def _load_network(self, path_for_init):
         ## DiWA load shared initialization ##
-        if is_not_none(path_for_init):
+        if misc.is_not_none(path_for_init):
             if not os.path.exists(path_for_init):
                 raise ValueError(f"Your initialization {path_for_init} has not been saved yet")
 
@@ -172,6 +170,117 @@ class ERM(Algorithm):
         else:
             print(f"Save whole network at {path_for_save}")
             torch.save(self.network.state_dict(), path_for_save)
+
+class TWA(ERM):
+    """
+    Trainable weight average
+    """
+
+    def _create_network(self):
+        ERM._create_network(self,)
+
+        self.featurizers_aux_paths = self.hparams["featurizers_aux"].split(" ")
+        self.featurizers_lambdas = [float(l) for l in self.hparams["featurizers_lambdas"].split(" ")]
+        assert len(self.featurizers_lambdas) == len(self.featurizers_aux_paths) + 1
+
+        self.featurizers_aux = [
+            self._load_featurizer_aux(aux_path)
+            for aux_path in self.featurizers_aux_paths
+        ]
+        self.featurizers = [self.featurizer] + self.featurizers_aux
+        self.num_featurizers = len(self.featurizers)
+        self.lambdas = torch.tensor(
+            [float(self.featurizers_lambdas[i]) for i in range(self.num_featurizers)], requires_grad=True)
+
+    def _load_featurizer_aux(self, aux_path):
+        # if device == "cpu":
+        #     save_dict = torch.load(aux_path, map_location=torch.device('cpu'))
+        # else:
+        print(f"Load auxiliary featurizer from: {aux_path}")
+        featurizer = networks.Featurizer(self.input_shape, self.hparams)
+        if aux_path != 'imagenet':
+            save_dict = torch.load(aux_path)
+            try:
+                featurizer.load_state_dict(save_dict, strict=True)
+            except Exception as exc:
+                print(exc)
+                featurizer.load_state_dict(save_dict, strict=False)
+
+        return featurizer
+
+    def to(self, device):
+        ERM.to(self, device)
+        for featurizer in self.featurizers_aux:
+            featurizer.to(device)
+
+    def train(self, *args):
+        ERM.train(self, *args)
+        for featurizer in self.featurizers:
+            for param in featurizer.parameters():
+                param.requires_grad = False
+
+    def _get_training_parameters(self):
+        parameters_to_be_optimized = []
+        if self._what_is_trainable in ["all", "lambdas"]:
+            print("Learn lambdas")
+            parameters_to_be_optimized.append({"params": [self.lambdas], "lr": 0.01})
+        if self._what_is_trainable in ["1", "cla", "clareset", "all"]:
+            print("Learn classifier")
+            parameters_to_be_optimized.append({"params": self.classifier.parameters()})
+
+        return parameters_to_be_optimized
+
+    def compute_loss(self, logits, y):
+        dict_loss = {}
+        dict_loss["ce"] = nn.CrossEntropyLoss()(logits, y)
+        dict_loss["ent"] = misc.get_entropy_loss(logits)
+        dict_loss["bdi"] = misc.get_batchdiversity_loss(logits)
+        # TODO coral like losses
+        return dict_loss
+
+    def update(self, minibatches, unlabeled=None):
+        all_x = torch.cat([x for x, y in minibatches])
+        all_y = torch.cat([y for x, y in minibatches])
+        all_logits = self.predict(all_x)[""]
+        dict_loss = self.compute_loss(all_logits, all_y)
+        objective = (
+            float(self.hparams["lossce"]) * dict_loss["ce"] +
+            float(self.hparams["lossent"]) * dict_loss["ent"] +
+            float(self.hparams["lossbdi"]) * dict_loss["bdi"]
+            # float(self.hparams.get("coralloss", 0.)) * dict_loss.get("coral", 0.)
+        )
+        self.optimizer.zero_grad()
+        objective.backward()
+        self.optimizer.step()
+
+        results = {key: float(value.item()) for key, value in dict_loss.items()}
+        for i in range(self.num_featurizers):
+            results[f"lambda_{i}"] = float(self.lambdas[i].detach().float().cpu().numpy())
+        return results
+
+    def get_wa_weights(self):
+        weights = {}
+        list_gen_named_params = [featurizer.named_parameters() for featurizer in self.featurizers]
+        for name_0, param_0 in self.featurizer.named_parameters():
+            named_params = [next(gen_named_params) for gen_named_params in list_gen_named_params]
+            new_data = torch.zeros_like(param_0.data)
+            sum_lambdas = 0.
+            for i in range(self.num_featurizers):
+                exp_lambda_i = torch.exp(self.lambdas[i])
+                name_i, param_i = named_params[i]
+                assert name_0 == name_i
+                new_data = new_data + exp_lambda_i * param_i
+                sum_lambdas += exp_lambda_i
+            weights[name_0] = new_data/sum_lambdas
+        return weights
+
+    def predict(self, x):
+        wa_weights = self.get_wa_weights()
+        features_wa = torch.nn.utils.stateless.functional_call(
+                self.featurizer, wa_weights, x)
+        predictions_wa = self.classifier(features_wa)
+        return {"": predictions_wa}
+        #  "init": self.network(x)
 
 
 class ERMG(ERM):
@@ -426,7 +535,7 @@ class Mixup(ERM):
     def update(self, minibatches, unlabeled=None):
         objective = 0
 
-        for (xi, yi), (xj, yj) in random_pairs_of_minibatches(minibatches):
+        for (xi, yi), (xj, yj) in misc.random_pairs_of_minibatches(minibatches):
             lam = np.random.beta(self.hparams["mixup_alpha"], self.hparams["mixup_alpha"])
 
             x = lam * xi + (1 - lam) * xj
@@ -700,7 +809,7 @@ class Fishr(Algorithm):
         self.register_buffer("update_count", torch.tensor([0]))
         self.bce_extended = extend(nn.CrossEntropyLoss(reduction='none'))
         self.ema_per_domain = [
-            MovingAverage(ema=self.hparams["ema"], oneminusema_correction=True)
+            misc.MovingAverage(ema=self.hparams["ema"], oneminusema_correction=True)
             for _ in range(self.num_domains)
         ]
         self._init_optimizer()
@@ -818,7 +927,7 @@ class Fishr(Algorithm):
 
         penalty = 0
         for domain_id in range(self.num_domains):
-            penalty += l2_between_dicts(grads_var_per_domain[domain_id], grads_var)
+            penalty += misc.l2_between_dicts(grads_var_per_domain[domain_id], grads_var)
         return penalty / self.num_domains
 
     def predict(self, x):

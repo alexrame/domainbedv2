@@ -234,20 +234,23 @@ if __name__ == "__main__":
     last_results_keys = None
     results = {}
 
-    for step in range(0, n_steps):
+    for step in range(-1, n_steps):
         step_start_time = time.time()
-        minibatches_device = [(x.to(device), y.to(device))
-            for x,y in next(train_minibatches_iterator)]
-        if args.task == "domain_adaptation":
-            uda_device = [x.to(device)
-                for x,_ in next(uda_minibatches_iterator)]
-        else:
-            uda_device = None
-        step_vals = algorithm.update(minibatches_device, uda_device)
-        checkpoint_vals['step_time'].append(time.time() - step_start_time)
+        if step >= 0:
+            minibatches_device = [(x.to(device), y.to(device))
+                for x,y in next(train_minibatches_iterator)]
+            if args.task == "domain_adaptation":
+                uda_device = [x.to(device)
+                    for x,_ in next(uda_minibatches_iterator)]
+            else:
+                uda_device = None
 
-        for key, val in step_vals.items():
-            checkpoint_vals[key].append(val)
+
+            step_vals = algorithm.update(minibatches_device, uda_device)
+            checkpoint_vals['step_time'].append(time.time() - step_start_time)
+
+            for key, val in step_vals.items():
+                checkpoint_vals[key].append(val)
 
         do_inference_at_this_step = (step % checkpoint_freq == 0) or (step > 0 and step == n_steps - 1) or (
             step < checkpoint_freq and step % int(os.environ.get("START_CHKPT_FREQ", checkpoint_freq)) == 0
@@ -288,7 +291,6 @@ if __name__ == "__main__":
             with open(epochs_path, 'a') as f:
                 f.write(json.dumps(results, sort_keys=True) + "\n")
 
-            ## DiWA ##
             current_score = misc.get_score(results, args.test_envs, model_selection="train")
             if current_score > best_score:
                 best_score = current_score
@@ -300,7 +302,7 @@ if __name__ == "__main__":
                     'model_best.pkl',
                     results=json.dumps(results, sort_keys=True),
                 )
-                # algorithm.to(device)
+
             current_score_oracle = misc.get_score(results, args.test_envs, model_selection="oracle")
             if current_score_oracle > best_score_oracle:
                 best_score_oracle = current_score_oracle
@@ -314,7 +316,6 @@ if __name__ == "__main__":
                     'model_bestoracle.pkl',
                     results=json.dumps(results, sort_keys=True),
                 )
-                # algorithm.to(device)
 
             checkpoint_vals = collections.defaultdict(lambda: [])
 

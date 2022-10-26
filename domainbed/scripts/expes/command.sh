@@ -13,6 +13,9 @@ done
 # list top hparams
 KEYSORT=train TESTOUT=1 python3 -m domainbed.scripts.list_top_hparams --input_dir /private/home/alexandrerame/dataplace/experiments/domainbed/home/home0_erm0p8_ermftop0_lpdn1_1026/ --dataset OfficeHome --test_env 1 --algorithm ERM
 
+# dev gpus
+srun --gpus-per-node=1 --partition=learnlab --time=10:00:00 --cpus-per-task 10 --constraint=volta32gb --pty /bin/bash -l
+
 # full pipeline from DomainNet to OfficeHome
 
 ## lp dn

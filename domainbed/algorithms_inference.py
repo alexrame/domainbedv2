@@ -485,7 +485,7 @@ class DiWA(algorithms.ERM):
 from torch import nn, optim
 
 class TrainableDiWA(DiWA):
-    # hparams: suploss, entloss, bdiloss, coralloss, lrl, lrc, nsteps (1000)
+    # hparams: celoss, entloss, bdiloss, coralloss, lrl, lrc, nsteps (1000)
 
     def _create_network(self):
         self.featurizer = None
@@ -570,7 +570,7 @@ class TrainableDiWA(DiWA):
         dict_loss_t = {}
         dict_loss_t["coral"] = (mean_x0 - mean_x1).pow(2).mean()
         dict_loss_t["coralv"] = (cova_x0 - cova_x1).pow(2).mean()
-        return dict_loss_ta
+        return dict_loss_t
 
     def train_step(self, x, y, optimizer, xt=None, yt=None):
         optimizer.zero_grad()
@@ -585,7 +585,7 @@ class TrainableDiWA(DiWA):
             dict_loss.update(dict_loss_t)
 
         objective = (
-            float(self.hparams.get("suploss", 0.)) * dict_loss["ce"] +
+            float(self.hparams.get("celoss", 0.)) * dict_loss["ce"] +
             float(self.hparams.get("entloss", 0.)) * dict_loss["ent"] +
             float(self.hparams.get("bdiloss", 0.)) * dict_loss["bdi"] +
             float(self.hparams.get("coralloss", 0.)) * dict_loss.get("coral", 0.)
