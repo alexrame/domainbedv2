@@ -152,12 +152,12 @@ def _hparams(algorithm, dataset, random_seed):
     elif algorithm == "TWA":
         default_featurizers_aux = " ".join([
             # "/private/home/alexandrerame/dataplace/data/domainbed/inits/home/home0_lp_0926.pkl",
-            "imagenet",
+            # "imagenet",
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_ermf_lp_r0_t0_0926.pkl",
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/iwild/transfer/iwild_ermf_lp_r0_t0_0926.pkl"
         ])
         default_featurizers_lambdas = " ".join(
-            ["1", "0", "0", "0"]
+            ["0", "0", "0"]
         )
         _hparam('lossce', 1.0, lambda r: r.choice([1.0]))
         _hparam('lossent', 0.0, lambda r: r.choice([0.0]))

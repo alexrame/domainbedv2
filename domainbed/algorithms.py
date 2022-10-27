@@ -223,7 +223,7 @@ class TWA(ERM):
         training_parameters = []
         if self._what_is_trainable in ["all", "allreset", "lambdas"]:
             print("Learn lambdas")
-            training_parameters.append({"params": [self.lambdas], "lr": 0.01})
+            training_parameters.append({"params": [self.lambdas], "lr": 0.1})
         if self._what_is_trainable in ["1", "cla", "clareset", "all", "allreset"]:
             print("Learn classifier")
             training_parameters.append({"params": self.classifier.parameters()})
