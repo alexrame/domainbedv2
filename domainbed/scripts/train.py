@@ -230,7 +230,7 @@ if __name__ == "__main__":
         torch.save(save_dict, save_path)
 
     best_score = 0
-    best_score_oracle = 0
+    # best_score_oracle = 0
     last_results_keys = None
     results = {}
 
@@ -274,6 +274,7 @@ if __name__ == "__main__":
                     writer.add_scalar(name + '_' + key, value, step)
 
             results['mem_gb'] = torch.cuda.max_memory_allocated() / (1024.*1024.*1024.)
+            results["holdout_fraction"] = args.holdout_fraction
 
             results_keys = sorted(results.keys())
             if results_keys != last_results_keys:
@@ -303,19 +304,18 @@ if __name__ == "__main__":
                     results=json.dumps(results, sort_keys=True),
                 )
 
-            current_score_oracle = misc.get_score(results, args.test_envs, model_selection="oracle")
-            if current_score_oracle > best_score_oracle:
-                best_score_oracle = current_score_oracle
-                results["best_score_oracle"] = best_score_oracle
-                results["best_step_oracle"] = step
-
-                print(
-                    f"Saving new best oracle at step: {step} at path: model_bestoracle.pkl"
-                )
-                save_checkpoint(
-                    'model_bestoracle.pkl',
-                    results=json.dumps(results, sort_keys=True),
-                )
+            # current_score_oracle = misc.get_score(results, args.test_envs, model_selection="oracle")
+            # if current_score_oracle > best_score_oracle:
+            #     best_score_oracle = current_score_oracle
+            #     results["best_score_oracle"] = best_score_oracle
+            #     results["best_step_oracle"] = step
+            #     print(
+            #         f"Saving new best oracle at step: {step} at path: model_bestoracle.pkl"
+            #     )
+            #     save_checkpoint(
+            #         'model_bestoracle.pkl',
+            #         results=json.dumps(results, sort_keys=True),
+            #     )
 
             checkpoint_vals = collections.defaultdict(lambda: [])
 

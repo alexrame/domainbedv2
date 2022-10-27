@@ -138,6 +138,7 @@ class OracleSelectionMethod(SelectionMethod):
             'val_acc': np.mean([chosen_record[key] for key in val_env_keys]),
             'test_acc': np.mean([chosen_record[key] for key in test_env_keys]),
             'testout_acc': np.mean([chosen_record[key] for key in testout_env_keys]),
+            "step": chosen_record["step"]
         }
 
 class IIDAccuracySelectionMethod(SelectionMethod):
@@ -201,6 +202,7 @@ class IIDAccuracySelectionMethod(SelectionMethod):
             'val_acc': np.mean([record[key] for key in val_env_keys]),
             'test_acc': np.mean([record[key] for key in test_env_keys]),
             'testout_acc': np.mean([record[key] for key in testout_env_keys]),
+            "step": record["step"]
         }
 
     @classmethod

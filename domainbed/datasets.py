@@ -720,7 +720,7 @@ class Waterbirds(MultipleDomainDataset):
 class CelebA_Blond(MultipleDomainDataset):
     ENVIRONMENTS = ["unbalanced_1", "unbalanced_2", "balanced"]
     N_STEPS = 2001
-    CHECKPOINT_FREQ = 200
+    CHECKPOINT_FREQ = 100
 
     def __init__(self, root, test_envs, hparams):
         super().__init__()

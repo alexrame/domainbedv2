@@ -33,7 +33,7 @@ def get_run_name(args, hparams):
     ]])
     name += 'te' + "".join([str(te) for te in args["test_envs"]])
 
-    keys = sorted(hparams.keys())
+    keys = sorted([key for key in hparams.keys() if key not in ["featurizers_aux", "featurizers_lambdas"]])
     keys = list(dict.fromkeys(keys))
 
     def params_to_str(param):

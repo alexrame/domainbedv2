@@ -115,22 +115,22 @@ class ERM(Algorithm):
         ## DiWA choose weights to be optimized ##
         if self._what_is_trainable in [0, "0", None, "0reset"]:
             print("Learn featurizer and classifier")
-            parameters_to_be_optimized = self.network.parameters()
+            training_parameters = self.network.parameters()
         elif self._what_is_trainable == "clafrozen":
             # useful for linear probing
             print("Learn only featurizer")
-            parameters_to_be_optimized = self.featurizer.parameters()
+            training_parameters = self.featurizer.parameters()
         else:
             assert self._what_is_trainable in ["1", "clareset"]
             # useful when learning with fixed vocabulary
             print("Learn only classifier")
-            parameters_to_be_optimized = self.classifier.parameters()
-        return parameters_to_be_optimized
+            training_parameters = self.classifier.parameters()
+        return training_parameters
 
     def _init_optimizer(self):
-        parameters_to_be_optimized = self._get_training_parameters()
+        training_parameters = self._get_training_parameters()
         self.optimizer = torch.optim.Adam(
-            parameters_to_be_optimized,
+            training_parameters,
             lr=self.hparams["lr"],
             weight_decay=self.hparams['weight_decay']
         )
@@ -215,20 +215,20 @@ class TWA(ERM):
 
     def train(self, *args):
         ERM.train(self, *args)
-        for featurizer in self.featurizers:
+        for featurizer in self.featurizers_aux:
             for param in featurizer.parameters():
                 param.requires_grad = False
 
     def _get_training_parameters(self):
-        parameters_to_be_optimized = []
+        training_parameters = []
         if self._what_is_trainable in ["all", "allreset", "lambdas"]:
             print("Learn lambdas")
-            parameters_to_be_optimized.append({"params": [self.lambdas], "lr": 0.01})
+            training_parameters.append({"params": [self.lambdas], "lr": 0.01})
         if self._what_is_trainable in ["1", "cla", "clareset", "all", "allreset"]:
             print("Learn classifier")
-            parameters_to_be_optimized.append({"params": self.classifier.parameters()})
+            training_parameters.append({"params": self.classifier.parameters()})
 
-        return parameters_to_be_optimized
+        return training_parameters
 
     def compute_loss(self, logits, y):
         dict_loss = {}
@@ -291,10 +291,10 @@ class ERMG(ERM):
     def _init_optimizer(self):
         self.optimizers = []
         for _ in range(self.num_domains):
-            parameters_to_be_optimized = self._get_training_parameters()
+            training_parameters = self._get_training_parameters()
             self.optimizers.append(
                 torch.optim.Adam(
-                    parameters_to_be_optimized,
+                    training_parameters,
                     lr=self.hparams["lr"],
                     weight_decay=self.hparams['weight_decay']
                 )
