@@ -113,7 +113,7 @@ class ERM(Algorithm):
 
     def _get_training_parameters(self):
         ## DiWA choose weights to be optimized ##
-        if self._what_is_trainable in [0, "0", None, "0reset"]:
+        if self._what_is_trainable in ["0", "0reset"]:
             print("Learn featurizer and classifier")
             training_parameters = self.network.parameters()
         elif self._what_is_trainable == "clafrozen":
@@ -158,7 +158,7 @@ class ERM(Algorithm):
 
     ## DiWA for saving initialization ##
     def save_path_for_future_init(self, path_for_save):
-        assert not os.path.exists(path_for_save), "The initialization has already been saved"
+        assert not os.path.exists(path_for_save), f"The initialization: {path_for_save} has already been saved"
         if os.environ.get('SAVE_FEATURES_CLASSIFIERS', "0") != "0":
             # for algorithms inference with decouplage of classifiers and network
             print(f"Save features extractor and classifier at {path_for_save}")
@@ -224,7 +224,7 @@ class TWA(ERM):
         if self._what_is_trainable in ["all", "allreset", "lambdas"]:
             print("Learn lambdas")
             training_parameters.append({"params": [self.lambdas], "lr": 0.1})
-        if self._what_is_trainable in ["1", "cla", "clareset", "all", "allreset"]:
+        if self._what_is_trainable in ["cla", "clareset", "all", "allreset"]:
             print("Learn classifier")
             training_parameters.append({"params": self.classifier.parameters()})
 
@@ -233,8 +233,8 @@ class TWA(ERM):
     def compute_loss(self, logits, y):
         dict_loss = {}
         dict_loss["ce"] = nn.CrossEntropyLoss()(logits, y)
-        dict_loss["ent"] = misc.get_entropy_loss(logits)
-        dict_loss["bdi"] = misc.get_batchdiversity_loss(logits)
+        # dict_loss["ent"] = misc.get_entropy_loss(logits)
+        # dict_loss["bdi"] = misc.get_batchdiversity_loss(logits)
         # TODO coral like losses
         return dict_loss
 
@@ -244,9 +244,9 @@ class TWA(ERM):
         all_logits = self.predict(all_x)[""]
         dict_loss = self.compute_loss(all_logits, all_y)
         objective = (
-            float(self.hparams["lossce"]) * dict_loss["ce"] +
-            float(self.hparams["lossent"]) * dict_loss["ent"] +
-            float(self.hparams["lossbdi"]) * dict_loss["bdi"]
+            float(self.hparams["lossce"]) * dict_loss["ce"]
+            # + float(self.hparams["lossent"]) * dict_loss["ent"]
+            # + float(self.hparams["lossbdi"]) * dict_loss["bdi"]
             # float(self.hparams.get("coralloss", 0.)) * dict_loss.get("coral", 0.)
         )
         self.optimizer.zero_grad()
@@ -282,6 +282,17 @@ class TWA(ERM):
         return {"": predictions_wa}
         #  "init": self.network(x)
 
+    def set_featurizer_weights(self, wa_weights):
+        for name, param in self.featurizer.named_parameters():
+            param.data = wa_weights[name]
+
+    def save_path_for_future_init(self, path_for_save):
+        assert not os.path.exists(path_for_save), f"The initialization: {path_for_save} has already been saved"
+        assert os.environ.get('SAVE_FEATURES_CLASSIFIERS', "0") == "0"
+        assert os.environ.get("SAVE_ONLY_FEATURES", "0") == "0"
+        print(f"Save wa network at {path_for_save}")
+        self.set_featurizer_weights(self.get_wa_weights())
+        torch.save(self.network.state_dict(), path_for_save)
 
 class ERMG(ERM):
     """

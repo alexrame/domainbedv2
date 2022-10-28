@@ -160,14 +160,13 @@ def _hparams(algorithm, dataset, random_seed):
             ["0", "0", "0"]
         )
         _hparam('lossce', 1.0, lambda r: r.choice([1.0]))
-        _hparam('lossent', 0.0, lambda r: r.choice([0.0]))
-        _hparam('lossbdi', 0.0, lambda r: r.choice([0.0]))
+        # _hparam('lossent', 0.0, lambda r: r.choice([0.0]))
+        # _hparam('lossbdi', 0.0, lambda r: r.choice([0.0]))
         _hparam('featurizers_aux', default_featurizers_aux, lambda r: r.choice([default_featurizers_aux]))
         _hparam('featurizers_lambdas', default_featurizers_lambdas, lambda r: r.choice([default_featurizers_lambdas]))
 
     # Dataset-and-algorithm-specific hparam definitions. Each block of code
     # below corresponds to exactly one hparam. Avoid nested conditionals.
-
 
     ## DiWA ##
     ## Mild hyperparameter ranges as first defined in SWAD (https://arxiv.org/abs/2102.08604)

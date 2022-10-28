@@ -65,7 +65,7 @@ def num_environments(dataset_name):
 
 
 class MultipleDomainDataset:
-    N_STEPS = 5001  # Default, subclasses may override
+    N_STEPS = 5000  # Default, subclasses may override
     CHECKPOINT_FREQ = 100  # Default, subclasses may override
     N_WORKERS = 8 if os.environ.get(
         'CUDA_VISIBLE_DEVICES'
@@ -355,7 +355,7 @@ class PACS(MultipleEnvironmentImageFolder):
 
 class DomainNet(MultipleEnvironmentImageFolder):
     CHECKPOINT_FREQ = 500  ## DiWA ##
-    N_STEPS = 15001
+    N_STEPS = 15000
     ENVIRONMENTS = ["clip", "info", "paint", "quick", "real", "sketch"]
 
     def __init__(self, root, test_envs, hparams):
@@ -365,7 +365,7 @@ class DomainNet(MultipleEnvironmentImageFolder):
 
 class iNaturalist(MultipleDomainDataset):
     CHECKPOINT_FREQ = 500
-    N_STEPS = 15001
+    N_STEPS = 15000
     ENVIRONMENTS = ["Reptiles", "Plants", "Insects", "Fungi", "Birds", "Amphibians"]
 
     def __init__(self, root, test_envs, hparams):
@@ -670,7 +670,7 @@ class WaterbirdsDataset(torch.utils.data.Dataset):
 class Waterbirds(MultipleDomainDataset):
     ENVIRONMENTS = ["att0", "att1", "balanced"]
     #, "wg0", "wg1"]
-    N_STEPS = 2001
+    N_STEPS = 2000
     CHECKPOINT_FREQ = 200
 
     def __init__(self, root, test_envs, hparams):
@@ -719,7 +719,7 @@ class Waterbirds(MultipleDomainDataset):
 
 class CelebA_Blond(MultipleDomainDataset):
     ENVIRONMENTS = ["unbalanced_1", "unbalanced_2", "balanced"]
-    N_STEPS = 2001
+    N_STEPS = 2000
     CHECKPOINT_FREQ = 100
 
     def __init__(self, root, test_envs, hparams):
