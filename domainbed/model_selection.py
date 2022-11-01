@@ -3,10 +3,15 @@ import os
 import itertools
 import numpy as np
 
-def get_test_records(records):
+def get_test_records_old(records):
     """Given records with a common test env, get the test records (i.e. the
     records with *only* that single test env and no other test envs)"""
     return records.filter(lambda r: len(r['args']['test_envs']) == 1)
+
+def get_test_records(records):
+    """Given records with a common test env, get the test records (i.e. the
+    records with that test env)"""
+    return records.filter(lambda r: len(r['args']['test_envs']) >= 1)
 
 class SelectionMethod:
     """Abstract class whose subclasses implement strategies for model
@@ -44,6 +49,7 @@ class SelectionMethod:
         Given all records from a single (dataset, algorithm, test env) pair,
         return a sorted list of (run_acc, records) tuples.
         """
+        keysort = os.environ.get("KEYSORT", "val")
         accs = (records.group('args.hparams_seed')
             .map(lambda _, run_records:
                 (
@@ -51,11 +57,11 @@ class SelectionMethod:
                     run_records
                 )
             ).filter(lambda x: x[0] is not None)
-            .sorted(key=lambda x: x[0]['val_acc'])
+            .sorted(key=lambda x: x[0][keysort + '_acc'])
         )
-        test_env = accs[0][1][0]["args"]["test_envs"][0]
-        trial_seed = accs[0][1][0]["args"]["trial_seed"]
-        print(f"len(accs): {len(accs)} for test_env: {test_env} and trial_seed: {trial_seed} for dataset: {accs[0][1][0]['args']['dataset']}")
+        # test_env = accs[0][1][0]["args"]["test_envs"][0]
+        # trial_seed = accs[0][1][0]["args"]["trial_seed"]
+        # print(f"len(accs): {len(accs)} for test_env: {test_env} and trial_seed: {trial_seed} for dataset: {accs[0][1][0]['args']['dataset']}")
         return accs[::-1]
 
     @classmethod
@@ -66,7 +72,7 @@ class SelectionMethod:
         """
         _hparams_accs = self.hparams_accs(records)
         if len(_hparams_accs):
-            return _hparams_accs[0][0]['test_acc']
+            return _hparams_accs[0][0][os.environ.get("KEYTEST", "test") + '_acc']
         else:
             return None
 
@@ -76,55 +82,127 @@ class OracleSelectionMethod(SelectionMethod):
     checkpoints, we pick the last checkpoint, i.e. no early stopping."""
     name = "test-domain validation set (oracle)"
 
+    # @classmethod
+    # def run_acc_old(self, run_records):
+    #     run_records = run_records.filter(lambda r:
+    #         len(r['args']['test_envs']) == 1)
+    #     if not len(run_records):
+    #         return None
+    #     keyacc = os.environ.get("KEYACC", "")
+    #     if keyacc:
+    #         keyacc = "_" + keyacc
+    #     test_env = run_records[0]['args']['test_envs'][0]
+    #     test_out_acc_key = 'env{}_out_acc'.format(test_env) + keyacc
+    #     test_in_acc_key = 'env{}_in_acc'.format(test_env) + keyacc
+
+    #     chosen_record = run_records.sorted(lambda r: r['step'])[-1]
+    #     if test_in_acc_key not in chosen_record:
+    #         print(chosen_record.keys())
+    #         raise ValueError(f"Key not found {test_in_acc_key}")
+
+    #     return {
+    #         'val_acc':  chosen_record[test_out_acc_key],
+    #         'test_acc': chosen_record[test_in_acc_key]
+    #     }
+
     @classmethod
     def run_acc(self, run_records):
         run_records = run_records.filter(lambda r:
-            len(r['args']['test_envs']) == 1)
+            len(r['args']['test_envs']) >= 1)
         if not len(run_records):
             return None
+        chosen_record = run_records.sorted(lambda r: r['step'])[-1]
+
+        test_envs = chosen_record['args']['test_envs']
+        train_env_keys = []
+        val_env_keys = []
+        test_env_keys = []
+        testout_env_keys = []
         keyacc = os.environ.get("KEYACC", "")
         if keyacc:
             keyacc = "_" + keyacc
-        test_env = run_records[0]['args']['test_envs'][0]
-        test_out_acc_key = 'env{}_out_acc'.format(test_env) + keyacc
-        test_in_acc_key = 'env{}_in_acc'.format(test_env) + keyacc
-        chosen_record = run_records.sorted(lambda r: r['step'])[-1]
-        if test_in_acc_key not in chosen_record:
-            print(chosen_record.keys())
-            raise ValueError(f"Key not found {test_in_acc_key}")
+
+        for i in itertools.count():
+            if f'env{i}_out_acc' + keyacc not in chosen_record:
+                break
+
+            if i not in test_envs:
+                train_env_keys.append(f'env{i}_in_acc' + keyacc)
+                val_env_keys.append(f'env{i}_out_acc' + keyacc)
+            else:
+                testout_env_keys.append(f'env{i}_out_acc' + keyacc)
+                test_env_keys.append(f'env{i}_in_acc' + keyacc)
 
         return {
-            'val_acc':  chosen_record[test_out_acc_key],
-            'test_acc': chosen_record[test_in_acc_key]
+            'train_acc': np.mean([chosen_record[key] for key in train_env_keys]),
+            'val_acc': np.mean([chosen_record[key] for key in val_env_keys]),
+            'test_acc': np.mean([chosen_record[key] for key in test_env_keys]),
+            'testout_acc': np.mean([chosen_record[key] for key in testout_env_keys]),
+            "step": chosen_record["step"]
         }
 
 class IIDAccuracySelectionMethod(SelectionMethod):
     """Picks argmax(mean(env_out_acc for env in train_envs))"""
     name = "training-domain validation set"
 
+    # @classmethod
+    # def _step_acc_old(self, record):
+    #     """Given a single record, return a {val_acc, test_acc} dict."""
+    #     test_env = record['args']['test_envs'][0]
+    #     val_env_keys = []
+    #     keyacc = os.environ.get("KEYACC", "")
+    #     if keyacc:
+    #         keyacc = "_" + keyacc
+
+    #     for i in itertools.count():
+    #         if f'env{i}_out_acc' + keyacc not in record:
+    #             break
+    #         if i != test_env:
+    #             val_env_keys.append(f'env{i}_out_acc' + keyacc)
+    #     test_in_acc_key = 'env{}_in_acc'.format(test_env) + keyacc
+
+    #     if test_in_acc_key not in record:
+    #         print(record.keys())
+    #         raise ValueError(f"Key not found {test_in_acc_key}")
+
+    #     return {
+    #         'val_acc': np.mean([record[key] for key in val_env_keys]),
+    #         'test_acc': record[test_in_acc_key]
+    #     }
+
     @classmethod
     def _step_acc(self, record):
         """Given a single record, return a {val_acc, test_acc} dict."""
-        test_env = record['args']['test_envs'][0]
+
+        train_env_keys = []
         val_env_keys = []
+        test_env_keys = []
+        testout_env_keys = []
+
         keyacc = os.environ.get("KEYACC", "")
         if keyacc:
             keyacc = "_" + keyacc
 
+        test_envs = record['args']['test_envs']
+
         for i in itertools.count():
             if f'env{i}_out_acc' + keyacc not in record:
                 break
-            if i != test_env:
-                val_env_keys.append(f'env{i}_out_acc' + keyacc)
-        test_in_acc_key = 'env{}_in_acc'.format(test_env) + keyacc
 
-        if test_in_acc_key not in record:
-            print(record.keys())
-            raise ValueError(f"Key not found {test_in_acc_key}")
+            if i not in test_envs:
+                train_env_keys.append(f'env{i}_in_acc' + keyacc)
+                val_env_keys.append(f'env{i}_out_acc' + keyacc)
+            else:
+                testout_env_keys.append(f'env{i}_out_acc' + keyacc)
+                test_env_keys.append(f'env{i}_in_acc' + keyacc)
+
 
         return {
+            'train_acc': np.mean([record[key] for key in train_env_keys]),
             'val_acc': np.mean([record[key] for key in val_env_keys]),
-            'test_acc': record[test_in_acc_key]
+            'test_acc': np.mean([record[key] for key in test_env_keys]),
+            'testout_acc': np.mean([record[key] for key in testout_env_keys]),
+            "step": record["step"]
         }
 
     @classmethod
@@ -132,7 +210,7 @@ class IIDAccuracySelectionMethod(SelectionMethod):
         test_records = get_test_records(run_records)
         if not len(test_records):
             return None
-        return test_records.map(self._step_acc).argmax('val_acc')
+        return test_records.map(self._step_acc).argmax(os.environ.get("KEYSORT", "val") + '_acc')
 
 class LeaveOneOutSelectionMethod(SelectionMethod):
     """Picks (hparams, step) by leave-one-out cross validation."""
@@ -171,6 +249,6 @@ class LeaveOneOutSelectionMethod(SelectionMethod):
             self._step_acc(step_records)
         ).filter_not_none()
         if len(step_accs):
-            return step_accs.argmax('val_acc')
+            return step_accs.argmax(os.environ.get("KEYSORT", "val") + '_acc')
         else:
             return None

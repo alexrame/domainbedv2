@@ -146,15 +146,16 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
         description="Domain generalization testbed")
-    parser.add_argument("--input_dir", type=str, required=True)
+    # parser.add_argument("--input_dirs", type=str, required=True)
+    parser.add_argument("--input_dirs", nargs="+", type=str, default=[])
     parser.add_argument("--latex", action="store_true")
     args = parser.parse_args()
 
     results_file = "results.tex" if args.latex else "results.txt"
+    sys.stdout = misc.Tee(os.path.join(args.input_dirs[0], results_file), "w")
 
-    sys.stdout = misc.Tee(os.path.join(args.input_dir, results_file), "w")
-
-    records = reporting.load_records(args.input_dir)
+    records = reporting.load_list_records(args.input_dirs)
+    # records = reporting.load_records(args.input_dir)
 
     if args.latex:
         print("\\documentclass{article}")
@@ -181,3 +182,5 @@ if __name__ == "__main__":
 
     if args.latex:
         print("\\end{document}")
+
+# python3 -m domainbed.scripts.collect_results --input_dirs /private/home/alexandrerame/dataplace/experiments/domainbed/home/home0_erm_lplw_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home1_erm_lplw_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home2_erm_lplw_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home3_erm_lplw_0926/

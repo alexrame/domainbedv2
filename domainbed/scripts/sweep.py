@@ -149,7 +149,7 @@ def ask_for_confirmation():
 
 
 DATASETS = [d for d in datasets.DATASETS if "Debug" not in d]
-NOT_HASHABLE_KEYS = ["path_for_init", "train_only_classifier", "save_model_every_checkpoint"]
+NOT_HASHABLE_KEYS = ["path_for_init", "what_is_trainable", "save_model_every_checkpoint"]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run a sweep')
@@ -170,9 +170,9 @@ if __name__ == "__main__":
     parser.add_argument('--single_test_envs', action='store_true')
     parser.add_argument('--ask_confirmation', action='store_true')
     ## DiWA ##
-    parser.add_argument('--test_envs', type=int, nargs='+', default=[0])
+    parser.add_argument('--test_envs', type=int, nargs='+', required=True)
     parser.add_argument('--path_for_init', type=str, default="")
-    parser.add_argument('--train_only_classifier', type=str, default="0")
+    parser.add_argument('--what_is_trainable', type=str, default="0")
     parser.add_argument('--save_model_every_checkpoint', type=str, default="0")
 
     args = parser.parse_args()
@@ -192,7 +192,7 @@ if __name__ == "__main__":
         ## DiWA ##
         force_test_envs=args.test_envs,
         path_for_init=args.path_for_init,
-        train_only_classifier=args.train_only_classifier,
+        what_is_trainable=args.what_is_trainable,
         save_model_every_checkpoint=args.save_model_every_checkpoint
     )
 

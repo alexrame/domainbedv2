@@ -1,0 +1,12 @@
+sbatch home0_erm1_lp_0926.slurm
+sbatch home0_erm2_lp_0926.slurm
+sbatch home0_erm3_lp_0926.slurm
+sbatch home1_erm0_lp_0926.slurm
+sbatch home1_erm2_lp_0926.slurm
+sbatch home1_erm3_lp_0926.slurm
+sbatch home2_erm0_lp_0926.slurm
+sbatch home2_erm1_lp_0926.slurm
+sbatch home2_erm3_lp_0926.slurm
+sbatch home3_erm0_lp_0926.slurm
+sbatch home3_erm1_lp_0926.slurm
+sbatch home3_erm2_lp_0926.slurm

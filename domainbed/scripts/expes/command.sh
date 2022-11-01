@@ -10,28 +10,11 @@ do
 done
 
 
+# list top hparams
+KEYSORT=train TESTOUT=1 python3 -m domainbed.scripts.list_top_hparams --input_dir /private/home/alexandrerame/dataplace/experiments/domainbed/home/home0_erm0p8_ermftop0_lpdn1_1026/ --dataset OfficeHome --test_env 1 --algorithm ERM
 
-sbatch enshome0_erm_lp_0926.sh
-sbatch enshome1_erm_lp_0926.sh
-sbatch enshome2_erm_lp_0926.sh
-sbatch enshome3_erm_lp_0926.sh
-sbatch enshome_erm_lp_0926_t010dn.sh
-sbatch enshome_erm_lp_0926_t020dn.sh
-sbatch enshome_erm_lp_0926_t025dn.sh
-sbatch enshome_erm_lp_0926_t030dn.sh
-sbatch enshome_erm_lp_0926_t040dn.sh
-sbatch enshome_erm_lp_0926_t050dn.sh
-sbatch enshome_erm_lp_0926_t060dn.sh
-sbatch enshome_erm_lp_0926_t070dn.sh
-sbatch enshome_erm_lp_0926_t080dn.sh
-sbatch enshome_erm_lp_0926_t090dn.sh
-sbatch enshome_erm_lp_0926_t100dn.sh
-sbatch enshome_erm_lp_0926_t120dn.sh
-sbatch enshome_erm_lp_0926_t140dn.sh
-sbatch enshome_erm_lp_0926_t160dn.sh
-sbatch enshome_erm_lp_0926_t180dn.sh
-sbatch enshome_erm_lp_0926_t200dn.sh
-sbatch enshome_top1_erm_lp_0926_tdn.sh
+# dev gpus
+srun --gpus-per-node=1 --partition=learnlab --time=10:00:00 --cpus-per-task 10 --constraint=volta32gb --pty /bin/bash -l
 
 # full pipeline from DomainNet to OfficeHome
 

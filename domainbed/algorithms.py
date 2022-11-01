@@ -7,6 +7,7 @@ import torch.autograd as autograd
 from torch.autograd import Variable
 import os
 import pdb
+import random
 import copy
 from torch.distributions.normal import Normal
 import numpy as np
@@ -18,12 +19,10 @@ except:
     backpack = None
 
 from domainbed import networks
-from domainbed.lib.misc import (
-    random_pairs_of_minibatches, ParamDict, MovingAverage, l2_between_dicts, is_not_none, is_none
-)
+from domainbed.lib import misc
 
 ALGORITHMS = [
-    'ERM', "ERMG", "ERMLasso", "MA", 'Fish', 'IRM', 'GroupDRO', 'Mixup', 'CORAL', 'MMD', 'VREx',
+    'ERM', "ERMG", "TWA", "TWAMA", "ERMLasso", "MA", 'Fish', 'IRM', 'GroupDRO', 'Mixup', 'CORAL', 'MMD', 'VREx',
     "Fishr", "DARE", "DARESWAP"
 ]
 
@@ -95,7 +94,7 @@ class ERM(Algorithm):
 
     def _load_network(self, path_for_init):
         ## DiWA load shared initialization ##
-        if is_not_none(path_for_init):
+        if misc.is_not_none(path_for_init):
             if not os.path.exists(path_for_init):
                 raise ValueError(f"Your initialization {path_for_init} has not been saved yet")
 
@@ -108,31 +107,31 @@ class ERM(Algorithm):
             else:
                 self.network.load_state_dict(saved_dict)
 
-            if self._what_is_trainable in ["clareset", "0reset"]:
+            if self._what_is_trainable in ["clareset", "0reset", "allreset"]:
                 # or os.environ.get("RESET_CLASSIFIER"):
                 print("Reset random classifier")
                 self.classifier.reset_parameters()
 
     def _get_training_parameters(self):
         ## DiWA choose weights to be optimized ##
-        if self._what_is_trainable in [0, "0", None, "0reset"]:
+        if self._what_is_trainable in ["0", "0reset"]:
             print("Learn featurizer and classifier")
-            parameters_to_be_optimized = self.network.parameters()
+            training_parameters = self.network.parameters()
         elif self._what_is_trainable == "clafrozen":
             # useful for linear probing
             print("Learn only featurizer")
-            parameters_to_be_optimized = self.featurizer.parameters()
+            training_parameters = self.featurizer.parameters()
         else:
             assert self._what_is_trainable in ["1", "clareset"]
             # useful when learning with fixed vocabulary
             print("Learn only classifier")
-            parameters_to_be_optimized = self.classifier.parameters()
-        return parameters_to_be_optimized
+            training_parameters = self.classifier.parameters()
+        return training_parameters
 
     def _init_optimizer(self):
-        parameters_to_be_optimized = self._get_training_parameters()
+        training_parameters = self._get_training_parameters()
         self.optimizer = torch.optim.Adam(
-            parameters_to_be_optimized,
+            training_parameters,
             lr=self.hparams["lr"],
             weight_decay=self.hparams['weight_decay']
         )
@@ -160,11 +159,11 @@ class ERM(Algorithm):
 
     ## DiWA for saving initialization ##
     def save_path_for_future_init(self, path_for_save):
-        assert not os.path.exists(path_for_save), "The initialization has already been saved"
+        assert not os.path.exists(path_for_save), f"The initialization: {path_for_save} has already been saved"
         if os.environ.get('SAVE_FEATURES_CLASSIFIERS', "0") != "0":
             # for algorithms inference with decouplage of classifiers and network
             print(f"Save features extractor and classifier at {path_for_save}")
-            network = nn.Sequential(self.featurizer, self.classifiers[0])
+            network = nn.Sequential(self.featurizer, self.classifier)
             torch.save(network.state_dict(), path_for_save)
         elif os.environ.get("SAVE_ONLY_FEATURES", "0") != "0":
             print(f"Save only features extractor at {path_for_save}")
@@ -172,6 +171,231 @@ class ERM(Algorithm):
         else:
             print(f"Save whole network at {path_for_save}")
             torch.save(self.network.state_dict(), path_for_save)
+
+class TWA(ERM):
+    """
+    Trainable weight average
+    """
+
+    def _create_network(self):
+        ERM._create_network(self,)
+        self.update_count = 0
+        self._use_lambdas = True
+        self.featurizers_aux_paths = self.hparams["featurizers_aux"].split(" ")
+
+        if self.hparams["featurizers_lambdas"].split("_")[0] == "rand":
+            mutiplier = float(self.hparams["featurizers_lambdas"].split("_")[1])
+            self.featurizers_lambdas = [
+                (mutiplier * (random.random() - 1.))
+                # tofix: -0.5
+                for _ in range(len(self.featurizers_aux_paths) + 1)
+            ]
+        else:
+
+            self.featurizers_lambdas = [
+                float(l)
+                for l in self.hparams["featurizers_lambdas"].split(" ")
+                ]
+        assert len(self.featurizers_lambdas) == len(self.featurizers_aux_paths) + 1
+
+        self.featurizers_aux = [
+            self._load_featurizer_aux(aux_path)
+            for aux_path in self.featurizers_aux_paths
+        ]
+        self.featurizers = [self.featurizer] + self.featurizers_aux
+        self.num_featurizers = len(self.featurizers)
+        self.lambdas = torch.tensor(
+            [float(self.featurizers_lambdas[i]) for i in range(self.num_featurizers)], requires_grad=True)
+
+    def _load_featurizer_aux(self, aux_path):
+        # if device == "cpu":
+        #     save_dict = torch.load(aux_path, map_location=torch.device('cpu'))
+        # else:
+        print(f"Load auxiliary featurizer from: {aux_path}")
+        featurizer = networks.Featurizer(self.input_shape, self.hparams)
+        aux_path = misc.get_aux_path(aux_path)
+
+        if aux_path != 'imagenet':
+            save_dict = torch.load(aux_path)
+            try:
+                featurizer.load_state_dict(save_dict, strict=True)
+            except Exception as exc:
+                print(exc)
+                featurizer.load_state_dict(save_dict, strict=False)
+
+        return featurizer
+
+    def to(self, device):
+        ERM.to(self, device)
+        for featurizer in self.featurizers_aux:
+            featurizer.to(device)
+
+    def train(self, *args):
+        ERM.train(self, *args)
+        for featurizer in self.featurizers_aux:
+            for param in featurizer.parameters():
+                param.requires_grad = False
+
+    def _get_training_parameters(self):
+
+        if self._what_is_trainable in ["warmup", "warmupnet"]:
+            if self.update_count == 0:
+                assert self.update_count != self.hparams["lwarmup"]
+                what_is_trainable = "lambdas"
+            elif self.update_count == self.hparams["lwarmup"]:
+                if self._what_is_trainable == "warmupnet":
+                    what_is_trainable = "cla"
+                else:
+                    what_is_trainable = "all"
+            else:
+                assert self.update_count == 2. * self.hparams["lwarmup"]
+                assert self._what_is_trainable == "warmupnet"
+                what_is_trainable = "net"
+                print("No longer using lambdas, back to ERM")
+                self.set_featurizer_weights(self.get_wa_weights())
+                self._use_lambdas = False
+        else:
+            what_is_trainable = self._what_is_trainable
+
+        training_parameters = []
+
+        if what_is_trainable in ["all", "allreset", "lambdas"]:
+            print("Learn lambdas")
+            training_parameters.append({"params": [self.lambdas], "lr": self.hparams["lrl"]})
+
+        if what_is_trainable in ["cla", "clareset", "all", "allreset"]:
+            print("Learn classifier")
+            training_parameters.append({"params": self.classifier.parameters()})
+
+        if what_is_trainable in ["net"]:
+            print("Learn network")
+            training_parameters.append({"params": self.network.parameters()})
+
+        return training_parameters
+
+    def compute_loss(self, logits, y):
+        dict_loss = {}
+        dict_loss["ce"] = nn.CrossEntropyLoss()(logits, y)
+        # dict_loss["ent"] = misc.get_entropy_loss(logits)
+        # dict_loss["bdi"] = misc.get_batchdiversity_loss(logits)
+        # TODO coral like losses
+        return dict_loss
+
+    def update(self, minibatches, unlabeled=None):
+        all_x = torch.cat([x for x, _ in minibatches])
+        all_y = torch.cat([y for _, y in minibatches])
+        all_logits = self.predict_in_train(all_x)
+        dict_loss = self.compute_loss(all_logits, all_y)
+        objective = (
+            float(self.hparams["lossce"]) * dict_loss["ce"]
+            # + float(self.hparams["lossent"]) * dict_loss["ent"]
+            # + float(self.hparams["lossbdi"]) * dict_loss["bdi"]
+            # float(self.hparams.get("coralloss", 0.)) * dict_loss.get("coral", 0.)
+        )
+        self.optimizer.zero_grad()
+        objective.backward()
+        self.optimizer.step()
+
+        if self.update_count == self.hparams["lwarmup"] and self._what_is_trainable in ["warmup", "warmupnet"]:
+            self._init_optimizer()
+        if self.update_count == 2. * self.hparams["lwarmup"] and self._what_is_trainable in ["warmupnet"]:
+            self._init_optimizer()
+
+        results = {key: float(value.item()) for key, value in dict_loss.items()}
+
+        if self._use_lambdas:
+            for i in range(self.num_featurizers):
+                results[f"lambda_{i}"] = float(self.lambdas[i].detach().float().cpu().numpy())
+        self.update_count += 1
+        return results
+
+    def get_wa_weights(self):
+        weights = {}
+        list_gen_named_params = [featurizer.named_parameters() for featurizer in self.featurizers]
+        for name_0, param_0 in self.featurizer.named_parameters():
+            named_params = [next(gen_named_params) for gen_named_params in list_gen_named_params]
+            new_data = torch.zeros_like(param_0.data)
+            sum_lambdas = 0.
+            for i in range(self.num_featurizers):
+                exp_lambda_i = torch.exp(self.lambdas[i])
+                name_i, param_i = named_params[i]
+                assert name_0 == name_i
+                new_data = new_data + exp_lambda_i * param_i
+                sum_lambdas += exp_lambda_i
+            weights[name_0] = new_data/sum_lambdas
+        return weights
+
+    def predict_in_train(self, x):
+        if not self._use_lambdas:
+            return self.network(x)
+        wa_weights = self.get_wa_weights()
+        features_wa = torch.nn.utils.stateless.functional_call(
+                self.featurizer, wa_weights, x)
+        return self.classifier(features_wa)
+
+    def predict(self, x):
+        dict_preds = {"": self.predict_in_train(x)}
+        return dict_preds
+
+    def set_featurizer_weights(self, wa_weights):
+        for name, param in self.featurizer.named_parameters():
+            param.data = wa_weights[name]
+
+    def save_path_for_future_init(self, path_for_save):
+        if not self._use_lambdas:
+            return ERM.save_path_for_future_init(self, path_for_save)
+
+        assert not os.path.exists(path_for_save), f"The initialization: {path_for_save} has already been saved"
+        assert os.environ.get('SAVE_FEATURES_CLASSIFIERS', "0") == "0"
+        assert os.environ.get("SAVE_ONLY_FEATURES", "0") == "0"
+        print(f"Save wa network at {path_for_save}")
+        self.set_featurizer_weights(self.get_wa_weights())
+        torch.save(self.network.state_dict(), path_for_save)
+
+
+class TWAMA(TWA):
+    """
+    Empirical Risk Minimization (ERM) with Moving Average (MA) prediction model
+    from https://arxiv.org/abs/2110.10832
+    """
+
+    def __init__(self, *args, **kwargs):
+        TWA.__init__(self, *args, **kwargs)
+
+        self.network_ma = copy.deepcopy(self.network)
+        self.network_ma.eval()
+        self.ma_start_iter = 100 + self.hparams["lwarmup"]
+        self.ma_count = 0
+
+    def update(self, *args, **kwargs):
+        results = TWA.update(self, *args, **kwargs)
+        self.update_ma()
+        return results
+
+    def predict(self, x):
+        dict_preds = {"": self.predict_in_train(x)}
+        dict_preds["ma"] = self.network_ma(x)
+        return dict_preds
+
+    def update_ma(self):
+        if self.update_count >= self.ma_start_iter:
+            self.ma_count += 1
+            for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
+                param_k.data = (param_k.data * self.ma_count + param_q.data) / (1. + self.ma_count)
+        else:
+            for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
+                param_k.data = param_q.data
+
+    def save_path_for_future_init(self, path_for_save):
+        if not self._use_lambdas:
+            return MA.save_path_for_future_init(self, path_for_save)
+
+        assert not os.path.exists(path_for_save), f"The initialization: {path_for_save} has already been saved"
+        assert os.environ.get('SAVE_FEATURES_CLASSIFIERS', "0") == "0"
+        assert os.environ.get("SAVE_ONLY_FEATURES", "0") == "0"
+        print(f"Save wa network at {path_for_save}")
+        self.set_featurizer_weights(self.get_wa_weights())
+        torch.save(self.network.state_dict(), path_for_save)
 
 
 class ERMG(ERM):
@@ -182,10 +406,10 @@ class ERMG(ERM):
     def _init_optimizer(self):
         self.optimizers = []
         for _ in range(self.num_domains):
-            parameters_to_be_optimized = self._get_training_parameters()
+            training_parameters = self._get_training_parameters()
             self.optimizers.append(
                 torch.optim.Adam(
-                    parameters_to_be_optimized,
+                    training_parameters,
                     lr=self.hparams["lr"],
                     weight_decay=self.hparams['weight_decay']
                 )
@@ -282,11 +506,12 @@ class MA(ERM):
         self.network_ma = copy.deepcopy(self.network)
         self.network_ma.eval()
         self.ma_start_iter = 100
-        self.global_iter = 0
+        self.update_count = 0
         self.ma_count = 0
 
     def update(self, *args, **kwargs):
         result = ERM.update(self, *args, **kwargs)
+        self.update_count += 1
         self.update_ma()
         return result
 
@@ -296,14 +521,26 @@ class MA(ERM):
         return {"ma": self.network_ma(x), "": self.network(x)}
 
     def update_ma(self):
-        self.global_iter += 1
-        if self.global_iter >= self.ma_start_iter:
+        if self.update_count >= self.ma_start_iter:
             self.ma_count += 1
             for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
                 param_k.data = (param_k.data * self.ma_count + param_q.data) / (1. + self.ma_count)
         else:
             for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
                 param_k.data = param_q.data
+
+    ## DiWA for saving initialization ##
+    def save_path_for_future_init(self, path_for_save):
+        assert not os.path.exists(path_for_save), f"The initialization: {path_for_save} has already been saved"
+        assert os.environ.get('SAVE_FEATURES_CLASSIFIERS', "0") == "0"
+
+        print(f"Save wa network at {path_for_save}")
+        state_dict = self.network_ma.state_dict()
+
+        if os.environ.get("SAVE_ONLY_FEATURES", "0") != "0":
+            state_dict = {key.replace("0.network", "network"): value for key, value in state_dict.items() if key not in ["1.weight", "1.bias"]}
+
+        torch.save(state_dict, path_for_save)
 
 
 class IRM(ERM):
@@ -426,7 +663,7 @@ class Mixup(ERM):
     def update(self, minibatches, unlabeled=None):
         objective = 0
 
-        for (xi, yi), (xj, yj) in random_pairs_of_minibatches(minibatches):
+        for (xi, yi), (xj, yj) in misc.random_pairs_of_minibatches(minibatches):
             lam = np.random.beta(self.hparams["mixup_alpha"], self.hparams["mixup_alpha"])
 
             x = lam * xi + (1 - lam) * xj
@@ -700,7 +937,7 @@ class Fishr(Algorithm):
         self.register_buffer("update_count", torch.tensor([0]))
         self.bce_extended = extend(nn.CrossEntropyLoss(reduction='none'))
         self.ema_per_domain = [
-            MovingAverage(ema=self.hparams["ema"], oneminusema_correction=True)
+            misc.MovingAverage(ema=self.hparams["ema"], oneminusema_correction=True)
             for _ in range(self.num_domains)
         ]
         self._init_optimizer()
@@ -818,7 +1055,7 @@ class Fishr(Algorithm):
 
         penalty = 0
         for domain_id in range(self.num_domains):
-            penalty += l2_between_dicts(grads_var_per_domain[domain_id], grads_var)
+            penalty += misc.l2_between_dicts(grads_var_per_domain[domain_id], grads_var)
         return penalty / self.num_domains
 
     def predict(self, x):

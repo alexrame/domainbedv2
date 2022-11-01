@@ -35,7 +35,7 @@ def _get_args():
     parser.add_argument('--weight_selection', type=str, default="uniform")  # or "restricted"
     parser.add_argument('--path_for_init', type=str, default=None)
     parser.add_argument('--topk', type=int, default=0)
-    parser.add_argument('--what', nargs='+', default=[])
+    parser.add_argument('--what', nargs='+', default=["mean"])
 
     inf_args = parser.parse_args()
     if len(inf_args.checkpoints) % 3 == 0:
@@ -189,7 +189,7 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
         "nonlinear_classifier": False, "resnet18": False, "resnet_dropout": 0}
 
     for i, ckpt in enumerate(good_checkpoints):
-        checkpoint = ckpt["name"]
+        checkpoint = misc.get_aux_path(ckpt["name"])
         checkpoint_weight = ckpt["weight"]
         checkpoint_type  = ckpt["type"]
         if device == "cpu":
@@ -229,11 +229,16 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
                 wa_algorithm.update_product_network(
                     algorithm.network, weight=checkpoint_weight
                 )
+            if "addnet" in action:
+                wa_algorithm.add_network(algorithm.network)
+
             if "ma" in action:
                 wa_algorithm.update_mean_network_ma(algorithm.network_ma, weight=checkpoint_weight)
-            if "addnet" in action:
-                # previously "netm"
-                wa_algorithm.add_network(algorithm.network)
+
+            if "addnetma" in action:
+                assert "addnet" not in action
+                wa_algorithm.add_network(algorithm.network_ma)
+
             if "var" in action:
                 wa_algorithm.update_var_network(algorithm.network)
 
@@ -291,7 +296,7 @@ def tta_wa(selected_checkpoints, dataset, inf_args, dict_data_splits, device):
             batch_size=32,
             num_workers=0
         )
-    if "train" in dict_data_splits:
+    if "train" in dict_data_splits and False:
         train_loader = InfiniteDataLoader(
                 dataset=dict_data_splits["train"],
                 weights=None,
@@ -304,8 +309,7 @@ def tta_wa(selected_checkpoints, dataset, inf_args, dict_data_splits, device):
     wa_algorithm.test_time_training(
         tta_loader, device, dict_data_loaders, train_loader=train_loader
     )
-    if inf_args.path_for_init:
-        wa_algorithm.save_path_for_future_init(inf_args.path_for_init)
+    assert not inf_args.path_for_init
     return eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args)
 
 
@@ -322,7 +326,7 @@ def get_wa_results(good_checkpoints, dataset, inf_args, dict_data_splits, device
     }
     print("selected_checkpoints: ", good_checkpoints)
     load_and_update_networks(
-        wa_algorithm, good_checkpoints, dataset, action=["mean"] + inf_args.what, device=device
+        wa_algorithm, good_checkpoints, dataset, action=inf_args.what, device=device
     )
     if "var" in inf_args.what:
         load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action=["var"], device=device)
@@ -350,6 +354,7 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
         for key, value in _results_name.items():
             new_key = name + "_" + key if name != "test" else key
             dict_results[new_key] = value
+
         if do_feats:
             domain = name.split("_")[1]
             assert domain not in wa_algorithm.domain_to_mean_feats
@@ -358,7 +363,6 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
 
     for name in dict_data_loaders.keys():
         if inf_args.hparams.get("do_feats") and name.startswith("env_") and name.endswith("_out"):
-
             print(f"Features at {name}")
             domain = name.split("_")[1]
             loader = dict_data_loaders[name]
@@ -466,7 +470,7 @@ def create_data_splits(inf_args, dataset):
     else:
         dict_domain_to_filter = {}
 
-    if inf_args.weight_selection == "train" and inf_args.hparams.get("coralloss", None) is not None:
+    if inf_args.weight_selection == "train" and inf_args.hparams.get("coralloss", None) is not None or os.environ.get("INCLUDEVAL", "0") != "0":
         dict_domain_to_filter["train"] = "out"
 
     if os.environ.get("INCLUDE_UPTO", "0") != "0":

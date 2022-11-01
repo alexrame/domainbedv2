@@ -24,6 +24,18 @@ import socket
 from collections import Counter
 
 
+
+def get_aux_path(aux_path):
+    dict_shortcut = {
+            "dn":
+                "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_ermf_lp_r0_t0_0926.pkl",
+            "iwild":
+                "/private/home/alexandrerame/dataplace/data/domainbed/inits/iwild/transfer/iwild_ermf_lp_r0_t0_0926.pkl",
+            "natu":
+                "/private/home/alexandrerame/dataplace/data/domainbed/inits/natu/transfer/natu_erm_lp_r0_t0_0926.pkl"
+        }
+    return dict_shortcut.get(aux_path, aux_path)
+
 def get_batchdiversity_loss(logits):
     msoftmax = nn.Softmax(dim=1)(logits).mean(dim=0)
     return torch.sum(msoftmax * torch.log(msoftmax + 1e-5))
@@ -264,6 +276,9 @@ def print_args(args):
     _dict = args if isinstance(args, dict) else args.__dict__
     _print_dict(_dict)
 
+def np_encoder(object):
+    if isinstance(object, np.generic):
+        return object.item()
 
 def get_dict_entropy(dict_stats, device):
     dict_results = {}
@@ -285,7 +300,7 @@ def get_dict_entropy(dict_stats, device):
     return dict_results
 
 
-def results_ensembling(algorithm, loader, device, what=[], do_div=False, do_ent=False):
+def results_ensembling(algorithm, loader, device, what=[], do_div=True, do_ent=False):
     algorithm.eval()
     dict_stats, aux_dict_stats = algorithm.get_dict_prediction_stats(
         loader, device, what=what + ["classes"]
@@ -302,7 +317,7 @@ def results_ensembling(algorithm, loader, device, what=[], do_div=False, do_ent=
                     int(min(len(algorithm.networks), float(os.environ.get("MAXM", math.inf)))))
             ]
         )
-        if os.environ.get("DELETE_NETM"):
+        if os.environ.get("DELETE_NETM", "1") != "0":
             for key in range(int(min(len(algorithm.networks), float(os.environ.get("MAXM", math.inf))))):
                 del dict_results[f"acc_net{key}"]
 
