@@ -25,7 +25,7 @@ class ERM(algorithms.ERM):
         )
         self.network = nn.Sequential(self.featurizer, self.classifier)
         self.network_ma = copy.deepcopy(self.network)
-
+        self.network_ma2 = copy.deepcopy(self.network)
 
 class DiWA(algorithms.ERM):
 
@@ -526,9 +526,6 @@ class TrainableDiWA(DiWA):
         # w for wa, t for task
         dict_predictions["feats"] = features_wa
         dict_predictions["11"] = self.classifier(features_wa)
-        # dict_predictions["10"] = self.classifier_task(features_wa)
-        # dict_predictions["01"] = self.classifier(features_task)
-        # dict_predictions["00"] = self.classifier_task(features_task)
         return dict_predictions
 
     def _init_lambdas(self):
@@ -538,7 +535,6 @@ class TrainableDiWA(DiWA):
              for i in range(self.num_aux)], requires_grad=True)
 
     def _init_train(self):
-        self.classifier_task = copy.deepcopy(self.classifier)
         self._init_lambdas()
         lrl = self.hparams.get("lrl", 0.)
         lrc = self.hparams.get("lrc", 0.)
@@ -623,7 +619,7 @@ class TrainableDiWA(DiWA):
 
                 optimizer = self.get_optimizer_at_step(step)
                 l = self.train_step(x, y, optimizer, xt, yt)
-                # results.update(l)
+                results.update(l)
 
             for i in range(self.num_aux):
                 results[f"lambda_{i}"] = self.lambdas[i].detach().float().cpu().numpy()

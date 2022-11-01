@@ -166,6 +166,7 @@ def _hparams(algorithm, dataset, random_seed):
         _hparam('featurizers_aux', default_featurizers_aux, lambda r: r.choice([default_featurizers_aux]))
         _hparam('featurizers_lambdas', default_featurizers_lambdas, lambda r: r.choice([default_featurizers_lambdas]))
         _hparam('lwarmup', 100, lambda r: r.choice([100]))
+        _hparam('nwarmup', 200, lambda r: r.choice([200]))
         _hparam('lrl', 0.1, lambda r: r.choice([0.01, 0.05, 0.1]))
     # Dataset-and-algorithm-specific hparam definitions. Each block of code
     # below corresponds to exactly one hparam. Avoid nested conditionals.

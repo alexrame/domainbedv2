@@ -49,3 +49,13 @@ Total records: 16160
 Algorithm             C                     L                     S                     V                     Avg
 LP                   81.9 +/- 0.0          90.1 +/- 0.0          88.7 +/- 0.0          86.6 +/- 0.0          86.8
 LPLW                    81.6 +/- 0.0          90.2 +/- 0.0          88.8 +/- 0.0          86.7 +/- 0.0          86.8
+
+
+
+# PACS
+
+KEYTEST=val python3 -m domainbed.scripts.collect_results --input_dirs /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs0_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs1_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs2_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs3_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs0_twama_din_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs1_twama_din_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs2_twama_din_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs3_twama_din_lpl4_0926/
+
+ERM                   97.6 +/- 0.0          97.3 +/- 0.0          96.7 +/- 0.0          97.6 +/- 0.0          97.3
+TWAMA                 98.0 +/- 0.0          97.8 +/- 0.0          97.4 +/- 0.0          98.2 +/- 0.0          97.9
+ERM_transfer                   98.1 +/- 0.0          98.1 +/- 0.0          97.4 +/- 0.0          98.2 +/- 0.0          97.9

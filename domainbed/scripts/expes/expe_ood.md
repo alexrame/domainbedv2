@@ -117,6 +117,9 @@ printres:  {'acc': 0.8372733532246959, 'acc_ens': 0.8391094789993114, 'acc_netm'
 
 # twama
 
+printres:  {'acc': 0.6955088586732592, 'acc_ens': 0.681087762669963, 'acc_netm': 0.6329419035846724, 'divq_netm': 0.9280968966787058, 'divr_netm': 0.5446404887788141, 'length': 20, 'testenv': 0, 'topk': 0, 'train_acc': 0.8692512352717597, 'train_acc_ens': 0.8722919042189282, 'train_acc_netm': 0.8468833143291524, 'train_divq_netm': 0.9630041585349052, 'train_divr_netm': 0.738429940712075}
+
+
 printres:  {'acc': 0.6996291718170581, 'acc_ens': 0.6868562010712814, 'acc_netm': 0.6339513803049031, 'divq_netm': 0.9262820360512728, 'divr_netm': 0.5541197133316563, 'length': 20, 'testenv': 0, 'topk': 0, 'train_acc': 0.8719118206005321, 'train_acc_ens': 0.870771569745344, 'train_acc_netm': 0.842873432155074, 'train_divq_netm': 0.9614749469803978, 'train_divr_netm': 0.7422520884818263}
 printres:  {'acc': 0.6254295532646048, 'acc_ens': 0.6245131729667812, 'acc_netm': 0.573906071019473, 'divq_netm': 0.9341620946097133, 'divr_netm': 0.44532450292403286, 'length': 20, 'testenv': 1, 'topk': 0, 'train_acc': 0.8836379848417298, 'train_acc_ens': 0.8867588051716451, 'train_acc_netm': 0.8547481052162282, 'train_divq_netm': 0.9522449017770094, 'train_divr_netm': 0.8885581436706125}
 printres:  {'acc': 0.813922054516783, 'acc_ens': 0.8130209506645641, 'acc_netm': 0.7769317413831944, 'divq_netm': 0.9465740835269839, 'divr_netm': 0.6939018413012883, 'length': 20, 'testenv': 2, 'topk': 0, 'train_acc': 0.8308658591296546, 'train_acc_ens': 0.8340062808434275, 'train_acc_netm': 0.8001794526693583, 'train_divq_netm': 0.95086800036287, 'train_divr_netm': 0.7178319935791736}
@@ -129,6 +132,24 @@ printres:  {'acc': 0.8361257746155611, 'acc_ens': 0.8381914161120037, 'acc_netm'
 
 python3 -m domainbed.scripts.collect_results --input_dirs /private/home/alexandrerame/dataplace/experiments/domainbed/home/home0_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home1_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home2_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home3_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home0_twama_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home1_twama_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home2_twama_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home3_twama_lpl4_0926/
 
+
+python3 -m domainbed.scripts.list_top_hparams --input_dirs /private/home/alexandrerame/dataplace/experiments/domainbed/home/home0_twama_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home1_twama_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home2_twama_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home3_twama_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home0_twama_lpl8_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home1_twama_lpl8_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home2_twama_lpl8_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home3_twama_lpl8_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home0_twama_lpl4w0_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home1_twama_lpl4w0_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home2_twama_lpl4w0_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home3_twama_lpl4w0_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home0_twama_lpl4w0a_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home1_twama_lpl4w0a_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home2_twama_lpl4w0a_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home3_twama_lpl4w0a_0926/ --dataset OfficeHome --test_env 0 --algorithm TWAMA
+
+python3 -m domainbed.scripts.list_top_hparams --input_dirs /private/home/alexandrerame/dataplace/experiments/domainbed/home/home0_twama_lpl4w0a_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home1_twama_lpl4w0a_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home2_twama_lpl4w0a_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home3_twama_lpl4w0a_0926/ --dataset OfficeHome --test_env 0 --algorithm TWAMA >> ../lthp_home0.md
+
+python3 -m domainbed.scripts.list_top_hparams --input_dirs /private/home/alexandrerame/dataplace/experiments/domainbed/home/home0_twama_lpl4_0926/ --dataset OfficeHome --test_env 0 --algorithm TWAMA
+
+python3 -m domainbed.scripts.collect_results --input_dirs /private/home/alexandrerame/dataplace/experiments/domainbed/home/home0_twama_lpl4w0_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home1_twama_lpl4w0_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home2_twama_lpl4w0_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/home/home3_twama_lpl4w0_0926/
+printres:  {'acc': 0.6913885455294603, 'acc_ens': 0.6761433868974042, 'acc_netm': 0.6248042851256697, 'divq_netm': 0.9192561377705455, 'divr_netm': 0.5675171467038815, 'length': 20, 'testenv': 0, 'topk': 0, 'train_acc': 0.8688711516533637, 'train_acc_ens': 0.8669707335613835, 'train_acc_netm': 0.8372291904218928, 'train_divq_netm': 0.9591669857511775, 'train_divr_netm': 0.7499084634712726}
+printres:  {'acc': 0.6146620847651776, 'acc_ens': 0.6126002290950745, 'acc_netm': 0.5538258877434135, 'divq_netm': 0.926012680363372, 'divr_netm': 0.4672059074714768, 'length': 20, 'testenv': 1, 'topk': 0, 'train_acc': 0.8787338386090058, 'train_acc_ens': 0.8845296477931341, 'train_acc_netm': 0.850445831475702, 'train_divq_netm': 0.9497531631735335, 'train_divr_netm': 0.8992279050365951}
+printres:  {'acc': 0.8024329804009912, 'acc_ens': 0.803559360216265, 'acc_netm': 0.7681797702185177, 'divq_netm': 0.9437887346450323, 'divr_netm': 0.6923416863280777, 'length': 20, 'testenv': 2, 'topk': 0, 'train_acc': 0.8250336473755047, 'train_acc_ens': 0.8268281740690893, 'train_acc_netm': 0.7922835352175863, 'train_divq_netm': 0.9499931980430076, 'train_divr_netm': 0.7028190884105788}
+printres:  {'acc': 0.828322240073445, 'acc_ens': 0.8296993344044067, 'acc_netm': 0.7864011934817534, 'divq_netm': 0.9375059091266079, 'divr_netm': 0.7889307246350554, 'length': 20, 'testenv': 3, 'topk': 0, 'train_acc': 0.8534521158129176, 'train_acc_ens': 0.8543429844097995, 'train_acc_netm': 0.8225835189309578, 'train_divq_netm': 0.9579035411063743, 'train_divr_netm': 0.719749283639218}
+printres:  {'acc': 0.6967449526163988, 'acc_ens': 0.6946847960444994, 'acc_netm': 0.6795014421096004, 'divq_netm': 0.982913979632009, 'divr_netm': 0.28354911527959203, 'length': 20, 'testenv': 0, 'topk': 0, 'train_acc': 0.8597491448118586, 'train_acc_ens': 0.8654503990877993, 'train_acc_netm': 0.8562903838844548, 'train_divq_netm': 0.9901588570280985, 'train_divr_netm': 0.3745951339382301}
+printres:  {'acc': 0.6139747995418099, 'acc_ens': 0.6190148911798397, 'acc_netm': 0.5953493699885453, 'divq_netm': 0.9785404363308546, 'divr_netm': 0.2723411836099511, 'length': 20, 'testenv': 1, 'topk': 0, 'train_acc': 0.8778421756576015, 'train_acc_ens': 0.8823004904146232, 'train_acc_netm': 0.8715336602764154, 'train_divq_netm': 0.9858741139019205, 'train_divr_netm': 0.4672699417402884}
+printres:  {'acc': 0.800856048659608, 'acc_ens': 0.8046857400315386, 'acc_netm': 0.7968010813246227, 'divq_netm': 0.9882743384641066, 'divr_netm': 0.3244340357031169, 'length': 20, 'testenv': 2, 'topk': 0, 'train_acc': 0.8174069089277703, 'train_acc_ens': 0.8187528039479587, 'train_acc_netm': 0.8135486765365634, 'train_divq_netm': 0.9877082350521116, 'train_divr_netm': 0.35265974813736706}
+printres:  {'acc': 0.8317649759008492, 'acc_ens': 0.8331420702318109, 'acc_netm': 0.8224122102364012, 'divq_netm': 0.9863866100710778, 'divr_netm': 0.3825450238308178, 'length': 20, 'testenv': 3, 'topk': 0, 'train_acc': 0.8494432071269488, 'train_acc_ens': 0.8503340757238307, 'train_acc_netm': 0.842316258351893, 'train_divq_netm': 0.9896126599169939, 'train_divr_netm': 0.35926290377813136}
+
+
 -------- Dataset: OfficeHome, model selection method: training-domain validation set
 Algorithm             A                     C                     P                     R                     Avg
 noft_LP               0.6477857878          0.5100229095          0.7711148649          0.8043602983
@@ -138,9 +159,11 @@ LPLW                  67.2 +/- 0.0          62.6 +/- 0.0          80.5 +/- 0.0  
 LPWL                  67.5 +/- 0.0          62.0 +/- 0.0          80.2 +/- 0.0          81.3 +/- 0.0          72.7
 LPWLMA                68.7 +/- 0.0          65.1 +/- 0.0          80.9 +/- 0.0          82.8 +/- 0.0          74.4
 
-ERM                   64.5 +/- 0.0          55.3 +/- 0.0          78.2 +/- 0.0          79.7 +/- 0.0          69.4
+TWAW0                 67.4 +/- 0.0          55.6 +/- 0.0          79.1 +/- 0.0          81.9 +/- 0.0          71.0
+TWAW0MA               69.1 +/- 0.0          62.5 +/- 0.0          81.5 +/- 0.0          83.3 +/- 0.0          74.1
 TWA                   67.0 +/- 0.0          60.1 +/- 0.0          80.1 +/- 0.0          82.0 +/- 0.0          72.3
-TWAM                  67.8 +/- 0.0          63.0 +/- 0.0          81.4 +/- 0.0          83.4 +/- 0.0          73.9
+TWAMA                  67.8 +/- 0.0         63.0 +/- 0.0          81.4 +/- 0.0          83.4 +/- 0.0          73.9
+
 
 D_LP                 & 68.1 & 58.8 & 80.0 & 82.1 & 72.3
 D_LPLW               & 69.7 & 64.4 & 80.9 & 82.4 & 74.4
@@ -151,6 +174,9 @@ D_LP LPLW LPWL 3*7     & 70.0 & 63.0 & 81.2 & 82.9 & 74.2
 
 D_TWA                & 70.0 & 62.5 & 81.4 & 83.8 & 74.4
 DMA_TWA             &  70.1 & 62.7 & 81.0 & 83.6 & 74.4
+
+M_TWAW0             & 0.6913885455294603 & 0.6146620847651776 & 0.8024329804009912 & 0.828322240073445
+DMA_TWAW0           & 0.6967449526163988 & 0.6139747995418099 & 0.800856048659608  & 0.8317649759008492
 
 
 # TERRA
@@ -212,6 +238,8 @@ printres:  {'acc': 0.3950365459799422, 'acc_ens': 0.4011558728539861, 'acc_netm'
 
 KEYACC=ma python3 -m domainbed.scripts.collect_results --input_dirs /private/home/alexandrerame/dataplace/experiments/domainbed/terra/terra0_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/terra/terra1_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/terra/terra2_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/terra/terra3_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/terra/terra0_twama_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/terra/terra1_twama_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/terra/terra2_twama_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/terra/terra3_twama_lpl4_0926/
 
+KEYACC=ma python3 -m domainbed.scripts.collect_results --input_dirs /private/home/alexandrerame/dataplace/experiments/domainbed/terra/terra0_twama_lpl4w0_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/terra/terra1_twama_lpl4w0_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/terra/terra2_twama_lpl4w0_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/terra/terra3_twama_lpl4w0_0926/
+
 
 printres:  {'acc': 0.5969204809112002, 'acc_ens': 0.6019827040708712, 'acc_netm': 0.5506222315967095, 'divq_netm': 0.8881180463077308, 'divr_netm': 0.5917249430938146, 'length': 20, 'testenv': 0, 'topk': 0, 'train_acc': 0.9229001787081951, 'train_acc_ens': 0.9443451621138627, 'train_acc_netm': 0.9174495787592546, 'train_divq_netm': 0.9503579516648487, 'train_divr_netm': 1.3590341812843265}
 printres:  {'acc': 0.49548069022185703, 'acc_ens': 0.4518282662284306, 'acc_netm': 0.44458709942481517, 'divq_netm': 0.9646892787409612, 'divr_netm': 0.24576592227647767, 'length': 20, 'testenv': 1, 'topk': 0, 'train_acc': 0.927004797806717, 'train_acc_ens': 0.9396847155586018, 'train_acc_netm': 0.9166552433173406, 'train_divq_netm': 0.9532578450881047, 'train_divr_netm': 1.2907029605573557}
@@ -223,6 +251,17 @@ printres:  {'acc': 0.49126951520131473, 'acc_ens': 0.4725760065735415, 'acc_netm
 printres:  {'acc': 0.6198992443324937, 'acc_ens': 0.6244332493702771, 'acc_netm': 0.6109319899244333, 'divq_netm': 0.9712528857749095, 'divr_netm': 0.30905339104314594, 'length': 20, 'testenv': 2, 'topk': 0, 'train_acc': 0.9078850405305822, 'train_acc_ens': 0.9231147138295259, 'train_acc_netm': 0.9174527143208058, 'train_divq_netm': 0.9907199313685138, 'train_divr_netm': 0.5360875558083819}
 printres:  {'acc': 0.43243243243243246, 'acc_ens': 0.4293727689954105, 'acc_netm': 0.4223440421553629, 'divq_netm': 0.963136649406587, 'divr_netm': 0.22831285113245783, 'length': 20, 'testenv': 3, 'topk': 0, 'train_acc': 0.9194903767958796, 'train_acc_ens': 0.9349417186229331, 'train_acc_netm': 0.9300352399024125, 'train_divq_netm': 0.9908921199418076, 'train_divr_netm': 0.5794276025063184}
 
+
+printres:  {'acc': 0.6021936300358575, 'acc_ens': 0.6015608521408985, 'acc_netm': 0.5536068340012655, 'divq_netm': 0.8698689999176168, 'divr_netm': 0.6587313796834693, 'length': 20, 'testenv': 0, 'topk': 0, 'train_acc': 0.9259637477661475, 'train_acc_ens': 0.9446004595353586, 'train_acc_netm': 0.9185856522849118, 'train_divq_netm': 0.9495551996895978, 'train_divr_netm': 1.3834894951073136}
+printres:  {'acc': 0.47997124075595726, 'acc_ens': 0.44186524239934266, 'acc_netm': 0.43250821692686936, 'divq_netm': 0.969601005898277, 'divr_netm': 0.22246640699752587, 'length': 20, 'testenv': 1, 'topk': 0, 'train_acc': 0.9232350925291295, 'train_acc_ens': 0.9407128169979438, 'train_acc_netm': 0.9168608636052088, 'train_divq_netm': 0.9487399234511654, 'train_divr_netm': 1.3809069174631636}
+printres:  {'acc': 0.6047858942065492, 'acc_ens': 0.6057934508816121, 'acc_netm': 0.5580478589420654, 'divq_netm': 0.8813802140119346, 'divr_netm': 0.5859661451273094, 'length': 20, 'testenv': 2, 'topk': 0, 'train_acc': 0.9317121100466715, 'train_acc_ens': 0.9521002210759028, 'train_acc_netm': 0.924981577008106, 'train_divq_netm': 0.9517850632254639, 'train_divr_netm': 1.4228893624977559}
+printres:  {'acc': 0.39928607853136155, 'acc_ens': 0.41373448920618733, 'acc_netm': 0.3773414924358321, 'divq_netm': 0.8921755465879052, 'divr_netm': 0.3593010792210853, 'length': 20, 'testenv': 3, 'topk': 0, 'train_acc': 0.9414475467606397, 'train_acc_ens': 0.9571699647600976, 'train_acc_netm': 0.9375440498780158, 'train_divq_netm': 0.957549144225093, 'train_divr_netm': 1.4889527342840587}
+printres:  {'acc': 0.5741404766926809, 'acc_ens': 0.5817338114321873, 'acc_netm': 0.5672748365323772, 'divq_netm': 0.9625872849229278, 'divr_netm': 0.34508365597371987, 'length': 20, 'testenv': 0, 'topk': 0, 'train_acc': 0.8932856778146541, 'train_acc_ens': 0.9152412560633137, 'train_acc_netm': 0.9090375287209598, 'train_divq_netm': 0.989034023494905, 'train_divr_netm': 0.5403321397617572}
+printres:  {'acc': 0.4867502054231717, 'acc_ens': 0.4691865242399343, 'acc_netm': 0.4669730895645028, 'divq_netm': 0.9845767349205238, 'divr_netm': 0.1688452533210316, 'length': 20, 'testenv': 1, 'topk': 0, 'train_acc': 0.8893077450308431, 'train_acc_ens': 0.9177518848526388, 'train_acc_netm': 0.9120459218642909, 'train_divq_netm': 0.9878436280689704, 'train_divr_netm': 0.5868937268879515}
+printres:  {'acc': 0.6183879093198993, 'acc_ens': 0.6246851385390428, 'acc_netm': 0.6079974811083123, 'divq_netm': 0.9634627416613327, 'divr_netm': 0.34764167869196627, 'length': 20, 'testenv': 2, 'topk': 0, 'train_acc': 0.9022353230164579, 'train_acc_ens': 0.9260623925325473, 'train_acc_netm': 0.9182633259641367, 'train_divq_netm': 0.9896307664430998, 'train_divr_netm': 0.5783570195713463}
+printres:  {'acc': 0.4326024137344892, 'acc_ens': 0.4320924698283189, 'acc_netm': 0.42246302906680266, 'divq_netm': 0.9604529170979738, 'divr_netm': 0.23649498887833476, 'length': 20, 'testenv': 3, 'topk': 0, 'train_acc': 0.9159663865546218, 'train_acc_ens': 0.9346706424505286, 'train_acc_netm': 0.9298997018162103, 'train_divq_netm': 0.9907623442019766, 'train_divr_netm': 0.6070107130886712}
+
+
 -------- Dataset: TerraIncognita, model selection method: training-domain validation set
 Algorithm             L100                  L38                   L43                   L46                   Avg
 noft_LP               0.2973899288          0.3182693542          0.3639798489          0.3074144891
@@ -233,6 +272,8 @@ MA_LPLW               55.2 +/- 0.0          48.3 +/- 0.0          60.3 +/- 0.0  
 ERM                   58.8 +/- 0.0          42.1 +/- 0.0          55.6 +/- 0.0          42.2 +/- 0.0          49.7
 TWA                   50.5 +/- 0.0          44.6 +/- 0.0          51.6 +/- 0.0          41.9 +/- 0.0          47.2
 TWAMA                 54.9 +/- 0.0          49.1 +/- 0.0          60.3 +/- 0.0          43.4 +/- 0.0          51.9
+TWAW0                 58.6 +/- 0.0          47.6 +/- 0.0          51.0 +/- 0.0          37.9 +/- 0.0          48.8
+TWAW0MA               57.5 +/- 0.0          47.2 +/- 0.0          61.5 +/- 0.0          42.6 +/- 0.0          52.2
 
 D_ERMLP               & 57.7 & 49.4 & 60.5 & 39.5 & 51.8
 D_LPLW                & 57.5 & 47.6 & 59.9 & 42.6 & 51.9
@@ -240,7 +281,10 @@ DMA_LPLW              & 58.2 & 48.7 & 62.1 & 44.8 & 53.4
 D_LP LPLW 40          & 58.3 & 49.3 & 60.2 & 40.0 & 52.0
 D_LP LPLW top10       & 57.6 & 49.8 & 60.1 & 41.9 & 52.3
 D_TWA                 & 59.7 & 49.5 & 61.8 & 41.1 & 53.0
-DMA_TWAMA            & 57.6 & 49.1 & 62.0 & 43.2 & 53.0
+DMA_TWAMA             & 57.6 & 49.1 & 62.0 & 43.2 & 53.0
+
+D_TWAW0 &   60.2 & 48.0 & 60.5 & 39.9 & 52.2
+DMA_TWAW0 & 57.4 & 48.7 & 61.8 & 43.3 & 52.8
 
 
 -------- Dataset: TerraIncognita, model selection method: test-domain validation set (oracle)
@@ -313,6 +357,7 @@ printres:  {'acc': 0.9865724381625441, 'acc_ens': 0.9830388692579505, 'acc_netm'
 printres:  {'acc': 0.6231174698795181, 'acc_ens': 0.6434487951807228, 'acc_netm': 0.6334713855421686, 'divq_netm': 0.9846841012536949, 'divr_netm': 0.2512687919087459, 'length': 20, 'testenv': 1, 'topk': 0, 'train_acc': 0.8872366790582404, 'train_acc_ens': 0.8853779429987608, 'train_acc_netm': 0.8699814126394052, 'train_divq_netm': 0.961252493783636, 'train_divr_netm': 0.8492402285230377}
 printres:  {'acc': 0.7205971968312005, 'acc_ens': 0.7245581962218159, 'acc_netm': 0.7015843997562462, 'divq_netm': 0.8958157536365512, 'divr_netm': 0.7992528683761733, 'length': 20, 'testenv': 2, 'topk': 0, 'train_acc': 0.8723975822699799, 'train_acc_ens': 0.8730691739422431, 'train_acc_netm': 0.8560107454667563, 'train_divq_netm': 0.9592536099727813, 'train_divr_netm': 0.8105686063747858}
 printres:  {'acc': 0.7956161137440758, 'acc_ens': 0.7923578199052133, 'acc_netm': 0.761196682464455, 'divq_netm': 0.873562218802181, 'divr_netm': 1.117279069944678, 'length': 20, 'testenv': 3, 'topk': 0, 'train_acc': 0.8442176870748299, 'train_acc_ens': 0.8476190476190476, 'train_acc_netm': 0.8275850340136055, 'train_divq_netm': 0.9378069759371427, 'train_divr_netm': 0.9120053590821627}
+
 printres:  {'acc': 0.9915194346289753, 'acc_ens': 0.9886925795053003, 'acc_netm': 0.9886219081272085, 'divq_netm': 0.9951795204027336, 'divr_netm': 1.2511519736713235, 'length': 20, 'testenv': 0, 'topk': 0, 'train_acc': 0.8174006444683136, 'train_acc_ens': 0.8227712137486574, 'train_acc_netm': 0.8174274973147153, 'train_divq_netm': 0.9825642504739344, 'train_divr_netm': 0.41734494675004674}
 printres:  {'acc': 0.6121987951807228, 'acc_ens': 0.6219879518072289, 'acc_netm': 0.6191829819277108, 'divq_netm': 0.9963922592849288, 'divr_netm': 0.112195859907322, 'length': 20, 'testenv': 1, 'topk': 0, 'train_acc': 0.8804213135068154, 'train_acc_ens': 0.8822800495662949, 'train_acc_netm': 0.8765799256505575, 'train_divq_netm': 0.9917607530877561, 'train_divr_netm': 0.3626077044411105}
 printres:  {'acc': 0.7361365021328459, 'acc_ens': 0.7422303473491774, 'acc_netm': 0.7302559414990858, 'divq_netm': 0.9680979144985098, 'divr_netm': 0.44509462926494686, 'length': 20, 'testenv': 2, 'topk': 0, 'train_acc': 0.8703828072531901, 'train_acc_ens': 0.8683680322364002, 'train_acc_netm': 0.8641705842847548, 'train_divq_netm': 0.9867970882743592, 'train_divr_netm': 0.442767303591147}
@@ -355,7 +400,7 @@ D_TWAMA_din     & 99.2 & 61.2 & 73.6 & 80.9 & 78.7
 
 # PACS
 
-KEYACC=ma python3 -m domainbed.scripts.collect_results --input_dirs /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs0_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs1_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs2_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs3_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs0_twama_din_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs1_twama_din_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs2_twama_din_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs3_twama_din_lpl4_0926/
+KEYTEST=val python3 -m domainbed.scripts.collect_results --input_dirs /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs0_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs1_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs2_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs3_erm_lp_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs0_twama_din_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs1_twama_din_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs2_twama_din_lpl4_0926/ /private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs3_twama_din_lpl4_0926/
 
 
 printres:  {'acc': 0.904296875, 'acc_ens': 0.8994140625, 'acc_netm': 0.857177734375, 'divq_netm': 0.9197672800935245, 'divr_netm': 1.3084934760582299, 'length': 20, 'testenv': 0, 'topk': 0, 'train_acc': 0.9810964083175804, 'train_acc_ens': 0.9785759294265911, 'train_acc_netm': 0.967989918084436, 'train_divq_netm': 0.9673020678803382, 'train_divr_netm': 1.9687649082256597}
@@ -372,14 +417,24 @@ printres:  {'acc': 0.8839590443686007, 'acc_ens': 0.8856655290102389, 'acc_netm'
 printres:  {'acc': 0.9898203592814371, 'acc_ens': 0.988622754491018, 'acc_netm': 0.9861976047904191, 'divq_netm': 0.9967947708688093, 'divr_netm': 0.8771992214920622, 'length': 20, 'testenv': 2, 'topk': 0, 'train_acc': 0.9753309265944645, 'train_acc_ens': 0.9753309265944645, 'train_acc_netm': 0.9735559566787002, 'train_divq_netm': 0.993715860921279, 'train_divr_netm': 0.8562778541487369}
 printres:  {'acc': 0.8785950623568338, 'acc_ens': 0.8742682616441843, 'acc_netm': 0.8649147365741919, 'divq_netm': 0.984289013048098, 'divr_netm': 0.5214971450983722, 'length': 20, 'testenv': 3, 'topk': 0, 'train_acc': 0.9793559042113955, 'train_acc_ens': 0.9801816680429397, 'train_acc_netm': 0.979066886870355, 'train_divq_netm': 0.9967390422800015, 'train_divr_netm': 0.639093132288177}
 
+
+{'acc': 0.93505859375, 'env_0_in_acc': 0.9296636085626911, 'env_0_out_acc': 0.941320293398533, 'env_1_in_acc': 1.0, 'env_1_out_acc': 0.9850427350427351, 'env_2_in_acc': 1.0, 'env_2_out_acc': 0.9940119760479041, 'env_3_in_acc': 1.0, 'env_3_out_acc': 0.975796178343949, 'length': 20, 'maxm': 3, 'robust': 0.0, 'which': 'stepbest'}
+{'acc': 0.9023037542662116, 'env_0_in_acc': 1.0, 'env_0_out_acc': 0.9853300733496333, 'env_1_in_acc': 0.92, 'env_1_out_acc': 0.9145299145299145, 'env_2_in_acc': 1.0, 'env_2_out_acc': 0.9880239520958084, 'env_3_in_acc': 1.0, 'env_3_out_acc': 0.9681528662420382, 'length': 20, 'maxm': 3, 'robust': 0.0, 'step': 'best'}
+{'acc': 0.9850299401197605, 'env_0_in_acc': 1.0, 'env_0_out_acc': 0.9853300733496333, 'env_1_in_acc': 1.0, 'env_1_out_acc': 0.9829059829059829, 'env_2_in_acc': 0.9812734082397003, 'env_2_out_acc': 0.9790419161676647, 'env_3_in_acc': 1.0, 'env_3_out_acc': 0.9770700636942675, 'length': 20, 'maxm': 3, 'robust': 0.0, 'step': 'best'}
+{'acc': 0.8824128276915245, 'env_0_in_acc': 1.0, 'env_0_out_acc': 0.9755501222493888, 'env_1_in_acc': 0.9973333333333333, 'env_1_out_acc': 0.9764957264957265, 'env_2_in_acc': 1.0, 'env_2_out_acc': 0.9970059880239521, 'env_3_in_acc': 0.8630573248407644, 'env_3_out_acc': 0.8904458598726115, 'length': 20, 'maxm': 3, 'robust': 0.0, 'which': 'step100'}
+
 -------- Dataset: PACS, model selection method: training-domain validation set
 Algorithm             A                     C                     P                     S                     Avg
 
 ERM                   85.6 +/- 0.0          73.2 +/- 0.0          98.6 +/- 0.0          70.8 +/- 0.0          82.0
-D                     0.904296875 &         0.8272184300341296 &  0.9868263473053892 &  0.8246373122932044
+ERM_onlydn            & 92.6 +/- 0.0      & 89.8 +/- 0.0          98.7 +/- 0.0          86.5 +/- 0.0          91.9
 TWA                   93.3 +/- 0.0          90.5 +/- 0.0          98.8 +/- 0.0          88.7 +/- 0.0          92.8
 TWAMA                 91.9 +/- 0.0          85.9 +/- 0.0          98.7 +/- 0.0          87.4 +/- 0.0          91.0
-D_TWA                0.92626953125        0.889505119453925       0.9892215568862276    0.8785950623568338
-DMA_TWAMA            0.93017578125        0.8839590443686007      0.9898203592814371     0.8785950623568338
+
+D                     & 90.4 & 82.7 & 98.7 & 82.5 & 88.6
+D_onlydn & 93.5 & 90.2 & 98.5 & 88.2 & 92.6
+D_TWA           &     92.6 & 89.0 & 98.9 & 87.9 & 92.1
+D_TWAMA       &     93.0 & 88.4 & 99.0 & 87.9 & 92.1
 
 
+python3 -m domainbed.scripts.collect_results --input_dirs /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs0_erm123wn_idn1erm0921r0_lp_0916 /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs1_erm023wn_idn1erm0921r0_lp_0916 /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs2_erm013wn_idn1erm0921r0_lp_0916 /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs3_erm012wn_idn1erm0921r0_lp_0916

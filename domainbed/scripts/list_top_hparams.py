@@ -110,13 +110,15 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
         description="Domain generalization testbed")
-    parser.add_argument("--input_dir", required=True)
+    # parser.add_argument("--input_dir", required=True)
+    parser.add_argument("--input_dirs", nargs="+", type=str, default=[])
     parser.add_argument('--dataset', default="OfficeHome")
     parser.add_argument('--algorithm', default="ERM")
     parser.add_argument('--test_env', type=int, default=0)
     args = parser.parse_args()
 
-    records = reporting.load_records(args.input_dir)
+    records = reporting.load_list_records(args.input_dirs)
+    # records = reporting.load_records(args.input_dir)
     print("Total records:", len(records))
 
     records = reporting.get_grouped_records(records)
@@ -128,7 +130,7 @@ if __name__ == "__main__":
     )
 
     SELECTION_METHODS = [
-        model_selection.OracleSelectionMethod,
+        # model_selection.OracleSelectionMethod,
         model_selection.IIDAccuracySelectionMethod,
         # model_selection.LeaveOneOutSelectionMethod,
     ]
@@ -141,8 +143,8 @@ if __name__ == "__main__":
             best_hparams = selection_method.hparams_accs(group['records'])
             for run_acc, hparam_records in best_hparams:
                 print(f"\t{run_acc}")
-                for r in hparam_records:
-                    assert(r['hparams'] == hparam_records[0]['hparams'])
+                # for r in hparam_records:
+                #     assert(r['hparams'] == hparam_records[0]['hparams'])
                 print("\t\thparams:")
                 for k, v in sorted(hparam_records[0]['hparams'].items()):
                     print('\t\t\t{}: {}'.format(k, v))

@@ -274,7 +274,7 @@ if __name__ == "__main__":
                     writer.add_scalar(name + '_' + key, value, step)
 
             results['mem_gb'] = torch.cuda.max_memory_allocated() / (1024.*1024.*1024.)
-            results["holdout_fraction"] = args.holdout_fraction
+            # results["holdout_fraction"] = args.holdout_fraction
 
             results_keys = sorted(results.keys())
             if results_keys != last_results_keys:
