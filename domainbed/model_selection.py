@@ -72,7 +72,7 @@ class SelectionMethod:
         """
         _hparams_accs = self.hparams_accs(records)
         if len(_hparams_accs):
-            return _hparams_accs[0][0]['test_acc']
+            return _hparams_accs[0][0][os.environ.get("KEYTEST", "test") + '_acc']
         else:
             return None
 

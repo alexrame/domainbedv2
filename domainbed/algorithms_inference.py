@@ -218,9 +218,10 @@ class DiWA(algorithms.ERM):
         list_gen_named_params = [featurizer.named_parameters() for featurizer in self.featurizers]
         for name_0, param_0 in self.featurizer.named_parameters():
             named_params = [next(gen_named_params) for gen_named_params in list_gen_named_params]
-            new_data = torch.zeros_like(param_0.data)
-            sum_lambdas = 0.
-            for i, lambda_i in enumerate(lambda_interpolation):
+            new_data = param_0.data
+            sum_lambdas = 1.
+            for i in range(len(self.featurizers)):
+                lambda_i = lambda_interpolation[i]
                 name_i, param_i = named_params[i]
                 assert name_0 == name_i
                 lambda_i = lambda_interpolation[i]
@@ -425,14 +426,14 @@ class DiWA(algorithms.ERM):
         dict_diversity = collections.defaultdict(list)
         # num_classifiers = int(min(len(self.classifiers), float(os.environ.get("MAXM", math.inf))))
         num_members = int(min(len(self.networks), float(os.environ.get("MAXM", math.inf))))
-        regexes = [("waens", "wa_ens"), ("waprod", "wa_prod")]
+        # regexes = [("waens", "wa_ens"), ("waprod", "wa_prod")]
         # regexes = [("netcla0", "net0_cla0"), ("netcla1", "net1_cla1"), ("netcla2", "net2_cla2")]
         # regexes = [
         #     (f"cla{i}{j}", f"cla{i}_cla{j}")
         #     for i in range(num_classifiers)
         #     for j in range(i + 1, num_classifiers)
         # ]
-        regexes += [
+        regexes = [
             ("netm", f"net{i}_net{j}")
             for i in range(num_members)
             for j in range(i + 1, num_members)
@@ -450,9 +451,9 @@ class DiWA(algorithms.ERM):
             dict_diversity[f"divr_{regexname}"].append(
                 diversity_metrics.ratio_errors(targets, preds0, preds1)
             )
-            # dict_diversity[f"divq_{regexname}"].append(diversity_metrics.Q_statistic(
-            #     targets, preds0, preds1
-            # ))
+            dict_diversity[f"divq_{regexname}"].append(diversity_metrics.Q_statistic(
+                targets, preds0, preds1
+            ))
 
         dict_results = {key: np.mean(value) for key, value in dict_diversity.items()}
 
@@ -515,7 +516,7 @@ class TrainableDiWA(DiWA):
         if kwargs.get("lambdas") is not None:
             lambda_interpolation = kwargs.get("lambdas")
         else:
-            lambda_interpolation = [torch.exp(lam) for lam in self.lambdas]
+            lambda_interpolation = torch.exp(self.lambdas)
 
         wa_weights = self.get_wa_weights(lambda_interpolation=lambda_interpolation)
         features_wa = torch.nn.utils.stateless.functional_call(
@@ -543,13 +544,14 @@ class TrainableDiWA(DiWA):
         lrc = self.hparams.get("lrc", 0.)
         if lrl != 0:
             self.optimizer_lambdas = optim.Adam([self.lambdas], lr=lrl)
+            print('Load self.optimizer_lambdas')
         else:
             self.optimizer_lambdas = None
+
         if lrc != 0:
             self.optimizer_classifier = optim.Adam(self.classifier.parameters(), lr=lrc)
         else:
             self.optimizer_classifier = None
-        # to refine hperparames
 
     def get_optimizer_at_step(self, step):
         if step % 2:
@@ -559,8 +561,10 @@ class TrainableDiWA(DiWA):
     def compute_loss(self, logits, y):
         dict_loss = {}
         dict_loss["ce"] = nn.CrossEntropyLoss()(logits, y)
-        dict_loss["ent"] = misc.get_entropy_loss(logits)
-        dict_loss["bdi"] = misc.get_batchdiversity_loss(logits)
+        if self.hparams.get("entloss", 0.):
+            dict_loss["ent"] = misc.get_entropy_loss(logits)
+        if self.hparams.get("bdiloss", 0.):
+            dict_loss["bdi"] = misc.get_batchdiversity_loss(logits)
 
         return dict_loss
 
@@ -574,7 +578,7 @@ class TrainableDiWA(DiWA):
 
     def train_step(self, x, y, optimizer, xt=None, yt=None):
         optimizer.zero_grad()
-        wa_weights = self.get_wa_weights()
+        wa_weights = self.get_wa_weights([torch.exp(lam) for lam in self.lambdas])
         feats = torch.nn.utils.stateless.functional_call(self.featurizer, wa_weights, x)
         logits = self.classifier(feats)
         dict_loss = self.compute_loss(logits, y)
@@ -586,8 +590,8 @@ class TrainableDiWA(DiWA):
 
         objective = (
             float(self.hparams.get("celoss", 0.)) * dict_loss["ce"] +
-            float(self.hparams.get("entloss", 0.)) * dict_loss["ent"] +
-            float(self.hparams.get("bdiloss", 0.)) * dict_loss["bdi"] +
+            float(self.hparams.get("entloss", 0.)) * dict_loss.get("ent", 0.) +
+            float(self.hparams.get("bdiloss", 0.)) * dict_loss.get("bdi", 0.) +
             float(self.hparams.get("coralloss", 0.)) * dict_loss.get("coral", 0.)
         )
         # objective = torch.stack(list(loss.values()), dim=0).sum(dim=0)

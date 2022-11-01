@@ -7,6 +7,7 @@ import torch.autograd as autograd
 from torch.autograd import Variable
 import os
 import pdb
+import random
 import copy
 from torch.distributions.normal import Normal
 import numpy as np
@@ -21,7 +22,7 @@ from domainbed import networks
 from domainbed.lib import misc
 
 ALGORITHMS = [
-    'ERM', "ERMG", "TWA", "ERMLasso", "MA", 'Fish', 'IRM', 'GroupDRO', 'Mixup', 'CORAL', 'MMD', 'VREx',
+    'ERM', "ERMG", "TWA", "TWAMA", "ERMLasso", "MA", 'Fish', 'IRM', 'GroupDRO', 'Mixup', 'CORAL', 'MMD', 'VREx',
     "Fishr", "DARE", "DARESWAP"
 ]
 
@@ -178,9 +179,23 @@ class TWA(ERM):
 
     def _create_network(self):
         ERM._create_network(self,)
-
+        self.update_count = 0
+        self._use_lambdas = True
         self.featurizers_aux_paths = self.hparams["featurizers_aux"].split(" ")
-        self.featurizers_lambdas = [float(l) for l in self.hparams["featurizers_lambdas"].split(" ")]
+
+        if self.hparams["featurizers_lambdas"].split("_")[0] == "rand":
+            mutiplier = float(self.hparams["featurizers_lambdas"].split("_")[1])
+            self.featurizers_lambdas = [
+                (mutiplier * (random.random() - 1.))
+                # tofix: -0.5
+                for _ in range(len(self.featurizers_aux_paths) + 1)
+            ]
+        else:
+
+            self.featurizers_lambdas = [
+                float(l)
+                for l in self.hparams["featurizers_lambdas"].split(" ")
+                ]
         assert len(self.featurizers_lambdas) == len(self.featurizers_aux_paths) + 1
 
         self.featurizers_aux = [
@@ -198,6 +213,8 @@ class TWA(ERM):
         # else:
         print(f"Load auxiliary featurizer from: {aux_path}")
         featurizer = networks.Featurizer(self.input_shape, self.hparams)
+        aux_path = misc.get_aux_path(aux_path)
+
         if aux_path != 'imagenet':
             save_dict = torch.load(aux_path)
             try:
@@ -220,13 +237,39 @@ class TWA(ERM):
                 param.requires_grad = False
 
     def _get_training_parameters(self):
+
+        if self._what_is_trainable in ["warmup", "warmupnet"]:
+            if self.update_count == 0:
+                assert self.update_count != self.hparams["lwarmup"]
+                what_is_trainable = "lambdas"
+            elif self.update_count == self.hparams["lwarmup"]:
+                if self._what_is_trainable == "warmupnet":
+                    what_is_trainable = "cla"
+                else:
+                    what_is_trainable = "all"
+            else:
+                assert self.update_count == 2. * self.hparams["lwarmup"]
+                assert self._what_is_trainable == "warmupnet"
+                what_is_trainable = "net"
+                print("No longer using lambdas, back to ERM")
+                self.set_featurizer_weights(self.get_wa_weights())
+                self._use_lambdas = False
+        else:
+            what_is_trainable = self._what_is_trainable
+
         training_parameters = []
-        if self._what_is_trainable in ["all", "allreset", "lambdas"]:
+
+        if what_is_trainable in ["all", "allreset", "lambdas"]:
             print("Learn lambdas")
-            training_parameters.append({"params": [self.lambdas], "lr": 0.1})
-        if self._what_is_trainable in ["cla", "clareset", "all", "allreset"]:
+            training_parameters.append({"params": [self.lambdas], "lr": self.hparams["lrl"]})
+
+        if what_is_trainable in ["cla", "clareset", "all", "allreset"]:
             print("Learn classifier")
             training_parameters.append({"params": self.classifier.parameters()})
+
+        if what_is_trainable in ["net"]:
+            print("Learn network")
+            training_parameters.append({"params": self.network.parameters()})
 
         return training_parameters
 
@@ -239,9 +282,9 @@ class TWA(ERM):
         return dict_loss
 
     def update(self, minibatches, unlabeled=None):
-        all_x = torch.cat([x for x, y in minibatches])
-        all_y = torch.cat([y for x, y in minibatches])
-        all_logits = self.predict(all_x)[""]
+        all_x = torch.cat([x for x, _ in minibatches])
+        all_y = torch.cat([y for _, y in minibatches])
+        all_logits = self.predict_in_train(all_x)
         dict_loss = self.compute_loss(all_logits, all_y)
         objective = (
             float(self.hparams["lossce"]) * dict_loss["ce"]
@@ -253,9 +296,17 @@ class TWA(ERM):
         objective.backward()
         self.optimizer.step()
 
+        if self.update_count == self.hparams["lwarmup"] and self._what_is_trainable in ["warmup", "warmupnet"]:
+            self._init_optimizer()
+        if self.update_count == 2. * self.hparams["lwarmup"] and self._what_is_trainable in ["warmupnet"]:
+            self._init_optimizer()
+
         results = {key: float(value.item()) for key, value in dict_loss.items()}
-        for i in range(self.num_featurizers):
-            results[f"lambda_{i}"] = float(self.lambdas[i].detach().float().cpu().numpy())
+
+        if self._use_lambdas:
+            for i in range(self.num_featurizers):
+                results[f"lambda_{i}"] = float(self.lambdas[i].detach().float().cpu().numpy())
+        self.update_count += 1
         return results
 
     def get_wa_weights(self):
@@ -274,25 +325,78 @@ class TWA(ERM):
             weights[name_0] = new_data/sum_lambdas
         return weights
 
-    def predict(self, x):
+    def predict_in_train(self, x):
+        if not self._use_lambdas:
+            return self.network(x)
         wa_weights = self.get_wa_weights()
         features_wa = torch.nn.utils.stateless.functional_call(
                 self.featurizer, wa_weights, x)
-        predictions_wa = self.classifier(features_wa)
-        return {"": predictions_wa}
-        #  "init": self.network(x)
+        return self.classifier(features_wa)
+
+    def predict(self, x):
+        dict_preds = {"": self.predict_in_train(x)}
+        return dict_preds
 
     def set_featurizer_weights(self, wa_weights):
         for name, param in self.featurizer.named_parameters():
             param.data = wa_weights[name]
 
     def save_path_for_future_init(self, path_for_save):
+        if not self._use_lambdas:
+            return ERM.save_path_for_future_init(self, path_for_save)
+
         assert not os.path.exists(path_for_save), f"The initialization: {path_for_save} has already been saved"
         assert os.environ.get('SAVE_FEATURES_CLASSIFIERS', "0") == "0"
         assert os.environ.get("SAVE_ONLY_FEATURES", "0") == "0"
         print(f"Save wa network at {path_for_save}")
         self.set_featurizer_weights(self.get_wa_weights())
         torch.save(self.network.state_dict(), path_for_save)
+
+
+class TWAMA(TWA):
+    """
+    Empirical Risk Minimization (ERM) with Moving Average (MA) prediction model
+    from https://arxiv.org/abs/2110.10832
+    """
+
+    def __init__(self, *args, **kwargs):
+        TWA.__init__(self, *args, **kwargs)
+
+        self.network_ma = copy.deepcopy(self.network)
+        self.network_ma.eval()
+        self.ma_start_iter = 100 + self.hparams["lwarmup"]
+        self.ma_count = 0
+
+    def update(self, *args, **kwargs):
+        results = TWA.update(self, *args, **kwargs)
+        self.update_ma()
+        return results
+
+    def predict(self, x):
+        dict_preds = {"": self.predict_in_train(x)}
+        dict_preds["ma"] = self.network_ma(x)
+        return dict_preds
+
+    def update_ma(self):
+        if self.update_count >= self.ma_start_iter:
+            self.ma_count += 1
+            for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
+                param_k.data = (param_k.data * self.ma_count + param_q.data) / (1. + self.ma_count)
+        else:
+            for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
+                param_k.data = param_q.data
+
+    def save_path_for_future_init(self, path_for_save):
+        if not self._use_lambdas:
+            return MA.save_path_for_future_init(self, path_for_save)
+
+        assert not os.path.exists(path_for_save), f"The initialization: {path_for_save} has already been saved"
+        assert os.environ.get('SAVE_FEATURES_CLASSIFIERS', "0") == "0"
+        assert os.environ.get("SAVE_ONLY_FEATURES", "0") == "0"
+        print(f"Save wa network at {path_for_save}")
+        self.set_featurizer_weights(self.get_wa_weights())
+        torch.save(self.network.state_dict(), path_for_save)
+
 
 class ERMG(ERM):
     """
@@ -402,11 +506,12 @@ class MA(ERM):
         self.network_ma = copy.deepcopy(self.network)
         self.network_ma.eval()
         self.ma_start_iter = 100
-        self.global_iter = 0
+        self.update_count = 0
         self.ma_count = 0
 
     def update(self, *args, **kwargs):
         result = ERM.update(self, *args, **kwargs)
+        self.update_count += 1
         self.update_ma()
         return result
 
@@ -416,14 +521,26 @@ class MA(ERM):
         return {"ma": self.network_ma(x), "": self.network(x)}
 
     def update_ma(self):
-        self.global_iter += 1
-        if self.global_iter >= self.ma_start_iter:
+        if self.update_count >= self.ma_start_iter:
             self.ma_count += 1
             for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
                 param_k.data = (param_k.data * self.ma_count + param_q.data) / (1. + self.ma_count)
         else:
             for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
                 param_k.data = param_q.data
+
+    ## DiWA for saving initialization ##
+    def save_path_for_future_init(self, path_for_save):
+        assert not os.path.exists(path_for_save), f"The initialization: {path_for_save} has already been saved"
+        assert os.environ.get('SAVE_FEATURES_CLASSIFIERS', "0") == "0"
+
+        print(f"Save wa network at {path_for_save}")
+        state_dict = self.network_ma.state_dict()
+
+        if os.environ.get("SAVE_ONLY_FEATURES", "0") != "0":
+            state_dict = {key.replace("0.network", "network"): value for key, value in state_dict.items() if key not in ["1.weight", "1.bias"]}
+
+        torch.save(state_dict, path_for_save)
 
 
 class IRM(ERM):

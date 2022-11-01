@@ -289,8 +289,10 @@ if __name__ == "__main__":
             })
 
             epochs_path = os.path.join(args.output_dir, 'results.jsonl')
+
+
             with open(epochs_path, 'a') as f:
-                f.write(json.dumps(results, sort_keys=True) + "\n")
+                f.write(json.dumps(results, sort_keys=True, default=misc.np_encoder) + "\n")
 
             current_score = misc.get_score(results, args.test_envs, model_selection="train")
             if current_score > best_score:
@@ -301,7 +303,7 @@ if __name__ == "__main__":
                 print(f"Saving new best train at step: {step} at path: model_best.pkl")
                 save_checkpoint(
                     'model_best.pkl',
-                    results=json.dumps(results, sort_keys=True),
+                    results=json.dumps(results, sort_keys=True, default=misc.np_encoder),
                 )
 
             # current_score_oracle = misc.get_score(results, args.test_envs, model_selection="oracle")
@@ -324,12 +326,12 @@ if __name__ == "__main__":
                     pass
                 else:
                     save_checkpoint(
-                        f'model_step{step}.pkl', results=json.dumps(results, sort_keys=True),
+                        f'model_step{step}.pkl', results=json.dumps(results, sort_keys=True, default=misc.np_encoder),
                         light=True)
 
     save_checkpoint(
         'model.pkl',
-        results=json.dumps(results, sort_keys=True),
+        results=json.dumps(results, sort_keys=True, default=misc.np_encoder),
     )
 
     with open(os.path.join(args.output_dir, 'done'), 'w') as f:

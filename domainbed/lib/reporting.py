@@ -9,6 +9,22 @@ import tqdm
 
 from domainbed.lib.query import Q
 
+def load_list_records(list_path):
+    records = []
+    for path in list_path:
+        for i, subdir in tqdm.tqdm(list(enumerate(os.listdir(path))),
+                                ncols=80,
+                                leave=False):
+            results_path = os.path.join(path, subdir, "results.jsonl")
+            try:
+                with open(results_path, "r") as f:
+                    for line in f:
+                        records.append(json.loads(line[:-1]))
+            except IOError:
+                pass
+
+    return Q(records)
+
 def load_records(path):
     records = []
     for i, subdir in tqdm.tqdm(list(enumerate(os.listdir(path))),

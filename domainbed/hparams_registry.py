@@ -149,12 +149,13 @@ def _hparams(algorithm, dataset, random_seed):
         _hparam('beta1', 0.5, lambda r: r.choice([0., 0.5]))
         _hparam('lr_d', 1e-3, lambda r: 10**r.uniform(-4.5, -2.5))
 
-    elif algorithm == "TWA":
+    elif algorithm in ["TWA", "TWAMA"]:
         default_featurizers_aux = " ".join([
             # "/private/home/alexandrerame/dataplace/data/domainbed/inits/home/home0_lp_0926.pkl",
             # "imagenet",
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_ermf_lp_r0_t0_0926.pkl",
-            "/private/home/alexandrerame/dataplace/data/domainbed/inits/iwild/transfer/iwild_ermf_lp_r0_t0_0926.pkl"
+            "/private/home/alexandrerame/dataplace/data/domainbed/inits/iwild/transfer/iwild_ermf_lp_r0_t0_0926.pkl",
+            # "/private/home/alexandrerame/dataplace/data/domainbed/inits/natu/transfer/natu_erm_lp_r0_t0_0926.pkl"
         ])
         default_featurizers_lambdas = " ".join(
             ["0", "0", "0"]
@@ -164,7 +165,8 @@ def _hparams(algorithm, dataset, random_seed):
         # _hparam('lossbdi', 0.0, lambda r: r.choice([0.0]))
         _hparam('featurizers_aux', default_featurizers_aux, lambda r: r.choice([default_featurizers_aux]))
         _hparam('featurizers_lambdas', default_featurizers_lambdas, lambda r: r.choice([default_featurizers_lambdas]))
-
+        _hparam('lwarmup', 100, lambda r: r.choice([100]))
+        _hparam('lrl', 0.1, lambda r: r.choice([0.01, 0.05, 0.1]))
     # Dataset-and-algorithm-specific hparam definitions. Each block of code
     # below corresponds to exactly one hparam. Avoid nested conditionals.
 
