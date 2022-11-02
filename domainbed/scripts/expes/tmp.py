@@ -1,3 +1,3 @@
-cp came0_lp_0926.slurm came1_lp_0926.slurm
-cp came0_lp_0926.slurm came2_lp_0926.slurm
-cp came0_lp_0926.slurm came3_lp_0926.slurm
+cp home0_twama_d_lpl4w0a_0926.slurm home1_twama_d_lpl4w0a_0926.slurm
+cp home0_twama_d_lpl4w0a_0926.slurm home2_twama_d_lpl4w0a_0926.slurm
+cp home0_twama_d_lpl4w0a_0926.slurm home3_twama_d_lpl4w0a_0926.slurm
