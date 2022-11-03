@@ -27,13 +27,17 @@ from collections import Counter
 
 def get_aux_path(aux_path):
     dict_shortcut = {
-            "dn":
-                "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_ermf_lp_r0_t0_0926.pkl",
-            "iwild":
-                "/private/home/alexandrerame/dataplace/data/domainbed/inits/iwild/transfer/iwild_ermf_lp_r0_t0_0926.pkl",
-            "natu":
-                "/private/home/alexandrerame/dataplace/data/domainbed/inits/natu/transfer/natu_erm_lp_r0_t0_0926.pkl"
-        }
+        "dn":
+            "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_ermf_lp_r0_t0_0926.pkl",
+        "iwild":
+            "/private/home/alexandrerame/dataplace/data/domainbed/inits/iwild/transfer/iwild_ermf_lp_r0_t0_0926.pkl",
+        "iwildma":
+            "/private/home/alexandrerame/dataplace/data/domainbed/inits/iwild/transfer/iwild_maf_lp_r0_t0_0926.pkl",
+        "natu":
+            "/private/home/alexandrerame/dataplace/data/domainbed/inits/natu/transfer/natu_erm_lp_r0_t0_0926.pkl",
+        "rxrx":
+            "/private/home/alexandrerame/dataplace/data/domainbed/inits/rxrx/transfer/rxrx_erm_lp_r0_t0_0926.pkl"
+    }
     return dict_shortcut.get(aux_path, aux_path)
 
 def get_batchdiversity_loss(logits):

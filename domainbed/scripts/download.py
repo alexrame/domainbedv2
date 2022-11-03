@@ -14,9 +14,10 @@ import pandas as pd
 
 
 try:
-    # from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
+    from wilds.datasets.camelyon17_dataset import Camelyon17Dataset
     # from wilds.datasets.fmow_dataset import FMoWDataset
-    from wilds.datasets.iwildcam_dataset import IWildCamDataset
+    # from wilds.datasets.iwildcam_dataset import IWildCamDataset
+    from wilds.datasets.rxrx1_dataset import RxRx1Dataset
 except:
     print("No wilds")
 
@@ -299,4 +300,5 @@ if __name__ == "__main__":
     # download_sviro(args.data_dir)
     # Camelyon17Dataset(root_dir=args.data_dir, download=True)
     # FMoWDataset(root_dir=args.data_dir, download=True)
-    IWildCamDataset(root_dir=args.data_dir, download=True)
+    # IWildCamDataset(root_dir=args.data_dir, download=True)
+    RxRx1Dataset(root_dir=args.data_dir, download=True)

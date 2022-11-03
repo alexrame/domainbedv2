@@ -47,10 +47,12 @@ def get_grouped_records(records):
     result = collections.defaultdict(lambda: [])
     for r in records:
         for test_env in r["args"]["test_envs"]:
+            output_dir_clean = "_".join(r["args"]["output_dir"].split("/")[-1].split("_")[1:])
             group = (r["args"]["trial_seed"],
                 r["args"]["dataset"],
                 r["args"]["algorithm"],
-                test_env)
+                test_env,
+                output_dir_clean)
             result[group].append(r)
     return Q([{"trial_seed": t, "dataset": d, "algorithm": a, "test_env": e,
-        "records": Q(r)} for (t,d,a,e),r in result.items()])
+               "output_dir": o, "records": Q(r)} for (t,d,a,e,o),r in result.items()])

@@ -80,7 +80,8 @@ class ERM(Algorithm):
     ):
         super(ERM, self).__init__(input_shape, num_classes, num_domains, hparams)
 
-        self._what_is_trainable = what_is_trainable
+        self._what_is_trainable = {
+            "0": "all", "1": "cla", "clafrozen": "feat"}.get(what_is_trainable, what_is_trainable)
         self._create_network()
         self._load_network(path_for_init)
         self._init_optimizer()
@@ -107,22 +108,22 @@ class ERM(Algorithm):
             else:
                 self.network.load_state_dict(saved_dict)
 
-            if self._what_is_trainable in ["clareset", "0reset", "allreset"]:
+            if self._what_is_trainable.endswith("reset"):
                 # or os.environ.get("RESET_CLASSIFIER"):
                 print("Reset random classifier")
                 self.classifier.reset_parameters()
 
     def _get_training_parameters(self):
         ## DiWA choose weights to be optimized ##
-        if self._what_is_trainable in ["0", "0reset"]:
+        if self._what_is_trainable in ["all", "allreset"]:
             print("Learn featurizer and classifier")
             training_parameters = self.network.parameters()
-        elif self._what_is_trainable == "clafrozen":
+        elif self._what_is_trainable in ["feat", "featreset"]:
             # useful for linear probing
             print("Learn only featurizer")
             training_parameters = self.featurizer.parameters()
         else:
-            assert self._what_is_trainable in ["1", "clareset"]
+            assert self._what_is_trainable in ["cla", "clareset"]
             # useful when learning with fixed vocabulary
             print("Learn only classifier")
             training_parameters = self.classifier.parameters()
@@ -140,7 +141,7 @@ class ERM(Algorithm):
         all_x = torch.cat([x for x, y in minibatches])
         all_y = torch.cat([y for x, y in minibatches])
         all_features = self.featurizer(all_x)
-        if self._what_is_trainable in ["1", "clareset"]:
+        if self._what_is_trainable in ["cla", "clareset"]:
             all_features = all_features.detach()
         all_features = self.modify_features(all_features)
         loss = F.cross_entropy(self.classifier(all_features), all_y)
@@ -186,8 +187,7 @@ class TWA(ERM):
         if self.hparams["featurizers_lambdas"].split("_")[0] == "rand":
             mutiplier = float(self.hparams["featurizers_lambdas"].split("_")[1])
             self.featurizers_lambdas = [
-                (mutiplier * (random.random() - 1.))
-                # tofix: -0.5
+                (- mutiplier * random.random())
                 for _ in range(len(self.featurizers_aux_paths) + 1)
             ]
         else:
@@ -238,22 +238,23 @@ class TWA(ERM):
 
     def _get_training_parameters(self):
 
-        if self._what_is_trainable in ["warmup", "warmupnet"]:
-            if self.update_count == 0:
-                assert self.update_count != self.hparams["lwarmup"]
-                what_is_trainable = "lambdas"
-            elif self.update_count == self.hparams["lwarmup"]:
+        if self._what_is_trainable in ["warmup", "warmupnet", "warmupanet"]:
+            if self.update_count == self.hparams["lwarmup"]:
                 if self._what_is_trainable == "warmupnet":
                     what_is_trainable = "cla"
+                elif self._what_is_trainable == "warmupanet":
+                    what_is_trainable = "all"
                 else:
                     what_is_trainable = "all"
-            else:
-                assert self.update_count == 2. * self.hparams["lwarmup"]
-                assert self._what_is_trainable == "warmupnet"
+            elif self.update_count == self.hparams["nwarmup"]:
+                assert self._what_is_trainable in ["warmupnet", "warmupanet"]
                 what_is_trainable = "net"
                 print("No longer using lambdas, back to ERM")
                 self.set_featurizer_weights(self.get_wa_weights())
                 self._use_lambdas = False
+            else:
+                assert self.update_count == 0
+                what_is_trainable = "lambdas"
         else:
             what_is_trainable = self._what_is_trainable
 
@@ -296,17 +297,19 @@ class TWA(ERM):
         objective.backward()
         self.optimizer.step()
 
-        if self.update_count == self.hparams["lwarmup"] and self._what_is_trainable in ["warmup", "warmupnet"]:
+
+        if self.update_count == self.hparams["lwarmup"] and self._what_is_trainable in ["warmup", "warmupnet", "warmupanet"]:
             self._init_optimizer()
-        if self.update_count == 2. * self.hparams["lwarmup"] and self._what_is_trainable in ["warmupnet"]:
+        if self.update_count == self.hparams["nwarmup"] and self._what_is_trainable in ["warmupnet", "warmupanet"]:
             self._init_optimizer()
+
+        self.update_count += 1
 
         results = {key: float(value.item()) for key, value in dict_loss.items()}
 
         if self._use_lambdas:
             for i in range(self.num_featurizers):
                 results[f"lambda_{i}"] = float(self.lambdas[i].detach().float().cpu().numpy())
-        self.update_count += 1
         return results
 
     def get_wa_weights(self):
@@ -364,17 +367,23 @@ class TWAMA(TWA):
 
         self.network_ma = copy.deepcopy(self.network)
         self.network_ma.eval()
+        self.network_ma2 = copy.deepcopy(self.network)
+        self.network_ma2.eval()
         self.ma_start_iter = 100 + self.hparams["lwarmup"]
+        self.ma2_start_iter = 1000 + self.hparams["lwarmup"]
         self.ma_count = 0
+        self.ma2_count = 0
 
     def update(self, *args, **kwargs):
         results = TWA.update(self, *args, **kwargs)
         self.update_ma()
+        self.update_ma2()
         return results
 
     def predict(self, x):
         dict_preds = {"": self.predict_in_train(x)}
         dict_preds["ma"] = self.network_ma(x)
+        dict_preds["ma2"] = self.network_ma2(x)
         return dict_preds
 
     def update_ma(self):
@@ -382,6 +391,15 @@ class TWAMA(TWA):
             self.ma_count += 1
             for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
                 param_k.data = (param_k.data * self.ma_count + param_q.data) / (1. + self.ma_count)
+        else:
+            for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
+                param_k.data = param_q.data
+
+    def update_ma2(self):
+        if self.update_count >= self.ma2_start_iter:
+            self.ma2_count += 1
+            for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
+                param_k.data = (param_k.data * self.ma2_count + param_q.data) / (1. + self.ma2_count)
         else:
             for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
                 param_k.data = param_q.data
@@ -421,7 +439,7 @@ class ERMG(ERM):
             x = minibatches[domain][0]
             y = minibatches[domain][1]
             features = self.featurizer(x)
-            if self._what_is_trainable in ["1", "clareset"]:
+            if self._what_is_trainable in ["cla", "clareset"]:
                 features = features.detach()
             features = self.modify_features(features)
             loss = F.cross_entropy(self.classifier(features), y)
@@ -440,7 +458,7 @@ class ERMLasso(ERM):
         all_x = torch.cat([x for x, y in minibatches])
         all_y = torch.cat([y for x, y in minibatches])
         all_features = self.featurizer(all_x)
-        if self._what_is_trainable in ["1", "clareset"]:
+        if self._what_is_trainable in ["cla", "clareset"]:
             all_features = all_features.detach()
         all_features = self.modify_features(all_features)
         objective = F.cross_entropy(self.classifier(all_features), all_y)
@@ -476,7 +494,7 @@ class SD(ERM):
 
         all_x = torch.cat([x for x, y in minibatches])
         all_features = self.featurizer(all_x)
-        if self._what_is_trainable in ["1", "clareset"]:
+        if self._what_is_trainable in ["cla", "clareset"]:
             all_features = all_features.detach()
         all_features = self.modify_features(all_features)
 
@@ -572,7 +590,7 @@ class IRM(ERM):
 
         all_x = torch.cat([x for x, y in minibatches])
         all_features = self.featurizer(all_x)
-        if self._what_is_trainable in ["1", "clareset"]:
+        if self._what_is_trainable in ["cla", "clareset"]:
             all_features = all_features.detach()
         all_logits = self.classifier(all_features)
 
@@ -620,7 +638,7 @@ class VREx(ERM):
 
         all_x = torch.cat([x for x, y in minibatches])
         all_features = self.featurizer(all_x)
-        if self._what_is_trainable in ["1", "clareset"]:
+        if self._what_is_trainable in ["cla", "clareset"]:
             all_features = all_features.detach()
         all_logits = self.classifier(all_features)
 
@@ -668,7 +686,7 @@ class Mixup(ERM):
 
             x = lam * xi + (1 - lam) * xj
             features = self.featurizer(x)
-            if self._what_is_trainable in ["1", "clareset"]:
+            if self._what_is_trainable in ["cla", "clareset"]:
                 features = features.detach()
             predictions = self.classifier(features)
 
@@ -705,7 +723,7 @@ class GroupDRO(ERM):
         for m in range(len(minibatches)):
             x, y = minibatches[m]
             features = self.featurizer(x)
-            if self._what_is_trainable in ["1", "clareset"]:
+            if self._what_is_trainable in ["cla", "clareset"]:
                 features = features.detach()
             losses[m] = F.cross_entropy(self.classifier(features), y)
             self.q[m] *= (self.hparams["groupdro_eta"] * losses[m].data).exp()
@@ -746,7 +764,7 @@ class DARE(ERM):
         all_x = torch.cat([x for x, y in minibatches])
         all_y = torch.cat([y for x, y in minibatches])
         all_features = self.featurizer(all_x)
-        if self._what_is_trainable in ["1", "clareset"]:
+        if self._what_is_trainable in ["cla", "clareset"]:
             all_features = all_features.detach()
 
         penalty = torch.tensor(0.)
@@ -832,7 +850,6 @@ class AbstractMMD(ERM):
             self.kernel_type = "gaussian"
         else:
             self.kernel_type = "mean_cov"
-        assert not self._what_is_trainable
 
     def my_cdist(self, x1, x2):
         x1_norm = x1.pow(2).sum(dim=-1, keepdim=True)
@@ -969,7 +986,7 @@ class Fishr(Algorithm):
         len_minibatches = [x.shape[0] for x, y in minibatches]
 
         all_z = self.featurizer(all_x)
-        if self._what_is_trainable in ["1", "clareset"]:
+        if self._what_is_trainable in ["cla", "clareset"]:
             all_z = all_z.detach()
         all_logits = self.classifier(all_z)
 

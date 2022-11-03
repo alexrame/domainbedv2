@@ -25,7 +25,7 @@ class ERM(algorithms.ERM):
         )
         self.network = nn.Sequential(self.featurizer, self.classifier)
         self.network_ma = copy.deepcopy(self.network)
-
+        self.network_ma2 = copy.deepcopy(self.network)
 
 class DiWA(algorithms.ERM):
 
@@ -230,6 +230,14 @@ class DiWA(algorithms.ERM):
             weights[name_0] = new_data/sum_lambdas
         return weights
 
+    def predict_feat(self, x):
+        dict_features = {}
+        if len(self.featurizers) != 0:
+            for i, featurizer in enumerate(self.featurizers):
+                if i < float(os.environ.get("MAXM", math.inf)):
+                    dict_features["net" + str(i)] = featurizer(x)
+        return dict_features
+
     def predict(self, x, **kwargs):
         if self.network_ma is not None:
             dict_predictions = {"": self.network_ma(x)}
@@ -319,7 +327,7 @@ class DiWA(algorithms.ERM):
         aux_dict_stats = {}
         with torch.no_grad():
             i = 0.
-            for x, y in loader:
+            for count_batch, (x, y) in enumerate(loader):
                 x = x.to(device)
                 bs = x.size(0)
                 prediction = self.predict(x, **predict_kwargs)
@@ -380,6 +388,7 @@ class DiWA(algorithms.ERM):
 
                 i += float(bs)
                 y = y.to(device)
+
                 if "classes" in what:
                     if "batch_classes" not in aux_dict_stats:
                         aux_dict_stats["batch_classes"] = []
@@ -414,6 +423,13 @@ class DiWA(algorithms.ERM):
                     pdb.set_trace()
                     break
 
+                if count_batch < float(os.environ.get("DIVFEATS", "10")):
+                    dict_feats = self.predict_feat(x)
+                    for key in dict_feats.keys():
+                        if "feats" not in dict_stats[key]:
+                            dict_stats[key]["feats"] = []
+                        dict_stats[key]["feats"].append(dict_feats[key])
+
         for key0 in dict_stats:
             for key1 in dict_stats[key0]:
                 dict_stats[key0][key1] = torch.cat(dict_stats[key0][key1])
@@ -422,7 +438,7 @@ class DiWA(algorithms.ERM):
 
         return dict_stats, aux_dict_stats
 
-    def get_dict_diversity(self, dict_stats, targets, device):
+    def get_dict_diversity(self, dict_stats, targets, device, compute_div_feats=False):
         dict_diversity = collections.defaultdict(list)
         # num_classifiers = int(min(len(self.classifiers), float(os.environ.get("MAXM", math.inf))))
         num_members = int(min(len(self.networks), float(os.environ.get("MAXM", math.inf))))
@@ -454,6 +470,10 @@ class DiWA(algorithms.ERM):
             dict_diversity[f"divq_{regexname}"].append(diversity_metrics.Q_statistic(
                 targets, preds0, preds1
             ))
+            if os.environ.get("DIVFEATS", "10") != "0" and "feats" in dict_stats[key0] and "feats" in dict_stats[key1]:
+                feats0 = dict_stats[key0]["feats"]
+                feats1 = dict_stats[key1]["feats"]
+                dict_diversity[f"divf_{regexname}"] = 1. - diversity_metrics.CudaCKA(device).linear_CKA(feats0, feats1).item()
 
         dict_results = {key: np.mean(value) for key, value in dict_diversity.items()}
 
@@ -526,9 +546,6 @@ class TrainableDiWA(DiWA):
         # w for wa, t for task
         dict_predictions["feats"] = features_wa
         dict_predictions["11"] = self.classifier(features_wa)
-        # dict_predictions["10"] = self.classifier_task(features_wa)
-        # dict_predictions["01"] = self.classifier(features_task)
-        # dict_predictions["00"] = self.classifier_task(features_task)
         return dict_predictions
 
     def _init_lambdas(self):
@@ -538,7 +555,6 @@ class TrainableDiWA(DiWA):
              for i in range(self.num_aux)], requires_grad=True)
 
     def _init_train(self):
-        self.classifier_task = copy.deepcopy(self.classifier)
         self._init_lambdas()
         lrl = self.hparams.get("lrl", 0.)
         lrc = self.hparams.get("lrc", 0.)
@@ -623,7 +639,7 @@ class TrainableDiWA(DiWA):
 
                 optimizer = self.get_optimizer_at_step(step)
                 l = self.train_step(x, y, optimizer, xt, yt)
-                # results.update(l)
+                results.update(l)
 
             for i in range(self.num_aux):
                 results[f"lambda_{i}"] = self.lambdas[i].detach().float().cpu().numpy()

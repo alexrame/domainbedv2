@@ -5,6 +5,7 @@ import pickle
 import pandas as pd
 import numpy as np
 import time
+import pdb
 
 import torch
 from PIL import Image, ImageFile
@@ -46,6 +47,7 @@ DATASETS = [
     # WILDS datasets
     "WILDSCamelyon",
     "WILDSFMoW",
+    "WILDSRxRx1",
     "iWILDSCam",
     # correlation shift
     "CelebA_Blond",
@@ -469,7 +471,7 @@ class WILDSEnvironment:
 
     def __getitem__(self, i):
         x = self.dataset.get_input(self.indices[i])
-        if type(x).__name__ not in ["Image", "JpegImageFile"]:
+        if type(x).__name__ not in ["Image", "JpegImageFile", "PngImageFile"]:
             x = Image.fromarray(x)
 
         y = self.dataset.y_array[self.indices[i]]
@@ -561,12 +563,27 @@ class WILDSFMoW(WILDSDataset):
         super().__init__(dataset, "region", test_envs, hparams['data_augmentation'], hparams)
 
 
+class WILDSRxRx1(WILDSDataset):
+    ENVIRONMENTS = [
+        "0to8", "9to17", "18to26", "27to35", "35to44", "44to50"
+    ]
+    CHECKPOINT_FREQ = 1000
+    N_STEPS = 15000
+    def __init__(self, root, test_envs, hparams):
+        print("Begin loading RxRx1Dataset")
+        time.sleep(1)
+        from wilds.datasets.rxrx1_dataset import RxRx1Dataset
+        dataset = RxRx1Dataset(root_dir=root)
+        super().__init__(dataset, "experiment", test_envs, hparams['data_augmentation'], hparams, value_range=9)
+
+
 class iWILDSCam(WILDSDataset):
     ENVIRONMENTS = [
         "0to35", "36to71", "72to107", "108to143", "144to179", "180to215", "216to251", "252to287",
         "288to323"
     ]
-
+    CHECKPOINT_FREQ = 500
+    N_STEPS = 15000
     def __init__(self, root, test_envs, hparams):
         print("Begin loading IWildCamDataset")
         time.sleep(1)

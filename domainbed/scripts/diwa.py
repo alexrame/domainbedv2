@@ -10,6 +10,7 @@ from domainbed.lib import misc
 from domainbed.lib.fast_data_loader import FastDataLoader, InfiniteDataLoader
 from domainbed.lib import misc
 
+os.environ["PYTHONUNBUFFERED"]="1"
 # MODEL_SELECTION=oracle WHICHMODEL=stepbest CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /data/rame/experiments/domainbed/home0_ma_lp_0824 --trial_seed 0 --data_dir /data/rame/data/domainbed --topk 2 --what mean product feats cla clas featsproduct claproduct netm
 
 def _get_args():
@@ -229,15 +230,18 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
                 wa_algorithm.update_product_network(
                     algorithm.network, weight=checkpoint_weight
                 )
-            if "addnet" in action:
-                wa_algorithm.add_network(algorithm.network)
 
             if "ma" in action:
                 wa_algorithm.update_mean_network_ma(algorithm.network_ma, weight=checkpoint_weight)
+            elif "ma2" in action:
+                wa_algorithm.update_mean_network_ma(algorithm.network_ma2, weight=checkpoint_weight)
 
-            if "addnetma" in action:
-                assert "addnet" not in action
+            if "addnet" in action:
+                wa_algorithm.add_network(algorithm.network)
+            elif "addnetma" in action:
                 wa_algorithm.add_network(algorithm.network_ma)
+            elif "addnetma2" in action:
+                wa_algorithm.add_network(algorithm.network_ma2)
 
             if "var" in action:
                 wa_algorithm.update_var_network(algorithm.network)
