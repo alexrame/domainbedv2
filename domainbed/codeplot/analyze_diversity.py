@@ -205,7 +205,7 @@ def get_data_label_color_hess(key1, key2):
     )
 
     label.append('WA')
-        
+
     if False:
         data.append(
             [
@@ -686,6 +686,41 @@ import seaborn as sns
 list_methods = ['erm', 'mixup', 'coral', 'gdro', 'fishr']
 from data.home import divacrossregul, divacrossrefulv2
 l = divacrossregul.l + divacrossrefulv2.l
+
+
+def plot_diversity_aux(l, labels, key, length=None, limits={}):
+
+    plt.rcParams["figure.figsize"] = (5, 5)
+    kwargs = dict(alpha=0.5, bins=25, density=True, stacked=True)
+
+    def check_line(line):
+        if length is None:
+            return True
+        return line["length"] == length
+
+    fig = plt.figure()
+    keyname = "Feature" if "divf" in key else "Prediction"
+
+    data = []
+
+    for c in l:
+        data.append(
+            [
+                line[key] for line in c if check_line(line)
+            ]
+        )
+
+    colors = cm.rainbow(np.linspace(0.3, 1, len(labels)))
+
+    for i in range(len(labels)):
+        plt.hist(data[i], **kwargs, color=colors[i], label=labels[i])
+
+    plt.gca().set_xlabel(keyname + ' diversity', fontsize="x-large")
+    plt.gca().set_ylabel('Frequency (%)', fontsize="x-large")
+    if key in limits:
+        plt.xlim(limits[key][0], limits[key][1])
+    plt.legend(loc="upper right", fontsize="x-large")
+    return fig
 
 
 def plot_diversity_reguls(l, key="dr", plot=False):

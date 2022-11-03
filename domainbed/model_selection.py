@@ -44,20 +44,16 @@ class SelectionMethod:
     #         .sorted(key=lambda x: x[0]['val_acc'])[::-1]
     #     )
     @classmethod
-    def hparams_accs(self, records):
+    def hparams_accs(self, records, key_uniq='args.hparams_seed'):
         """
         Given all records from a single (dataset, algorithm, test env) pair,
         return a sorted list of (run_acc, records) tuples.
         """
         keysort = os.environ.get("KEYSORT", "val")
-        accs = (records.group('args.hparams_seed')
-            .map(lambda _, run_records:
-                (
-                    self.run_acc(run_records),
-                    run_records
-                )
-            ).filter(lambda x: x[0] is not None)
-            .sorted(key=lambda x: x[0][keysort + '_acc'])
+        accs = (
+            records.group(key_uniq).map(
+                lambda _, run_records: (self.run_acc(run_records), run_records)
+            ).filter(lambda x: x[0] is not None).sorted(key=lambda x: x[0][keysort + '_acc'])
         )
         # test_env = accs[0][1][0]["args"]["test_envs"][0]
         # trial_seed = accs[0][1][0]["args"]["trial_seed"]
@@ -122,9 +118,12 @@ class OracleSelectionMethod(SelectionMethod):
         if keyacc:
             keyacc = "_" + keyacc
 
+        dict_acc = {}
         for i in itertools.count():
             if f'env{i}_out_acc' + keyacc not in chosen_record:
                 break
+
+            dict_acc[f'env{i}_out_acc'] = chosen_record[f'env{i}_out_acc' + keyacc]
 
             if i not in test_envs:
                 train_env_keys.append(f'env{i}_in_acc' + keyacc)
@@ -133,13 +132,14 @@ class OracleSelectionMethod(SelectionMethod):
                 testout_env_keys.append(f'env{i}_out_acc' + keyacc)
                 test_env_keys.append(f'env{i}_in_acc' + keyacc)
 
-        return {
+        dict_acc.update({
             'train_acc': np.mean([chosen_record[key] for key in train_env_keys]),
             'val_acc': np.mean([chosen_record[key] for key in val_env_keys]),
             'test_acc': np.mean([chosen_record[key] for key in test_env_keys]),
             'testout_acc': np.mean([chosen_record[key] for key in testout_env_keys]),
             "step": chosen_record["step"]
-        }
+        })
+        return dict_acc
 
 class IIDAccuracySelectionMethod(SelectionMethod):
     """Picks argmax(mean(env_out_acc for env in train_envs))"""

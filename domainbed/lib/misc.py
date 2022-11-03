@@ -27,11 +27,25 @@ from collections import Counter
 
 def get_aux_path(aux_path):
     dict_shortcut = {
+        "dn0":
+            "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_erm0_lp0_r0_t0_0926.pkl",
+        "dn1":
+            "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_erm1_lp1_r0_t0_0926.pkl",
+        "dn2":
+            "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_erm2_lp2_r0_t0_0926.pkl",
+        "dn3":
+            "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_erm3_lp3_r0_t0_0926.pkl",
+        "dn4":
+            "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_erm4_lp4_r0_t0_0926.pkl",
+        "dn5":
+            "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_erm5_lp5_r0_t0_0926.pkl",
         "dn":
+            "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_erm_lp_r0_t0_0926.pkl",
+        "dnf":
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_ermf_lp_r0_t0_0926.pkl",
         "iwild":
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/iwild/transfer/iwild_ermf_lp_r0_t0_0926.pkl",
-        "iwildma":
+        "wildma":
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/iwild/transfer/iwild_maf_lp_r0_t0_0926.pkl",
         "natu":
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/natu/transfer/natu_erm_lp_r0_t0_0926.pkl",
@@ -93,7 +107,9 @@ def get_score(results, test_envs, metric_key="out_acc", model_selection="train")
                     val_env_keys.append(acc_key)
         else:
             break
-    assert i > 0, results
+    if i == 0:
+        assert "ma" in metric_key, results
+        return 0
     return np.mean([results[key] for key in val_env_keys])
 
 ## DiWA ##

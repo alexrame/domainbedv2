@@ -221,7 +221,11 @@ if __name__ == "__main__":
         if not light:
             save_dict["model_dict"] = algorithm.state_dict()
         else:
-            save_dict["network_dict"] = algorithm.network.state_dict()
+            save_dict["network_dict"] = algorithm.get_network_state_dict()
+            if hasattr(algorithm, "network_ma"):
+                save_dict["network_ma_dict"] = algorithm.network_ma.state_dict()
+            if hasattr(algorithm, "network_ma2"):
+                save_dict["network_ma2_dict"] = algorithm.network_ma2.state_dict()
 
         ## DiWA ##
         if results is not None:
@@ -230,7 +234,7 @@ if __name__ == "__main__":
         torch.save(save_dict, save_path)
 
     best_score = 0
-    # best_score_oracle = 0
+    dict_metric_to_best_score = {"out_acc": 0, "out_acc_ma": 0, "out_acc_ma2": 0}
     last_results_keys = None
     results = {}
 
@@ -288,41 +292,35 @@ if __name__ == "__main__":
                 'args': vars(args)
             })
 
+            if hasattr(algorithm, "lambdas"):
+                results["hparams"]["featurizers_lambdas_step"] = " ".join(
+                    [
+                        "{:.4f}".format(float(_lambda.detach().float().cpu().numpy()))
+                        for _lambda in algorithm.lambdas
+                    ])
+
             epochs_path = os.path.join(args.output_dir, 'results.jsonl')
-
-
             with open(epochs_path, 'a') as f:
                 f.write(json.dumps(results, sort_keys=True, default=misc.np_encoder) + "\n")
 
-            current_score = misc.get_score(results, args.test_envs, model_selection="train")
-            if current_score > best_score:
-                best_score = current_score
-                results["best_score"] = best_score
-                results["best_step"] = step
-
-                print(f"Saving new best train at step: {step} at path: model_best.pkl")
-                save_checkpoint(
-                    'model_best.pkl',
-                    results=json.dumps(results, sort_keys=True, default=misc.np_encoder),
-                )
-
-            # current_score_oracle = misc.get_score(results, args.test_envs, model_selection="oracle")
-            # if current_score_oracle > best_score_oracle:
-            #     best_score_oracle = current_score_oracle
-            #     results["best_score_oracle"] = best_score_oracle
-            #     results["best_step_oracle"] = step
-            #     print(
-            #         f"Saving new best oracle at step: {step} at path: model_bestoracle.pkl"
-            #     )
-            #     save_checkpoint(
-            #         'model_bestoracle.pkl',
-            #         results=json.dumps(results, sort_keys=True),
-            #     )
+            for metric in dict_metric_to_best_score.keys():
+                current_score = misc.get_score(results, args.test_envs, metric_key=metric, model_selection="train")
+                if current_score > dict_metric_to_best_score[metric]:
+                    dict_metric_to_best_score[metric] = current_score
+                    if metric != "out_acc":
+                        path = "model_best" + metric.split("_")[-1] + ".pkl"
+                    else:
+                        path = "model_best.pkl"
+                    print(f"Saving new best train for: {metric} at step: {step} at path: {path}")
+                    save_checkpoint(
+                        path,
+                        results=json.dumps(results, sort_keys=True, default=misc.np_encoder),
+                    )
 
             checkpoint_vals = collections.defaultdict(lambda: [])
 
             if misc.is_not_none(args.save_model_every_checkpoint):
-                if step not in [100, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000, 4200, 4400, 4500, 4600, 4700, 4800, 4900]:
+                if step not in [100, 200, 300, 400, 600, 800, 1000, 1200, 1400, 1600, 2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000, 4200, 4400, 4500, 4600, 4700, 4800, 4900]:
                     pass
                 else:
                     save_checkpoint(
