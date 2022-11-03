@@ -40,6 +40,11 @@ class Job:
                     self.train_args["path_for_init"] = self.train_args["path_for_init"].format(
                         trial_seed=self.train_args["trial_seed"]
                     )
+                if "{test_env}" in self.train_args["path_for_init"]:
+                    assert len(self.train_args["test_envs"]) == 1
+                    self.train_args["path_for_init"] = self.train_args["path_for_init"].format(
+                        test_env=self.train_args["test_envs"][0]
+                    )
                 if "{hash}" in self.train_args["path_for_init"]:
                     self.train_args["path_for_init"] = self.train_args["path_for_init"].format(
                         hash=args_hash
@@ -111,10 +116,14 @@ def make_args_list(
 
                 # select test envs
                 if force_test_envs is not None:
-                    all_test_envs = [force_test_envs]
+                    if single_test_envs:
+                        all_test_envs = [[env] for env in force_test_envs]
+                    else:
+                        all_test_envs = [force_test_envs]
                 elif single_test_envs:
                     all_test_envs = [[i] for i in range(datasets.num_environments(dataset))]
                 else:
+                    raise ValueError()
                     all_test_envs = all_test_env_combinations(datasets.num_environments(dataset))
 
                 # iterate over test envs
@@ -170,7 +179,7 @@ if __name__ == "__main__":
     parser.add_argument('--single_test_envs', action='store_true')
     parser.add_argument('--ask_confirmation', action='store_true')
     ## DiWA ##
-    parser.add_argument('--test_envs', type=int, nargs='+', required=True)
+    parser.add_argument('--test_envs', type=int, nargs='+', default=None)
     parser.add_argument('--path_for_init', type=str, default="")
     parser.add_argument('--what_is_trainable', type=str, default="0")
     parser.add_argument('--save_model_every_checkpoint', type=str, default="0")

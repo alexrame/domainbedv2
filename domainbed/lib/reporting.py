@@ -46,13 +46,25 @@ def get_grouped_records(records):
     one group."""
     result = collections.defaultdict(lambda: [])
     for r in records:
+        r["args"]["hpstep"] = str(r["args"]["hparams_seed"]) + "_" + str(r["step"])
         for test_env in r["args"]["test_envs"]:
-            output_dir_clean = "_".join(r["args"]["output_dir"].split("/")[-1].split("_")[1:])
+            output_dir_clean = "_".join(r["args"]["output_dir"].split("/")[-2].split("_")[1:])
             group = (r["args"]["trial_seed"],
                 r["args"]["dataset"],
                 r["args"]["algorithm"],
                 test_env,
                 output_dir_clean)
             result[group].append(r)
-    return Q([{"trial_seed": t, "dataset": d, "algorithm": a, "test_env": e,
-               "output_dir": o, "records": Q(r)} for (t,d,a,e,o),r in result.items()])
+    # import pdb; pdb.set_trace()
+    return Q(
+        [
+            {
+                "trial_seed": t,
+                "dataset": d,
+                "algorithm": a,
+                "test_env": e,
+                "algorithmid": o,
+                "records": Q(r)
+            } for (t, d, a, e, o), r in result.items()
+        ]
+    )

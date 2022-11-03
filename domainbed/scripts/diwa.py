@@ -8,7 +8,6 @@ import torch.utils.data
 from domainbed import datasets, algorithms_inference
 from domainbed.lib import misc
 from domainbed.lib.fast_data_loader import FastDataLoader, InfiniteDataLoader
-from domainbed.lib import misc
 
 os.environ["PYTHONUNBUFFERED"]="1"
 # MODEL_SELECTION=oracle WHICHMODEL=stepbest CUDA_VISIBLE_DEVICES=0 python3 -m domainbed.scripts.diwa --dataset OfficeHome --test_env 0 --output_dir /data/rame/experiments/domainbed/home0_ma_lp_0824 --trial_seed 0 --data_dir /data/rame/data/domainbed --topk 2 --what mean product feats cla clas featsproduct claproduct netm
@@ -36,6 +35,9 @@ def _get_args():
     parser.add_argument('--weight_selection', type=str, default="uniform")  # or "restricted"
     parser.add_argument('--path_for_init', type=str, default=None)
     parser.add_argument('--topk', type=int, default=0)
+    parser.add_argument('--num_samples', type=int, default=1)
+    parser.add_argument('--num_weightings', type=int, default=1)
+
     parser.add_argument('--what', nargs='+', default=["mean"])
 
     inf_args = parser.parse_args()
@@ -175,7 +177,7 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
         else:
             score = misc.get_score(
                 json.loads(save_dict["results"]), [inf_args.test_env],
-                metric_key=os.environ.get("KEYACC", "out_acc"),
+                metric_key=os.environ.get("KEYACC", "out_acc" if "ma" not in inf_args.what else "out_acc_ma"),
                 model_selection=os.environ.get("MODEL_SELECTION", "train")
             )
         dict_checkpoint_to_score[checkpoint] = score
@@ -407,21 +409,22 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
 
     return dict_results
 
-
-def weighting_checkpoint(checkpoint, weighting, dict_checkpoint_to_score, len_checkpoint):
-    if weighting in [None, "uniform", "None"]:
+def weighting_checkpoint(weighting_strategy, len_checkpoint, i_weighting=None, rank_checkpoint=None):
+    if weighting_strategy in [None, "uniform", "None"]:
         return 1.
-    if weighting in "norm":
+    if weighting_strategy in ["norm"]:
         return 1/len_checkpoint
-    if misc.is_float(weighting):
-        return float(weighting)
-    if "/" in weighting:
-        return eval(weighting)
-    if weighting in ["linear"]:
-        return dict_checkpoint_to_score[checkpoint]
-    if weighting in ["quadratic"]:
-        return dict_checkpoint_to_score[checkpoint]**2
-    raise ValueError(weighting)
+    if weighting_strategy in ["rank"]:
+        assert len_checkpoint % 2 == 0
+        if rank_checkpoint >= len_checkpoint / 2:
+            return 1. - i_weighting
+        else:
+            return i_weighting
+    if misc.is_float(weighting_strategy):
+        return float(weighting_strategy)
+    if "/" in weighting_strategy:
+        return eval(weighting_strategy)
+    raise ValueError(weighting_strategy)
 
 
 def print_results(dict_results):
@@ -455,13 +458,7 @@ def merge_checkpoints(inf_args, list_dict_checkpoint_to_score_i):
         dict_checkpoint_to_score.update(dict_checkpoint_to_score_i)
         notsorted_checkpoints.extend(sorted_checkpoints_i)
 
-    if inf_args.weight_selection != "restricted":
-        return dict_checkpoint_to_score, notsorted_checkpoints
-
-    sorted_checkpoints = sorted(
-        notsorted_checkpoints, key=lambda x: dict_checkpoint_to_score[x], reverse=True
-    )
-    return dict_checkpoint_to_score, sorted_checkpoints
+    return dict_checkpoint_to_score, notsorted_checkpoints
 
 def create_data_splits(inf_args, dataset):
     # load data: test and optionally train_out for restricted weight selection
@@ -553,90 +550,103 @@ def main():
         #         get_dict_checkpoint_to_score(inf_args.output_dir[0], inf_args, train_envs=[i], device=device)
         #     )
 
-    dict_checkpoint_to_score, sorted_checkpoints = merge_checkpoints(
-        inf_args, list_dict_checkpoint_to_score_i
-    )
     dict_data_splits = create_data_splits(inf_args, dataset)
 
-    # compute score after weight averaging
-    if inf_args.weight_selection == "restricted":
-        # Restricted weight selection
-        assert len(inf_args.checkpoints) == 0
+    for _ in range(inf_args.num_samples):
+        dict_checkpoint_to_score, notsorted_checkpoints = merge_checkpoints(
+            inf_args, list_dict_checkpoint_to_score_i
+        )
 
-        ## sort individual members by decreasing accuracy on train_out
-        selected_indexes = []
-        best_result = -float("inf")
-        dict_best_results = {}
-        ## incrementally add them to the WA
-        for i in range(0, len(sorted_checkpoints)):
-            selected_indexes.append(i)
-            selected_checkpoints = [sorted_checkpoints[index] for index in selected_indexes]
-            selected_checkpoints = [
-                {
-                    "name":
-                    checkpoint,
-                    "weight":
-                    weighting_checkpoint(
-                        checkpoint, inf_args.weighting,
-                        dict_checkpoint_to_score,
-                        len(selected_checkpoints)
-                    ),
-                    "type":
-                    "network"
-                } for checkpoint in selected_checkpoints
-            ]
-
-            ood_results = get_wa_results(
-                selected_checkpoints, dataset, inf_args, dict_data_splits, device
+        # compute score after weight averaging
+        if inf_args.weight_selection == "restricted":
+            sorted_checkpoints = sorted(
+                notsorted_checkpoints, key=lambda x: dict_checkpoint_to_score[x], reverse=True
             )
-            ood_results["i"] = i
-
-            ## accept only if WA's accuracy is improved
-            if ood_results["train_acc"] >= best_result:
-                dict_best_results = ood_results
-                ood_results["accept"] = 1
-                best_result = ood_results["train_acc"]
-                print(f"Accepting index {i}")
-            else:
-                ood_results["accept"] = 0
-                selected_indexes.pop(-1)
-                print(f"Skipping index {i}")
-            print_results(ood_results)
-
-            if inf_args.path_for_init:
-                raise ValueError("Do not proceed when saving init")
-
-        ## print final scores
-        dict_best_results["final"] = 1
-        print_results(dict_best_results)
-    else:
-        selected_checkpoints = [
-                {
-                    "name": checkpoint,
-                    "weight": weighting_checkpoint(
-                        checkpoint, inf_args.weighting, dict_checkpoint_to_score,
-                        len(sorted_checkpoints)),
-                    "type": "network"
-                } for checkpoint in sorted_checkpoints
-            ]
-
-        if inf_args.weight_selection == "uniform":
-            if inf_args.checkpoints:
-                print(f"Extending inf_args.checkpoints: {inf_args.checkpoints}")
-                selected_checkpoints.extend(inf_args.checkpoints)
-            dict_results = get_wa_results(
-                selected_checkpoints, dataset, inf_args, dict_data_splits, device
-            )
-            print_results(dict_results)
-        elif inf_args.weight_selection == "train":
-
-            dict_results = tta_wa(
-                selected_checkpoints, dataset, inf_args, dict_data_splits, device
-            )
-            print_results(dict_results)
+            dict_best_results = wa_restricted(dataset, inf_args, dict_data_splits, device, sorted_checkpoints, dict_checkpoint_to_score)
+            print_results(dict_best_results)
         else:
-            raise ValueError(inf_args.weight_selection)
+            half_num_weightings = (inf_args.num_weightings - 1) // 2
+            weightings = [0.5 + 0.5 * (c-half_num_weightings) / max(1, half_num_weightings) for c in range(inf_args.num_weightings)]
+            for i_weighting in weightings:
+                selected_checkpoints = [
+                    {
+                        "name":
+                            checkpoint,
+                        "weight":
+                            weighting_checkpoint(
+                                inf_args.weighting, len(notsorted_checkpoints),
+                                i_weighting, rank_checkpoint
+                            ),
+                        "type":
+                            "network"
+                    } for rank_checkpoint, checkpoint in enumerate(notsorted_checkpoints)
+                ]
+                if inf_args.weight_selection == "uniform":
+                    if inf_args.checkpoints:
+                        print(f"Extending inf_args.checkpoints: {inf_args.checkpoints}")
+                        selected_checkpoints.extend(inf_args.checkpoints)
+                    dict_results = get_wa_results(
+                        selected_checkpoints, dataset, inf_args, dict_data_splits, device
+                    )
 
+                elif inf_args.weight_selection == "train":
+                    dict_results = tta_wa(
+                        selected_checkpoints, dataset, inf_args, dict_data_splits, device
+                    )
+                else:
+                    raise ValueError(inf_args.weight_selection)
+                if inf_args.weighting in ["rank"]:
+                    dict_results["weighting"] = i_weighting
+                    # remove duplicate computation, and only keep means afterward
+                    inf_args.what = ["mean"]
+                print_results(dict_results)
+
+def wa_restricted(dataset, inf_args, dict_data_splits, device, sorted_checkpoints, dict_checkpoint_to_score):
+    # Restricted weight selection
+    assert len(inf_args.checkpoints) == 0
+
+    ## sort individual members by decreasing accuracy on train_out
+    selected_indexes = []
+    best_result = -float("inf")
+    dict_best_results = {}
+    ## incrementally add them to the WA
+    for i in range(0, len(sorted_checkpoints)):
+        selected_indexes.append(i)
+        selected_checkpoints = [sorted_checkpoints[index] for index in selected_indexes]
+        selected_checkpoints = [
+            {
+                "name":
+                    checkpoint,
+                "weight":
+                    weighting_checkpoint(inf_args.weighting, len(selected_checkpoints)),
+                "type":
+                    "network"
+            } for checkpoint in selected_checkpoints
+        ]
+
+        ood_results = get_wa_results(
+            selected_checkpoints, dataset, inf_args, dict_data_splits, device
+        )
+        ood_results["i"] = i
+
+        ## accept only if WA's accuracy is improved
+        if ood_results["train_acc"] >= best_result:
+            dict_best_results = ood_results
+            ood_results["accept"] = 1
+            best_result = ood_results["train_acc"]
+            print(f"Accepting index {i}")
+        else:
+            ood_results["accept"] = 0
+            selected_indexes.pop(-1)
+            print(f"Skipping index {i}")
+        print_results(ood_results)
+
+        if inf_args.path_for_init:
+            raise ValueError("Do not proceed when saving init")
+
+    ## print final scores
+    dict_best_results["final"] = 1
+    return dict_best_results
 
 if __name__ == "__main__":
     main()

@@ -438,7 +438,7 @@ class DiWA(algorithms.ERM):
 
         return dict_stats, aux_dict_stats
 
-    def get_dict_diversity(self, dict_stats, targets, device, compute_div_feats=False):
+    def get_dict_diversity(self, dict_stats, targets, device):
         dict_diversity = collections.defaultdict(list)
         # num_classifiers = int(min(len(self.classifiers), float(os.environ.get("MAXM", math.inf))))
         num_members = int(min(len(self.networks), float(os.environ.get("MAXM", math.inf))))

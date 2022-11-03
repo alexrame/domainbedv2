@@ -93,20 +93,28 @@ class ERM(Algorithm):
         )
         self.network = nn.Sequential(self.featurizer, self.classifier)
 
+    def get_network_state_dict(self):
+        return self.network.state_dict()
+
     def _load_network(self, path_for_init):
         ## DiWA load shared initialization ##
         if misc.is_not_none(path_for_init):
-            if not os.path.exists(path_for_init):
-                raise ValueError(f"Your initialization {path_for_init} has not been saved yet")
+            for i, subpath_for_init in enumerate(path_for_init.split(",")):
+                subpath_for_init = misc.get_aux_path(subpath_for_init)
 
-            print(f"Load weights from {path_for_init}")
-            saved_dict = torch.load(path_for_init)
-            if "model_dict" in saved_dict:
-                self.load_state_dict(saved_dict["model_dict"])
-            elif os.environ.get("LOAD_ONLY_FEATURES"):
-                self.featurizer.load_state_dict(saved_dict)
-            else:
-                self.network.load_state_dict(saved_dict)
+                if not os.path.exists(subpath_for_init):
+                    raise ValueError(f"Your initialization {subpath_for_init} has not been saved yet")
+
+                saved_dict = torch.load(subpath_for_init)
+                if "model_dict" in saved_dict:
+                    print(f"Load model from: {subpath_for_init}")
+                    self.load_state_dict(saved_dict["model_dict"])
+                elif os.environ.get("LOAD_ONLY_FEATURES") or i > 0:
+                    print(f"Load featurizer from: {subpath_for_init} at i: {i}")
+                    self.featurizer.load_state_dict(saved_dict)
+                else:
+                    print(f"Load network from: {subpath_for_init}")
+                    self.network.load_state_dict(saved_dict)
 
             if self._what_is_trainable.endswith("reset"):
                 # or os.environ.get("RESET_CLASSIFIER"):
@@ -182,26 +190,29 @@ class TWA(ERM):
         ERM._create_network(self,)
         self.update_count = 0
         self._use_lambdas = True
-        self.featurizers_aux_paths = self.hparams["featurizers_aux"].split(" ")
+        _featurizers_aux_paths = self.hparams["featurizers_aux"].split(" ")
+        self.featurizers_aux = [
+            self._load_featurizer_aux(aux_path)
+            for aux_path in _featurizers_aux_paths
+            if aux_path != ""
+        ]
 
         if self.hparams["featurizers_lambdas"].split("_")[0] == "rand":
             mutiplier = float(self.hparams["featurizers_lambdas"].split("_")[1])
             self.featurizers_lambdas = [
                 (- mutiplier * random.random())
-                for _ in range(len(self.featurizers_aux_paths) + 1)
+                for _ in range(len(self.featurizers_aux) + 1)
             ]
         else:
-
             self.featurizers_lambdas = [
                 float(l)
                 for l in self.hparams["featurizers_lambdas"].split(" ")
                 ]
-        assert len(self.featurizers_lambdas) == len(self.featurizers_aux_paths) + 1
+        self.hparams["featurizers_lambdas_begin"] = " ".join(
+            ["{:.4f}".format(l) for l in self.featurizers_lambdas]
+        )
+        assert len(self.featurizers_lambdas) == len(self.featurizers_aux) + 1
 
-        self.featurizers_aux = [
-            self._load_featurizer_aux(aux_path)
-            for aux_path in self.featurizers_aux_paths
-        ]
         self.featurizers = [self.featurizer] + self.featurizers_aux
         self.num_featurizers = len(self.featurizers)
         self.lambdas = torch.tensor(
@@ -220,8 +231,15 @@ class TWA(ERM):
             try:
                 featurizer.load_state_dict(save_dict, strict=True)
             except Exception as exc:
-                print(exc)
-                featurizer.load_state_dict(save_dict, strict=False)
+                print(f"Had an issue when loading weights. Try with some renaming.")
+
+                new_save_dict = {
+                    key.replace("0.network", "network"): value
+                    for key, value in save_dict.items()
+                    if key not in ["1.weight", "1.bias"]
+                }
+
+                featurizer.load_state_dict(new_save_dict, strict=True)
 
         return featurizer
 
@@ -261,8 +279,12 @@ class TWA(ERM):
         training_parameters = []
 
         if what_is_trainable in ["all", "allreset", "lambdas"]:
-            print("Learn lambdas")
-            training_parameters.append({"params": [self.lambdas], "lr": self.hparams["lrl"]})
+            if len(self.lambdas) > 1:
+                print("Learn lambdas")
+                training_parameters.append({"params": [self.lambdas], "lr": self.hparams["lrl"]})
+            else:
+                print(f"Skip learning lambdas of len {len(self.lambdas)}")
+                raise ValueError("Unexpected")
 
         if what_is_trainable in ["cla", "clareset", "all", "allreset"]:
             print("Learn classifier")
@@ -340,9 +362,17 @@ class TWA(ERM):
         dict_preds = {"": self.predict_in_train(x)}
         return dict_preds
 
-    def set_featurizer_weights(self, wa_weights):
-        for name, param in self.featurizer.named_parameters():
+    def set_featurizer_weights(self, wa_weights, featurizer=None):
+        if featurizer is None:
+            featurizer = self.featurizer
+        for name, param in featurizer.named_parameters():
             param.data = wa_weights[name]
+
+    def get_network_state_dict(self):
+        featurizer = copy.deepcopy(self.featurizer)
+        self.set_featurizer_weights(self.get_wa_weights(), featurizer=featurizer)
+        network = nn.Sequential(featurizer, self.classifier)
+        return network.state_dict()
 
     def save_path_for_future_init(self, path_for_save):
         if not self._use_lambdas:
@@ -351,9 +381,9 @@ class TWA(ERM):
         assert not os.path.exists(path_for_save), f"The initialization: {path_for_save} has already been saved"
         assert os.environ.get('SAVE_FEATURES_CLASSIFIERS', "0") == "0"
         assert os.environ.get("SAVE_ONLY_FEATURES", "0") == "0"
+        state_dict = self.get_network_state_dict()
         print(f"Save wa network at {path_for_save}")
-        self.set_featurizer_weights(self.get_wa_weights())
-        torch.save(self.network.state_dict(), path_for_save)
+        torch.save(state_dict, path_for_save)
 
 
 class TWAMA(TWA):
@@ -376,14 +406,60 @@ class TWAMA(TWA):
 
     def update(self, *args, **kwargs):
         results = TWA.update(self, *args, **kwargs)
-        self.update_ma()
-        self.update_ma2()
+        MA.update_ma(self)
+        MA.update_ma2(self)
         return results
 
     def predict(self, x):
         dict_preds = {"": self.predict_in_train(x)}
         dict_preds["ma"] = self.network_ma(x)
         dict_preds["ma2"] = self.network_ma2(x)
+        return dict_preds
+
+    def save_path_for_future_init(self, path_for_save):
+        if not self._use_lambdas:
+            return MA.save_path_for_future_init(self, path_for_save)
+
+        assert not os.path.exists(path_for_save), f"The initialization: {path_for_save} has already been saved"
+        assert os.environ.get('SAVE_FEATURES_CLASSIFIERS', "0") == "0"
+        assert os.environ.get("SAVE_ONLY_FEATURES", "0") == "0"
+        state_dict = self.get_network_state_dict()
+        print(f"Save wa network at {path_for_save}")
+        torch.save(state_dict, path_for_save)
+
+
+## DiWA to reproduce moving average baseline ##
+class MA(ERM):
+    """
+    Empirical Risk Minimization (ERM) with Moving Average (MA) prediction model
+    from https://arxiv.org/abs/2110.10832
+    """
+
+    def __init__(self, *args, **kwargs):
+        ERM.__init__(self, *args, **kwargs)
+
+        self.network_ma = copy.deepcopy(self.network)
+        self.network_ma.eval()
+        self.network_ma2 = copy.deepcopy(self.network)
+        self.network_ma2.eval()
+        self.ma_start_iter = 100
+        self.ma2_start_iter = 1000
+        self.ma_count = 0
+        self.ma2_count = 0
+        self.update_count = 0
+
+    def update(self, *args, **kwargs):
+        results = ERM.update(self, *args, **kwargs)
+        self.update_count += 1
+        self.update_ma()
+        return results
+
+    def predict(self, x):
+        # self.network_ma.eval()
+        # I think this is not necessary
+        dict_preds = {"ma": self.network_ma(x), "": self.network(x)}
+        dict_preds["ma2"] = self.network_ma2(x)
+
         return dict_preds
 
     def update_ma(self):
@@ -398,22 +474,25 @@ class TWAMA(TWA):
     def update_ma2(self):
         if self.update_count >= self.ma2_start_iter:
             self.ma2_count += 1
-            for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
-                param_k.data = (param_k.data * self.ma2_count + param_q.data) / (1. + self.ma2_count)
+            for param_q, param_k in zip(self.network.parameters(), self.network_ma2.parameters()):
+                param_k.data = (param_k.data * self.ma2_count +
+                                param_q.data) / (1. + self.ma2_count)
         else:
-            for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
+            for param_q, param_k in zip(self.network.parameters(), self.network_ma2.parameters()):
                 param_k.data = param_q.data
 
+    ## DiWA for saving initialization ##
     def save_path_for_future_init(self, path_for_save):
-        if not self._use_lambdas:
-            return MA.save_path_for_future_init(self, path_for_save)
-
         assert not os.path.exists(path_for_save), f"The initialization: {path_for_save} has already been saved"
         assert os.environ.get('SAVE_FEATURES_CLASSIFIERS', "0") == "0"
-        assert os.environ.get("SAVE_ONLY_FEATURES", "0") == "0"
+
         print(f"Save wa network at {path_for_save}")
-        self.set_featurizer_weights(self.get_wa_weights())
-        torch.save(self.network.state_dict(), path_for_save)
+        state_dict = self.network_ma.state_dict()
+
+        if os.environ.get("SAVE_ONLY_FEATURES", "0") != "0":
+            state_dict = {key.replace("0.network", "network"): value for key, value in state_dict.items() if key not in ["1.weight", "1.bias"]}
+
+        torch.save(state_dict, path_for_save)
 
 
 class ERMG(ERM):
@@ -510,55 +589,6 @@ class SD(ERM):
 
         return {'loss': loss.item(), 'penalty': penalty.item()}
 
-
-## DiWA to reproduce moving average baseline ##
-class MA(ERM):
-    """
-    Empirical Risk Minimization (ERM) with Moving Average (MA) prediction model
-    from https://arxiv.org/abs/2110.10832
-    """
-
-    def __init__(self, *args, **kwargs):
-        ERM.__init__(self, *args, **kwargs)
-
-        self.network_ma = copy.deepcopy(self.network)
-        self.network_ma.eval()
-        self.ma_start_iter = 100
-        self.update_count = 0
-        self.ma_count = 0
-
-    def update(self, *args, **kwargs):
-        result = ERM.update(self, *args, **kwargs)
-        self.update_count += 1
-        self.update_ma()
-        return result
-
-    def predict(self, x):
-        # self.network_ma.eval()
-        # I think this is not necessary
-        return {"ma": self.network_ma(x), "": self.network(x)}
-
-    def update_ma(self):
-        if self.update_count >= self.ma_start_iter:
-            self.ma_count += 1
-            for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
-                param_k.data = (param_k.data * self.ma_count + param_q.data) / (1. + self.ma_count)
-        else:
-            for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
-                param_k.data = param_q.data
-
-    ## DiWA for saving initialization ##
-    def save_path_for_future_init(self, path_for_save):
-        assert not os.path.exists(path_for_save), f"The initialization: {path_for_save} has already been saved"
-        assert os.environ.get('SAVE_FEATURES_CLASSIFIERS', "0") == "0"
-
-        print(f"Save wa network at {path_for_save}")
-        state_dict = self.network_ma.state_dict()
-
-        if os.environ.get("SAVE_ONLY_FEATURES", "0") != "0":
-            state_dict = {key.replace("0.network", "network"): value for key, value in state_dict.items() if key not in ["1.weight", "1.bias"]}
-
-        torch.save(state_dict, path_for_save)
 
 
 class IRM(ERM):

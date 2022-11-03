@@ -115,6 +115,7 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', default="OfficeHome")
     parser.add_argument('--algorithm', default="ERM")
     parser.add_argument('--test_env', type=int, default=0)
+    parser.add_argument('--key_uniq', type=str, default="args.hparams_seed")
     args = parser.parse_args()
 
     records = reporting.load_list_records(args.input_dirs)
@@ -130,25 +131,40 @@ if __name__ == "__main__":
     )
 
     SELECTION_METHODS = [
-        # model_selection.OracleSelectionMethod,
-        model_selection.IIDAccuracySelectionMethod,
+        model_selection.OracleSelectionMethod,
+        # model_selection.IIDAccuracySelectionMethod,
         # model_selection.LeaveOneOutSelectionMethod,
     ]
 
-    for selection_method in SELECTION_METHODS:
-        print(f'Model selection: {selection_method.name}')
+    # for selection_method in SELECTION_METHODS:
+    #     print(f'Model selection: {selection_method.name}')
 
+    #     for group in records:
+    #         print(f"trial_seed: {group['trial_seed']}")
+    #         best_hparams = selection_method.hparams_accs(
+    #             group['records'], key_uniq=args.key_uniq)
+    #         for run_acc, hparam_records in best_hparams:
+    #             print(f"\t{run_acc}")
+    #             # for r in hparam_records:
+    #             #     assert(r['hparams'] == hparam_records[0]['hparams'])
+    #             if args.key_uniq != "args.hpstep":
+    #                 print("\t\thparams:")
+    #                 for k, v in sorted(hparam_records[0]['hparams'].items()):
+    #                     print('\t\t\t{}: {}'.format(k, v))
+    #             print("\t\toutput_dirs:")
+    #             output_dirs = hparam_records.select('args.output_dir').unique()
+    #             for output_dir in output_dirs:
+    #                 print(f"\t\t\t{output_dir}")
+
+    for selection_method in SELECTION_METHODS:
+        # print(f'Model selection: {selection_method.name}')
         for group in records:
-            print(f"trial_seed: {group['trial_seed']}")
-            best_hparams = selection_method.hparams_accs(group['records'])
+            # print(f"trial_seed: {group['trial_seed']}")
+            best_hparams = selection_method.hparams_accs(
+                group['records'], key_uniq=args.key_uniq)
             for run_acc, hparam_records in best_hparams:
-                print(f"\t{run_acc}")
+                output_dir = hparam_records.select('args.output_dir').unique()[0].split("/")[-2]
+                print(f'l["{output_dir}"].append({run_acc})')
+                # print(f"\t{run_acc}")
                 # for r in hparam_records:
                 #     assert(r['hparams'] == hparam_records[0]['hparams'])
-                print("\t\thparams:")
-                for k, v in sorted(hparam_records[0]['hparams'].items()):
-                    print('\t\t\t{}: {}'.format(k, v))
-                print("\t\toutput_dirs:")
-                output_dirs = hparam_records.select('args.output_dir').unique()
-                for output_dir in output_dirs:
-                    print(f"\t\t\t{output_dir}")
