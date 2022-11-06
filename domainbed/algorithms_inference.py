@@ -27,6 +27,7 @@ class ERM(algorithms.ERM):
         self.network_ma = copy.deepcopy(self.network)
         self.network_ma2 = copy.deepcopy(self.network)
 
+
 class DiWA(algorithms.ERM):
 
     def __init__(self, input_shape, num_classes, num_domains, hparams={}):
@@ -62,6 +63,7 @@ class DiWA(algorithms.ERM):
         self.network_ma = None
         self.network_var = None
         self.networks = []
+        self.networks_wa = []
 
         self.featurizers = []
         self.featurizers_weights = []
@@ -124,8 +126,7 @@ class DiWA(algorithms.ERM):
         if weight0 + weight1 == 0:
             return
         for param_0, param_1 in zip(net0.parameters(), net1.parameters()):
-            param_1.data = (param_1.data * weight1 + param_0.data * weight0) / (
-                weight0 + weight1)
+            param_1.data = (param_1.data * weight1 + param_0.data * weight0) / (weight0 + weight1)
 
     def update_mean_network(self, network, weight=1.):
         if self.network is None:
@@ -213,23 +214,6 @@ class DiWA(algorithms.ERM):
         self.classifiers.append(classifier)
         self.classifiers_weights.append(weight)
 
-    def get_wa_weights(self, lambda_interpolation):
-        weights = {}
-        list_gen_named_params = [featurizer.named_parameters() for featurizer in self.featurizers]
-        for name_0, param_0 in self.featurizer.named_parameters():
-            named_params = [next(gen_named_params) for gen_named_params in list_gen_named_params]
-            new_data = param_0.data
-            sum_lambdas = 1.
-            for i in range(len(self.featurizers)):
-                lambda_i = lambda_interpolation[i]
-                name_i, param_i = named_params[i]
-                assert name_0 == name_i
-                lambda_i = lambda_interpolation[i]
-                new_data = new_data + lambda_i * param_i
-                sum_lambdas += lambda_i
-            weights[name_0] = new_data/sum_lambdas
-        return weights
-
     def predict_feat(self, x):
         dict_features = {}
         if len(self.featurizers) != 0:
@@ -255,12 +239,28 @@ class DiWA(algorithms.ERM):
 
         if len(self.networks) != 0:
             logits_ens = []
-            for i, network in enumerate(self.networks):
-                _logits_i = network(x)
+            len_network = len(self.networks)
+            for i in range(len_network):
+                _logits_i = self.networks[i](x)
                 logits_ens.append(_logits_i)
                 if i < float(os.environ.get("MAXM", math.inf)):
                     dict_predictions["net" + str(i)] = _logits_i
             dict_predictions["ens"] = torch.mean(torch.stack(logits_ens, dim=0), 0)
+            if os.environ.get("SUBWA", "0") != "0":
+                dict_predictions["ens01"] = torch.mean(torch.stack([logits_ens[0], logits_ens[1]], dim=0), 0)
+                dict_predictions["ens12"] = torch.mean(torch.stack([logits_ens[1], logits_ens[2]], dim=0), 0)
+                dict_predictions["ens23"] = torch.mean(torch.stack([logits_ens[2], logits_ens[3]], dim=0), 0)
+
+        if os.environ.get("SUBWA", "0") != "0":
+            assert len(self.networks) == 4
+            for subwa in [("0", "1"), ("1", "2"), ("2", "3")]:
+                lambdas_subwa = [
+                    1. if str(key) in subwa else 0. for key in range(len(self.networks))
+                ]
+                wa_weights = misc.get_wa_weights(lambdas_subwa, featurizers=self.networks)
+                dict_predictions[f"wa{''.join(subwa)}"] = torch.nn.utils.stateless.functional_call(
+                    self.network, wa_weights, x
+                )
 
         if self.featurizer is not None:
             logits_enscla = []
@@ -289,9 +289,11 @@ class DiWA(algorithms.ERM):
                 dict_predictions["claprod"] = self.classifier_product(features_product)
 
         if kwargs.get("lambdas") is not None:
-            wa_weights = self.get_wa_weights(lambda_interpolation=kwargs.get("lambdas"))
-            features_wa = torch.nn.utils.stateless.functional_call(
-                    self.featurizer, wa_weights, x)
+            wa_weights = misc.get_wa_weights(
+                lambda_interpolation=[1.] + kwargs.get("lambdas"),
+                featurizers=[self.featurizer] + self.featurizers
+            )
+            features_wa = torch.nn.utils.stateless.functional_call(self.featurizer, wa_weights, x)
             dict_predictions["feats"] = features_wa
             dict_predictions["clawa"] = self.classifier(features_wa)
 
@@ -335,7 +337,9 @@ class DiWA(algorithms.ERM):
                 if "mean_feats" in what:
                     feats = prediction["feats"]
                     mean_feats, cov_feats = self.get_mean_cov_feats(
-                        feats, true_mean=self.domain_to_mean_feats.get(predict_kwargs.get("domain")))
+                        feats,
+                        true_mean=self.domain_to_mean_feats.get(predict_kwargs.get("domain"))
+                    )
                     if "mean_feats" not in aux_dict_stats:
                         aux_dict_stats["mean_feats"] = torch.zeros_like(mean_feats)
                     aux_dict_stats["mean_feats"] = (
@@ -351,17 +355,20 @@ class DiWA(algorithms.ERM):
 
                     if "l2_feats" in what:
                         for domain in self.domain_to_mean_feats.keys():
-                            domain_feats = self.domain_to_mean_feats[domain].reshape(1, -1).tile((bs, 1))
+                            domain_feats = self.domain_to_mean_feats[domain].reshape(1, -1).tile(
+                                (bs, 1)
+                            )
                             l2_feats = (feats - domain_feats).pow(2).mean()
                             distkey = "l2_" + domain
                             if distkey not in aux_dict_stats:
                                 aux_dict_stats[distkey] = 0.
-                            aux_dict_stats[distkey] = (
-                                aux_dict_stats[distkey] * i + l2_feats * bs
-                            ) / (i + bs)
+                            aux_dict_stats[distkey] = (aux_dict_stats[distkey] * i +
+                                                       l2_feats * bs) / (i + bs)
 
                     if "l2var_feats" in what:
-                        var_feats = torch.diag(self.domain_to_cov_feats[predict_kwargs.get("domain")]).reshape(1, -1).tile((bs, 1))
+                        var_feats = torch.diag(
+                            self.domain_to_cov_feats[predict_kwargs.get("domain")]
+                        ).reshape(1, -1).tile((bs, 1))
                         for domain in self.domain_to_mean_feats.keys():
                             domain_feats = self.domain_to_mean_feats[domain].reshape(1, -1).tile(
                                 (bs, 1)
@@ -375,14 +382,15 @@ class DiWA(algorithms.ERM):
 
                     if "cos_feats" in what:
                         for domain in self.domain_to_mean_feats.keys():
-                            domain_feats = self.domain_to_mean_feats[domain].reshape(1, -1).tile((bs, 1))
+                            domain_feats = self.domain_to_mean_feats[domain].reshape(1, -1).tile(
+                                (bs, 1)
+                            )
                             l2_feats = nn.CosineSimilarity(dim=1)(feats, domain_feats).mean()
                             distkey = "cos_" + domain
                             if distkey not in aux_dict_stats:
                                 aux_dict_stats[distkey] = 0.
-                            aux_dict_stats[distkey] = (
-                                aux_dict_stats[distkey] * i + l2_feats * bs
-                            ) / (i + bs)
+                            aux_dict_stats[distkey] = (aux_dict_stats[distkey] * i +
+                                                       l2_feats * bs) / (i + bs)
 
                     # todo cos and l2varfeats
 
@@ -404,20 +412,20 @@ class DiWA(algorithms.ERM):
                             # "probs": [],
                             "preds": [],
                             "correct": [],
-                            # "tcp": []
+                            "tcp": []
                             # "confs": [],
                         }
                     preds = logits.argmax(1)
-                    # probs = torch.softmax(logits, dim=1)
+                    probs = torch.softmax(logits, dim=1)
                     dict_stats[key]["logits"].append(logits.cpu())
                     # dict_stats[key]["probs"].append(probs.cpu())
                     dict_stats[key]["preds"].append(preds.cpu())
                     dict_stats[key]["correct"].append(preds.eq(y).float().cpu())
 
-                    # dict_stats[key]["tcp"].append(
-                    #     probs[range(len(torch.flatten(y))),
-                    #           torch.flatten(y)].flatten().cpu()
-                    # )
+                    dict_stats[key]["tcp"].append(
+                        probs[range(len(torch.flatten(y))),
+                              torch.flatten(y)].flatten().cpu()
+                    )
                     # dict_stats[key]["confs"].append(probs.max(dim=1)[0].cpu())
                 if os.environ.get("DEBUG"):
                     pdb.set_trace()
@@ -433,12 +441,12 @@ class DiWA(algorithms.ERM):
         for key0 in dict_stats:
             for key1 in dict_stats[key0]:
                 dict_stats[key0][key1] = torch.cat(dict_stats[key0][key1])
-            dict_stats[key0]["acc"] = sum(dict_stats[key0]["correct"].numpy()) / len(
-                dict_stats[key0]["correct"].numpy())
+            dict_stats[key0]["acc"] = sum(dict_stats[key0]["correct"].numpy()
+                                         ) / len(dict_stats[key0]["correct"].numpy())
 
         return dict_stats, aux_dict_stats
 
-    def get_dict_diversity(self, dict_stats, targets, device):
+    def get_dict_diversity(self, dict_stats, targets, device, divregex="net"):
         dict_diversity = collections.defaultdict(list)
         # num_classifiers = int(min(len(self.classifiers), float(os.environ.get("MAXM", math.inf))))
         num_members = int(min(len(self.networks), float(os.environ.get("MAXM", math.inf))))
@@ -449,11 +457,37 @@ class DiWA(algorithms.ERM):
         #     for i in range(num_classifiers)
         #     for j in range(i + 1, num_classifiers)
         # ]
-        regexes = [
-            ("netm", f"net{i}_net{j}")
-            for i in range(num_members)
-            for j in range(i + 1, num_members)
-        ]
+        if os.environ.get("SUBWA", "0") != "0":
+            regexes = [
+                ("net01", f"net0_net1"),
+                ("net12", f"net1_net2"),
+                ("net23", f"net2_net3"),
+            ]
+        elif divregex == "net":
+            regexes = [
+                ("netm", f"net{i}_net{j}")
+                for i in range(num_members)
+                for j in range(i + 1, num_members)
+            ]
+        elif divregex == "nethalf":
+            regexes = [
+                ("netm", f"net{i}_net{j}")
+                for i in range(num_members // 2)
+                for j in range(num_members // 2 + 1, num_members)
+            ]
+            regexes += [
+                ("net0", f"net{i}_net{j}")
+                for i in range(num_members // 2)
+                for j in range(i + 1, num_members // 2)
+            ]
+            regexes += [
+                ("net1", f"net{i}_net{j}")
+                for i in range(num_members // 2, num_members)
+                for j in range(i + 1, num_members)
+            ]
+        else:
+            raise ValueError()
+
         for regexname, regex in regexes:
             key0, key1 = regex.split("_")
 
@@ -467,26 +501,32 @@ class DiWA(algorithms.ERM):
             dict_diversity[f"divr_{regexname}"].append(
                 diversity_metrics.ratio_errors(targets, preds0, preds1)
             )
-            dict_diversity[f"divq_{regexname}"].append(diversity_metrics.Q_statistic(
-                targets, preds0, preds1
-            ))
-            if os.environ.get("DIVFEATS", "10") != "0" and "feats" in dict_stats[key0] and "feats" in dict_stats[key1]:
+            dict_diversity[f"divq_{regexname}"].append(
+                diversity_metrics.Q_statistic(targets, preds0, preds1)
+            )
+            dict_diversity[f"divd_{regexname}"].append(
+                diversity_metrics.double_fault(targets, preds0, preds1)
+            )
+
+            if os.environ.get("DIVFEATS", "10") != "0" and "feats" in dict_stats[
+                key0] and "feats" in dict_stats[key1]:
                 feats0 = dict_stats[key0]["feats"]
                 feats1 = dict_stats[key1]["feats"]
-                dict_diversity[f"divf_{regexname}"] = 1. - diversity_metrics.CudaCKA(device).linear_CKA(feats0, feats1).item()
+                dict_diversity[f"divf_{regexname}"
+                              ] = 1. - diversity_metrics.CudaCKA(device).linear_CKA(feats0,
+                                                                                    feats1).item()
 
         dict_results = {key: np.mean(value) for key, value in dict_diversity.items()}
 
-        if num_members > 0 and False:
+        if num_members > 0:
             # cf https://arxiv.org/abs/2110.13786
-            tcps = [dict_stats[f"net{i}"]["tcp"].numpy() for i in range(num_members)]
-            tcps = np.stack(tcps, axis=1)
-
             def div_pac(row):
                 max_row = np.max(row)
                 normalized_row = [r / (math.sqrt(2) * max_row + 1e-7) for r in row]
                 return np.var(normalized_row)
 
+            tcps = [dict_stats[f"net{i}"]["tcp"].numpy() for i in range(num_members)]
+            tcps = np.stack(tcps, axis=1)
             dict_results["divp_netm"] = np.mean(np.apply_along_axis(div_pac, 1, tcps))
 
         return dict_results
@@ -504,6 +544,7 @@ class DiWA(algorithms.ERM):
 
 
 from torch import nn, optim
+
 
 class TrainableDiWA(DiWA):
     # hparams: celoss, entloss, bdiloss, coralloss, lrl, lrc, nsteps (1000)
@@ -530,29 +571,12 @@ class TrainableDiWA(DiWA):
             for param in net.parameters():
                 param.requires_grad = False
 
-    def predict(self, x, **kwargs):
-        dict_predictions = {}
-
-        if kwargs.get("lambdas") is not None:
-            lambda_interpolation = kwargs.get("lambdas")
-        else:
-            lambda_interpolation = torch.exp(self.lambdas)
-
-        wa_weights = self.get_wa_weights(lambda_interpolation=lambda_interpolation)
-        features_wa = torch.nn.utils.stateless.functional_call(
-                self.featurizer, wa_weights, x)
-        # features_task = self.featurizer(x)
-
-        # w for wa, t for task
-        dict_predictions["feats"] = features_wa
-        dict_predictions["11"] = self.classifier(features_wa)
-        return dict_predictions
-
     def _init_lambdas(self):
         self.num_aux = len(self.featurizers)
         self.lambdas = torch.tensor(
-            [float(self.featurizers_weights[i])
-             for i in range(self.num_aux)], requires_grad=True)
+            [0.] + [float(self.featurizers_weights[i]) for i in range(self.num_aux)],
+            requires_grad=True
+        )
 
     def _init_train(self):
         self._init_lambdas()
@@ -592,16 +616,35 @@ class TrainableDiWA(DiWA):
         dict_loss_t["coralv"] = (cova_x0 - cova_x1).pow(2).mean()
         return dict_loss_t
 
+    def predict(self, x, **kwargs):
+        dict_predictions = {}
+
+        if kwargs.get("lambdas") is not None:
+            lambda_interpolation = [1.] + kwargs.get("lambdas")
+        else:
+            lambda_interpolation = torch.exp(self.lambdas)
+
+        wa_weights = misc.get_wa_weights(
+            lambda_interpolation=lambda_interpolation,
+            featurizers=[self.featurizer] + self.featurizers
+        )
+        features_wa = torch.nn.utils.stateless.functional_call(self.featurizer, wa_weights, x)
+
+        # w for wa, t for task
+        dict_predictions["feats"] = features_wa
+        dict_predictions["logits"] = self.classifier(features_wa)
+        return dict_predictions
+
     def train_step(self, x, y, optimizer, xt=None, yt=None):
         optimizer.zero_grad()
-        wa_weights = self.get_wa_weights([torch.exp(lam) for lam in self.lambdas])
-        feats = torch.nn.utils.stateless.functional_call(self.featurizer, wa_weights, x)
-        logits = self.classifier(feats)
-        dict_loss = self.compute_loss(logits, y)
+        dict_predictions = self.predict(x)
+        dict_loss = self.compute_loss(dict_predictions["logits"], y)
 
         if xt is not None:
-            featst = torch.nn.utils.stateless.functional_call(self.featurizer, wa_weights, xt)
-            dict_loss_t = self.compute_loss_t(feats, featst)
+            dict_predictions_t = self.predict(xt)
+            dict_loss_t = self.compute_loss_t(
+                dict_predictions["feats"], dict_predictions_t["feats"]
+            )
             dict_loss.update(dict_loss_t)
 
         objective = (
@@ -652,7 +695,8 @@ class TrainableDiWA(DiWA):
                     else:
                         print(f"Inference at {name}")
                         _results_name, _ = misc.results_ensembling(
-                            self, loader, device, do_div=False, do_ent=True)
+                            self, loader, device, do_div=False, do_ent=True
+                        )
                         for key, value in _results_name.items():
                             new_key = name + "_" + key if name != "test" else key
                             results[new_key] = value

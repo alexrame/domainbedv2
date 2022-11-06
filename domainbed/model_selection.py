@@ -134,9 +134,9 @@ class OracleSelectionMethod(SelectionMethod):
 
         dict_acc.update({
             'train_acc': np.mean([chosen_record[key] for key in train_env_keys]),
-            'val_acc': np.mean([chosen_record[key] for key in val_env_keys]),
+            'trainout_acc': np.mean([chosen_record[key] for key in val_env_keys]),
             'test_acc': np.mean([chosen_record[key] for key in test_env_keys]),
-            'testout_acc': np.mean([chosen_record[key] for key in testout_env_keys]),
+            'val_acc': np.mean([chosen_record[key] for key in testout_env_keys]),
             "step": chosen_record["step"]
         })
         return dict_acc
@@ -184,11 +184,11 @@ class IIDAccuracySelectionMethod(SelectionMethod):
             keyacc = "_" + keyacc
 
         test_envs = record['args']['test_envs']
-
+        dict_acc = {}
         for i in itertools.count():
             if f'env{i}_out_acc' + keyacc not in record:
                 break
-
+            dict_acc[f'env{i}_out_acc'] = record[f'env{i}_out_acc' + keyacc]
             if i not in test_envs:
                 train_env_keys.append(f'env{i}_in_acc' + keyacc)
                 val_env_keys.append(f'env{i}_out_acc' + keyacc)
@@ -196,14 +196,15 @@ class IIDAccuracySelectionMethod(SelectionMethod):
                 testout_env_keys.append(f'env{i}_out_acc' + keyacc)
                 test_env_keys.append(f'env{i}_in_acc' + keyacc)
 
-
-        return {
+        dict_acc.update({
             'train_acc': np.mean([record[key] for key in train_env_keys]),
             'val_acc': np.mean([record[key] for key in val_env_keys]),
             'test_acc': np.mean([record[key] for key in test_env_keys]),
             'testout_acc': np.mean([record[key] for key in testout_env_keys]),
             "step": record["step"]
-        }
+        })
+        return dict_acc
+
 
     @classmethod
     def run_acc(self, run_records):

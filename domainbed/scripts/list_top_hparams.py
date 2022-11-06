@@ -112,17 +112,25 @@ if __name__ == "__main__":
         description="Domain generalization testbed")
     # parser.add_argument("--input_dir", required=True)
     parser.add_argument("--input_dirs", nargs="+", type=str, default=[])
-    parser.add_argument('--dataset', default="OfficeHome")
-    parser.add_argument('--algorithm', default="ERM")
+    parser.add_argument('--dataset', default="def")
+    parser.add_argument('--algorithm', default="def")
     parser.add_argument('--test_env', type=int, default=0)
     parser.add_argument('--key_uniq', type=str, default="args.hparams_seed")
     args = parser.parse_args()
 
     records = reporting.load_list_records(args.input_dirs)
     # records = reporting.load_records(args.input_dir)
-    print("Total records:", len(records))
+    # print("Total records:", len(records))
 
     records = reporting.get_grouped_records(records)
+
+    if args.dataset == "def":
+        args.dataset = records[0]["dataset"]
+        print(f"Choose args.dataset {args.dataset}")
+    if args.algorithm == "def":
+        args.algorithm = records[0]["algorithm"]
+        print(f"Choose args.algorithm {args.algorithm}")
+
     records = records.filter(
         lambda r:
             r['dataset'] == args.dataset and
@@ -164,6 +172,7 @@ if __name__ == "__main__":
                 group['records'], key_uniq=args.key_uniq)
             for run_acc, hparam_records in best_hparams:
                 output_dir = hparam_records.select('args.output_dir').unique()[0].split("/")[-2]
+                run_acc["test_env"] = args.test_env
                 print(f'l["{output_dir}"].append({run_acc})')
                 # print(f"\t{run_acc}")
                 # for r in hparam_records:

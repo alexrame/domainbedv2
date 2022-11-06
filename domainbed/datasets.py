@@ -37,13 +37,13 @@ DATASETS = [
     "ColoredRotatedMNIST",
     "ColoredRotatedMNISTClean",
     # Big images
+    "OfficeHome",
     "VLCS",
     "PACS",
-    "OfficeHome",
-    "TerraIncognita",
-    "iNaturalist",
     "DomainNet",
+    "TerraIncognita",
     "SVIRO",
+    "iNaturalist",
     # WILDS datasets
     "WILDSCamelyon",
     "WILDSFMoW",

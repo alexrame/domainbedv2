@@ -81,7 +81,9 @@ class ERM(Algorithm):
         super(ERM, self).__init__(input_shape, num_classes, num_domains, hparams)
 
         self._what_is_trainable = {
-            "0": "all", "1": "cla", "clafrozen": "feat"}.get(what_is_trainable, what_is_trainable)
+            "0": "all",
+            "1": "cla",
+            "clafrozen": "feat"}.get(what_is_trainable, what_is_trainable)
         self._create_network()
         self._load_network(path_for_init)
         self._init_optimizer()
@@ -100,21 +102,21 @@ class ERM(Algorithm):
         ## DiWA load shared initialization ##
         if misc.is_not_none(path_for_init):
             for i, subpath_for_init in enumerate(path_for_init.split(",")):
-                subpath_for_init = misc.get_aux_path(subpath_for_init)
+                subpath_for_init = misc.get_save_path(subpath_for_init)
 
                 if not os.path.exists(subpath_for_init):
                     raise ValueError(f"Your initialization {subpath_for_init} has not been saved yet")
 
-                saved_dict = torch.load(subpath_for_init)
-                if "model_dict" in saved_dict:
+                state_dict = torch.load(subpath_for_init)
+                if "model_dict" in state_dict:
                     print(f"Load model from: {subpath_for_init}")
-                    self.load_state_dict(saved_dict["model_dict"])
+                    self.load_state_dict(state_dict["model_dict"])
                 elif os.environ.get("LOAD_ONLY_FEATURES") or i > 0:
                     print(f"Load featurizer from: {subpath_for_init} at i: {i}")
-                    self.featurizer.load_state_dict(saved_dict)
+                    misc.load_featurizer(self.featurizer, state_dict)
                 else:
                     print(f"Load network from: {subpath_for_init}")
-                    self.network.load_state_dict(saved_dict)
+                    self.network.load_state_dict(state_dict)
 
             if self._what_is_trainable.endswith("reset"):
                 # or os.environ.get("RESET_CLASSIFIER"):
@@ -224,23 +226,10 @@ class TWA(ERM):
         # else:
         print(f"Load auxiliary featurizer from: {aux_path}")
         featurizer = networks.Featurizer(self.input_shape, self.hparams)
-        aux_path = misc.get_aux_path(aux_path)
-
+        aux_path = misc.get_save_path(aux_path)
         if aux_path != 'imagenet':
-            save_dict = torch.load(aux_path)
-            try:
-                featurizer.load_state_dict(save_dict, strict=True)
-            except Exception as exc:
-                print(f"Had an issue when loading weights. Try with some renaming.")
-
-                new_save_dict = {
-                    key.replace("0.network", "network"): value
-                    for key, value in save_dict.items()
-                    if key not in ["1.weight", "1.bias"]
-                }
-
-                featurizer.load_state_dict(new_save_dict, strict=True)
-
+            state_dict = torch.load(aux_path)
+            misc.load_featurizer(featurizer, state_dict)
         return featurizer
 
     def to(self, device):
@@ -268,7 +257,7 @@ class TWA(ERM):
                 assert self._what_is_trainable in ["warmupnet", "warmupanet"]
                 what_is_trainable = "net"
                 print("No longer using lambdas, back to ERM")
-                self.set_featurizer_weights(self.get_wa_weights())
+                misc.set_weights(self.get_featurizer_wa_weights(), self.featurizer)
                 self._use_lambdas = False
             else:
                 assert self.update_count == 0
@@ -334,26 +323,15 @@ class TWA(ERM):
                 results[f"lambda_{i}"] = float(self.lambdas[i].detach().float().cpu().numpy())
         return results
 
-    def get_wa_weights(self):
-        weights = {}
-        list_gen_named_params = [featurizer.named_parameters() for featurizer in self.featurizers]
-        for name_0, param_0 in self.featurizer.named_parameters():
-            named_params = [next(gen_named_params) for gen_named_params in list_gen_named_params]
-            new_data = torch.zeros_like(param_0.data)
-            sum_lambdas = 0.
-            for i in range(self.num_featurizers):
-                exp_lambda_i = torch.exp(self.lambdas[i])
-                name_i, param_i = named_params[i]
-                assert name_0 == name_i
-                new_data = new_data + exp_lambda_i * param_i
-                sum_lambdas += exp_lambda_i
-            weights[name_0] = new_data/sum_lambdas
-        return weights
+    def get_featurizer_wa_weights(self):
+        return misc.get_wa_weights(
+            torch.exp(self.lambdas),
+            self.featurizers)
 
     def predict_in_train(self, x):
         if not self._use_lambdas:
             return self.network(x)
-        wa_weights = self.get_wa_weights()
+        wa_weights = self.get_featurizer_wa_weights()
         features_wa = torch.nn.utils.stateless.functional_call(
                 self.featurizer, wa_weights, x)
         return self.classifier(features_wa)
@@ -362,15 +340,9 @@ class TWA(ERM):
         dict_preds = {"": self.predict_in_train(x)}
         return dict_preds
 
-    def set_featurizer_weights(self, wa_weights, featurizer=None):
-        if featurizer is None:
-            featurizer = self.featurizer
-        for name, param in featurizer.named_parameters():
-            param.data = wa_weights[name]
-
     def get_network_state_dict(self):
         featurizer = copy.deepcopy(self.featurizer)
-        self.set_featurizer_weights(self.get_wa_weights(), featurizer=featurizer)
+        misc.set_weights(self.get_featurizer_wa_weights(), featurizer=featurizer)
         network = nn.Sequential(featurizer, self.classifier)
         return network.state_dict()
 
@@ -397,23 +369,17 @@ class TWAMA(TWA):
 
         self.network_ma = copy.deepcopy(self.network)
         self.network_ma.eval()
-        self.network_ma2 = copy.deepcopy(self.network)
-        self.network_ma2.eval()
         self.ma_start_iter = 100 + self.hparams["lwarmup"]
-        self.ma2_start_iter = 1000 + self.hparams["lwarmup"]
         self.ma_count = 0
-        self.ma2_count = 0
 
     def update(self, *args, **kwargs):
         results = TWA.update(self, *args, **kwargs)
         MA.update_ma(self)
-        MA.update_ma2(self)
         return results
 
     def predict(self, x):
         dict_preds = {"": self.predict_in_train(x)}
         dict_preds["ma"] = self.network_ma(x)
-        dict_preds["ma2"] = self.network_ma2(x)
         return dict_preds
 
     def save_path_for_future_init(self, path_for_save):
@@ -440,12 +406,8 @@ class MA(ERM):
 
         self.network_ma = copy.deepcopy(self.network)
         self.network_ma.eval()
-        self.network_ma2 = copy.deepcopy(self.network)
-        self.network_ma2.eval()
         self.ma_start_iter = 100
-        self.ma2_start_iter = 1000
         self.ma_count = 0
-        self.ma2_count = 0
         self.update_count = 0
 
     def update(self, *args, **kwargs):
@@ -458,7 +420,6 @@ class MA(ERM):
         # self.network_ma.eval()
         # I think this is not necessary
         dict_preds = {"ma": self.network_ma(x), "": self.network(x)}
-        dict_preds["ma2"] = self.network_ma2(x)
 
         return dict_preds
 
@@ -469,16 +430,6 @@ class MA(ERM):
                 param_k.data = (param_k.data * self.ma_count + param_q.data) / (1. + self.ma_count)
         else:
             for param_q, param_k in zip(self.network.parameters(), self.network_ma.parameters()):
-                param_k.data = param_q.data
-
-    def update_ma2(self):
-        if self.update_count >= self.ma2_start_iter:
-            self.ma2_count += 1
-            for param_q, param_k in zip(self.network.parameters(), self.network_ma2.parameters()):
-                param_k.data = (param_k.data * self.ma2_count +
-                                param_q.data) / (1. + self.ma2_count)
-        else:
-            for param_q, param_k in zip(self.network.parameters(), self.network_ma2.parameters()):
                 param_k.data = param_q.data
 
     ## DiWA for saving initialization ##

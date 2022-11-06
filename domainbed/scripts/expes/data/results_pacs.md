@@ -38,3 +38,25 @@ D_TWAMA       &     93.0 & 88.4 & 99.0 & 87.9 & 92.1
 
 
 python3 -m domainbed.scripts.collect_results --input_dirs /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs0_erm123wn_idn1erm0921r0_lp_0916 /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs1_erm023wn_idn1erm0921r0_lp_0916 /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs2_erm013wn_idn1erm0921r0_lp_0916 /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs3_erm012wn_idn1erm0921r0_lp_0916
+
+
+
+(pytorch) [utr15kn@jean-zay1: domainbedv2]$ python3 -m domainbed.scripts.collect_results --input_dirs /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs0_erm123wn_idn1erm0921r0_lp_0916 /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs1_erm023wn_idn1erm0921r0_lp_0916 /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs2_erm013wn_idn1erm0921r0_lp_0916 /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/pacs3_erm012wn_idn1erm0921r0_lp_0916
+
+
+
+Total records: 4080
+
+-------- Dataset: PACS, model selection method: training-domain validation set
+Algorithm             A                     C                     P                     S                     Avg
+erm123wn_idn1erm0921  92.6 +/- 0.0          X                     X                     X                     X
+erm023wn_idn1erm0921  X                     89.8 +/- 0.0          X                     X                     X
+erm013wn_idn1erm0921  X                     X                     98.7 +/- 0.0          X                     X
+erm012wn_idn1erm0921  X                     X                     X                     86.5 +/- 0.0          X
+
+-------- Dataset: PACS, model selection method: test-domain validation set (oracle)
+Algorithm             A                     C                     P                     S                     Avg
+erm123wn_idn1erm0921  94.2 +/- 0.0          X                     X                     X                     X
+erm023wn_idn1erm0921  X                     89.8 +/- 0.0          X                     X                     X
+erm013wn_idn1erm0921  X                     X                     97.8 +/- 0.0          X                     X
+erm012wn_idn1erm0921  X                     X                     X                     87.4 +/- 0.0          X

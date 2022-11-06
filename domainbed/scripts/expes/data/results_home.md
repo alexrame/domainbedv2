@@ -131,3 +131,8 @@ printres:  {'acc': 0.7053976102183765, 'acc_ens': 0.700041203131438, 'acc_netm':
 printres:  {'acc': 0.627262313860252, 'acc_ens': 0.6316151202749141, 'acc_netm': 0.6028407789232532, 'divq_netm': 0.9625828054436038, 'divr_netm': 0.36733585585127204, 'length': 20, 'testenv': 1, 'topk': 0, 'train_acc': 0.8849754792688364, 'train_acc_ens': 0.8885421310744539, 'train_acc_netm': 0.8703967900133751, 'train_divq_netm': 0.9785257789307269, 'train_divr_netm': 0.5936674894759857}
 printres:  {'acc': 0.813922054516783, 'acc_ens': 0.8141473304798378, 'acc_netm': 0.7969475107006083, 'divq_netm': 0.9753628530160408, 'divr_netm': 0.47929678696469735, 'length': 20, 'testenv': 2, 'topk': 0, 'train_acc': 0.8268281740690893, 'train_acc_ens': 0.8308658591296546, 'train_acc_netm': 0.8151861821444595, 'train_divq_netm': 0.9761675358201184, 'train_divr_netm': 0.501433693950037}
 printres:  {'acc': 0.8372733532246959, 'acc_ens': 0.8379619003901767, 'acc_netm': 0.8222171218728483, 'divq_netm': 0.9824497287674441, 'divr_netm': 0.43698999210634654, 'length': 20, 'testenv': 3, 'topk': 0, 'train_acc': 0.8552338530066815, 'train_acc_ens': 0.8587973273942093, 'train_acc_netm': 0.8457906458797326, 'train_divq_netm': 0.9870616317642879, 'train_divr_netm': 0.4103668820594938}
+
+
+# jz
+
+python3 -m domainbed.scripts.collect_results --input_dirs /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home0_erm123wn_idn1erm0921r0_lp_0916 /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home1_erm023wn_idn1erm0921r0_lp_0916 /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home2_erm013wn_idn1erm0921r0_lp_0916 /gpfsscratch/rech/edr/utr15kn/experiments/domainbed/home3_erm012wn_idn1erm0921r0_lp_0916

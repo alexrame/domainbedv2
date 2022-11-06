@@ -224,8 +224,6 @@ if __name__ == "__main__":
             save_dict["network_dict"] = algorithm.get_network_state_dict()
             if hasattr(algorithm, "network_ma"):
                 save_dict["network_ma_dict"] = algorithm.network_ma.state_dict()
-            if hasattr(algorithm, "network_ma2"):
-                save_dict["network_ma2_dict"] = algorithm.network_ma2.state_dict()
 
         ## DiWA ##
         if results is not None:
@@ -234,7 +232,7 @@ if __name__ == "__main__":
         torch.save(save_dict, save_path)
 
     best_score = 0
-    dict_metric_to_best_score = {"out_acc": 0, "out_acc_ma": 0, "out_acc_ma2": 0}
+    dict_metric_to_best_score = {"out_acc": 0, "out_acc_ma": 0}
     last_results_keys = None
     results = {}
 
@@ -322,7 +320,7 @@ if __name__ == "__main__":
             if misc.is_not_none(args.save_model_every_checkpoint):
                 if step not in [100, 200, 300, 400, 600, 800, 1000, 1200, 1400, 1600, 2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000, 4200, 4400, 4500, 4600, 4700, 4800, 4900]:
                     pass
-                else:
+                elif args.save_model_every_checkpoint == "2":
                     save_checkpoint(
                         f'model_step{step}.pkl', results=json.dumps(results, sort_keys=True, default=misc.np_encoder),
                         light=True)

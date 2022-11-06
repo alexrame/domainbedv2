@@ -37,7 +37,7 @@ def _get_args():
     parser.add_argument('--topk', type=int, default=0)
     parser.add_argument('--num_samples', type=int, default=1)
     parser.add_argument('--num_weightings', type=int, default=1)
-
+    parser.add_argument('--divregex', type=str, default="net")
     parser.add_argument('--what', nargs='+', default=["mean"])
 
     inf_args = parser.parse_args()
@@ -139,6 +139,14 @@ def get_checkpoint_from_folder(output_folder):
 
 
 def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="cuda"):
+    if output_dir.endswith(".pkl"):
+        # print("Handling special case where output dir is direclty a path to a model and not a folder")
+        return {output_dir: 1.}
+
+    if "done" in output_dir and get_checkpoint_from_folder(folder):
+        print("Handling special case where output dir is direclty a path to a folder model")
+        return {get_checkpoint_from_folder(folder): 1.}
+
     _output_folders = [os.path.join(output_dir, path) for path in os.listdir(output_dir)]
     output_folders = [
         output_folder for output_folder in _output_folders if os.path.isdir(output_folder) and
@@ -146,7 +154,7 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
         get_checkpoint_from_folder(output_folder)
     ]
     if len(output_folders) == 0:
-        raise ValueError(f"No done folders found for: {inf_args}")
+        raise ValueError(f"No done folders found for: {inf_args} and os.env: {os.environ}")
 
     dict_checkpoint_to_score = {}
     for folder in output_folders:
@@ -192,8 +200,11 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
         "nonlinear_classifier": False, "resnet18": False, "resnet_dropout": 0}
 
     for i, ckpt in enumerate(good_checkpoints):
-        checkpoint = misc.get_aux_path(ckpt["name"])
+        checkpoint = misc.get_save_path(ckpt["name"])
         checkpoint_weight = ckpt["weight"]
+        if checkpoint_weight == 0.:
+            continue
+
         checkpoint_type  = ckpt["type"]
         if device == "cpu":
             save_dict = torch.load(checkpoint, map_location=torch.device('cpu'))
@@ -330,7 +341,7 @@ def get_wa_results(good_checkpoints, dataset, inf_args, dict_data_splits, device
         name: FastDataLoader(dataset=split, batch_size=64, num_workers=dataset.N_WORKERS, use_random=False)
         for name, split in dict_data_splits.items()
     }
-    print("selected_checkpoints: ", good_checkpoints)
+    # print("selected_checkpoints: ", good_checkpoints)
     load_and_update_networks(
         wa_algorithm, good_checkpoints, dataset, action=inf_args.what, device=device
     )
@@ -345,6 +356,7 @@ def get_wa_results(good_checkpoints, dataset, inf_args, dict_data_splits, device
         wa_algorithm.save_path_for_future_init(inf_args.path_for_init)
     dict_results = eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args)
     dict_results["length"] = len(good_checkpoints)
+    dict_results["lengthf"] = len([c for c in good_checkpoints if c["weight"] != 0])
     return dict_results
 
 
@@ -356,7 +368,8 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
         print(f"Prediction at {name}")
         do_feats = inf_args.hparams.get("do_feats") and name.startswith("env_") and name.endswith("_out")
         _results_name, dict_stats = misc.results_ensembling(
-            wa_algorithm, loader, device, what=["mean_feats", "cov_feats"] if do_feats else [])
+            wa_algorithm, loader, device, what=["mean_feats", "cov_feats"] if do_feats else [],
+            do_div=inf_args.divregex)
         for key, value in _results_name.items():
             new_key = name + "_" + key if name != "test" else key
             dict_results[new_key] = value
@@ -399,8 +412,12 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
             dict_results["step"] = int(dict_results["step"])
         except:
             pass
+
     dict_results["testenv"] = inf_args.test_env
     dict_results["topk"] = inf_args.topk
+    dict_results["dirs"] = ",".join([
+      output_dir.split("/")[-1] for output_dir in inf_args.output_dir
+    ])
     if inf_args.checkpoints:
         dict_results["robust"] = "-".join(
             ["{w:.3f}".format(w=ckpt["weight"]) + "_" + str(ckpt["type"])
@@ -420,6 +437,16 @@ def weighting_checkpoint(weighting_strategy, len_checkpoint, i_weighting=None, r
             return 1. - i_weighting
         else:
             return i_weighting
+    if weighting_strategy in ["filter"]:
+        assert len_checkpoint % 2 == 0
+        if rank_checkpoint >= len_checkpoint // 2:
+            return filter_out(
+                rank_checkpoint - len_checkpoint // 2, 1. - i_weighting, len_checkpoint // 2
+            )
+        else:
+            return filter_out(
+                rank_checkpoint, i_weighting, len_checkpoint // 2
+            )
     if misc.is_float(weighting_strategy):
         return float(weighting_strategy)
     if "/" in weighting_strategy:
@@ -427,9 +454,18 @@ def weighting_checkpoint(weighting_strategy, len_checkpoint, i_weighting=None, r
     raise ValueError(weighting_strategy)
 
 
+def filter_out(rank_checkpoint, i_weighting, half_len_checkpoint):
+    max_len = i_weighting * half_len_checkpoint
+    assert abs(round(max_len) - max_len) < 0.000001
+    max_len = round(max_len)
+    if rank_checkpoint < max_len:
+        return 1.
+    else:
+        return 0.
+
 def print_results(dict_results):
     results_keys = sorted(list(dict_results.keys()))
-    print("printres: ", {_key: dict_results[_key] for _key in results_keys})
+    print("l[key].append(", {_key: dict_results.get(_key, "") for _key in results_keys + ["printres"]}, ")")
     misc.print_row(results_keys, colwidth=20)
     misc.print_row([dict_results[key] for key in results_keys], colwidth=20)
 
@@ -451,10 +487,10 @@ def merge_checkpoints(inf_args, list_dict_checkpoint_to_score_i):
             else:
                 # select k randomly
                 rand_nums = sorted(random.sample(range(len(sorted_checkpoints_i)), -inf_args.topk))
-
-            sorted_checkpoints_i = [sorted_checkpoints_i[i] for i in rand_nums]
+            sorted_checkpoints_i = [sorted_checkpoints_i[i] for i in rand_nums if i < len(sorted_checkpoints_i)]
         for checkpoint in sorted_checkpoints_i:
             print("Found: ", checkpoint, " with score: ", dict_checkpoint_to_score_i[checkpoint])
+        random.shuffle(sorted_checkpoints_i)
         dict_checkpoint_to_score.update(dict_checkpoint_to_score_i)
         notsorted_checkpoints.extend(sorted_checkpoints_i)
 
@@ -595,7 +631,7 @@ def main():
                     )
                 else:
                     raise ValueError(inf_args.weight_selection)
-                if inf_args.weighting in ["rank"]:
+                if inf_args.weighting in ["rank", "filter"]:
                     dict_results["weighting"] = i_weighting
                     # remove duplicate computation, and only keep means afterward
                     inf_args.what = ["mean"]

@@ -33,9 +33,15 @@ def get_x(l, key):
     elif "+" in key:
         return [i + j for i, j in zip(get_x(l, key.split("+")[0]), get_x(l, "+".join(key.split("+")[1:])))]
     else:
-        return [(i[key] if key in i else print(i, key)) for i in l if check_condition(i)]
+        return [(i[key] if key in i else 0) for i in l if check_condition(i)]
 
 
+ENV = None
+TOPK = None
+DROP = None
+STEP = None
+THESS = False
+EHESS = False
 def check_condition(i):
     if (DROP is not None and i.get("drop", DROP) != DROP):
         return False
@@ -52,12 +58,45 @@ def check_condition(i):
     return True
 
 
-ENV = None
-TOPK = None
-DROP = None
-STEP = None
-THESS = False
-EHESS = False
+import numpy as np
+from matplotlib import cm
+import matplotlib.pyplot as plt
+from collections import defaultdict
+plt.rcParams["figure.figsize"] = (5, 5)
+
+def plot_histogram(l, labels, key, limits={}, lambda_filtering=None):
+
+    plt.rcParams["figure.figsize"] = (5, 5)
+    kwargs = dict(alpha=0.5, bins=15, density=True, stacked=True)
+
+    def check_line(line):
+        if lambda_filtering is not None:
+            return lambda_filtering(line)
+        return True
+
+    fig = plt.figure()
+    keyname = "Feature" if "divf" in key else "Prediction"
+
+    data = []
+
+    for c in l:
+        data.append(get_x([line for line in c if check_line(line)], key))
+
+    colors = cm.rainbow(np.linspace(0., 1, len(labels)))
+
+    for i in range(len(labels)):
+        plt.hist(data[i], **kwargs, color=colors[i], label=labels[i])
+
+    plt.gca().set_xlabel(
+        dict_key_to_label.get(key, key), fontsize="x-large")
+    plt.gca().set_ylabel('Frequency (%)', fontsize="x-large")
+    if key in limits:
+        plt.xlim(limits[key][0], limits[key][1])
+    plt.legend(loc="upper right", fontsize="x-large")
+    return fig
+
+
+
 
 # dict_key_to_label = {
 #     "length": "M (number of networks)",
@@ -75,7 +114,7 @@ EHESS = False
 dict_key_to_label = {
     "length": "M",
     "robust": "Robust Coeff",
-    "step":"# steps",
+    "step": "# steps",
     "acc": "OOD test acc.",
     "length": "# training runs",
     "testin_acc": "OOD train acc.",
@@ -87,13 +126,20 @@ dict_key_to_label = {
     "soup-netm":
     '$Acc(\\frac{\\theta_{1} + \\theta_{2}}{2}) - \\frac{Acc(\\theta_{1}) + Acc(\\theta_{2})}{2}$',
     "lr2-lr1": "Difference in learning rates",
-    "df": "Feature diversity",
-    "dr": "Prediction diversity",
+    "acc-acc_netm": "Accuracy gain",
+    "divf_netm": "Feature diversity",
+    "acc-acc_ens":  "Accuracy gain of WA over ENS",
+    "divr_netm": "Prediction r-diversity",
+    "divd_netm": "Prediction d-diversity",
+    "divp_netm": "Prediction p-diversity",
+    "1-divq_netm": "Prediction q-diversity",
+    "divq_netm": "Prediction similarity",
     # "hess": "Flatness",
-    "netm": "$\\frac{1}{M}(\\sum Acc(\\theta_m))$",
+    # "acc_netm": "$\\frac{1}{M}(\\sum Acc(\\theta_m))$",
+    "acc_netm": "Individual acc.",
     "soup": "$Acc(\\theta_{WA})$",
     # "net": "$Acc(\\{\\theta_m\\}_1^M)$"
-    "net": "$Acc(\\theta_{ENS})$",
+    "acc_ens": "$Acc(\\theta_{ENS})$",
 }
 
 
@@ -209,98 +255,82 @@ def fit_and_plot(key1, key2, l, order, label, color, ax=None, linestyle="-"):
         linestyle=linestyle
     )
 
+SIZE="x-large"
 
 def plot_key(
     l,
     key1,
     key2,
+    keycolor=None,
     order=1,
     label="",
     labels=None,
     diag=False,
-    fcard=None,
     markers=None,
     colors=None,
     linestyle=None,
     _dict_key_to_limit="def",
     _dict_key_to_label="def",
-    loc="upper right"
+    loc="upper right",
+    lambda_filtering=None,
+    list_indexes=None,
 ):
+    if list_indexes is not None:
+        l = [l[i] for i in list_indexes]
+        if labels is not None:
+            labels = [labels[i] for i in list_indexes]
+
     fig = plt.figure()
 
-    # l = l[:-1]
-    if _dict_key_to_label == "2":
-        _dict_key_to_label = {
-            "length": "M (#nets)",
-            "soupswa": "Acc. sw",
-            "thess": "Train Flatness",
-            "soup-netm":
-            "$Acc(\\frac{1}{M}(\\sum \\theta_m)) - \\frac{1}{M}(\\sum Acc(\\theta_m))$",
-            "df": "Div. features",
-            "dr": "Div. predictions",
-            "hess": "Flatness",
-            "netm": "$\\frac{1}{2}(Acc(\\theta_1) + Acc(\\theta_2))$",
-            "soup": "$Acc(\\frac{\\theta_1}{2} + \\frac{\\theta_2}{2})$",
-            "net": "$Acc(\\{\\theta_1, \\theta_2)\\})$"
-        }
-    elif _dict_key_to_label == "def":
+    if _dict_key_to_label == "def":
         _dict_key_to_label = dict_key_to_label
+    if _dict_key_to_limit == "def":
+        _dict_key_to_limit = dict_key_to_limit
+    if colors is None:
+        if keycolor is not None:
+            colors = ["Blues", "Reds", "Greens", "Oranges", "Greys", "Purples"]
+            # todo: fill until len(l)
+        else:
+            colors = cm.rainbow(np.linspace(0, 1, len(l)))
+    if labels is None:
+        labels = [label + str(i) for i in range(len(l))]
 
-    plt.xlabel(_dict_key_to_label.get(key1, key1), fontsize="x-large")
-    plt.ylabel(_dict_key_to_label.get(key2, key2), fontsize="x-large")
+    plt.xlabel(_dict_key_to_label.get(key1, key1), fontsize=SIZE)
+    plt.ylabel(_dict_key_to_label.get(key2, key2), fontsize=SIZE)
 
-    seen_marker = set()
-
-    def plot_with_int(l, color, label, marker):
-        t = get_x(l, key1)
+    def plot_with_int(ll, color, label, marker):
+        ll = [lll for lll in ll if lambda_filtering is None or lambda_filtering(lll)]
+        t = get_x(ll, key1)
         if t == []:
             return
-        if marker is None:
+        if keycolor is not None:
             plt.scatter(
-                get_x(l, key1),
-                get_x(l, key2),
-                color=color,
+                get_x(ll, key1),
+                get_x(ll, key2),
+                c=get_x(ll, keycolor),
+                s=500,
+                cmap=color,
                 label=(label if order != 1 else None),
                 marker=marker
             )
         else:
-            for i, (xp, yp) in enumerate(zip(get_x(l, key1), get_x(l, key2))):
-                if fcard is not None:
-                    colori = color[i]
-                else:
-                    colori = color
-                m = marker[i]
-                if m not in seen_marker:
-                    label = labels[len(seen_marker)]
-                    seen_marker.add(m)
-                else:
-                    label = None
-                plt.scatter(xp, yp, color=colori, marker=m, alpha=0.5, label=label)
-        fit_and_plot(key1, key2, l, order, label, color, linestyle=linestyle)
+            plt.scatter(
+                get_x(ll, key1),
+                get_x(ll, key2),
+                color=color,
+                label=(label if order != 1 else None),
+                marker=marker
+            )
+        fit_and_plot(key1, key2, ll, order, label, color, linestyle=linestyle)
 
-    if colors is None:
-        colors = cm.rainbow(np.linspace(0, 1, len(l)))
-    if labels is None:
-        labels = [label + str(i) for i in range(len(l))]
-
-    if isinstance(fcard, str):
-        fcard = [int(f) for f in fcard.split(",")]
-    elif isinstance(fcard, int):
-        fcard = [fcard]
-
-    for card in range(len(l)):
-        if l[card] == []:
-            continue
-        if fcard is not None and card not in fcard:
-            continue
-        #print(card, l[card])
+    for index in range(len(l)):
         if markers is not None:
-            marker = markers[card]
+            marker = markers[index]
             label = None
         else:
             marker = None
-            label = labels[card]
-        plot_with_int(l[card], color=colors[card], label=label, marker=marker)
+            label = labels[index]
+        plot_with_int(l[index], color=colors[index], label=label, marker=marker)
     if diag:
         xpoints = ypoints = plt.xlim()
         plt.plot(
@@ -314,14 +344,12 @@ def plot_key(
             label="y=x"
         )
 
-    if _dict_key_to_limit == "def":
-        _dict_key_to_limit = dict_key_to_limit
     if key1 in _dict_key_to_limit:
         plt.xlim(_dict_key_to_limit[key1])
     if key2 in _dict_key_to_limit:
         plt.ylim(_dict_key_to_limit[key2])
-    if loc is not "No":
-        plt.legend(loc=loc, fontsize="x-large")
+    if loc is not "no":
+        plt.legend(loc=loc, fontsize=SIZE)
     return fig
 
 
@@ -1031,13 +1059,13 @@ def plot_robust(ll_m, key1, orders=None, key_axis1="acc", key_axis2=None, labels
         title1 = dict_key_to_label.get(key_axis1)
         if legends:
             title1= legends[0]
-        legend1.set_title(title1, prop = {'size':15})
+        legend1.set_title(title1, prop = {'size': 15})
         if key_axis2:
             title2 = dict_key_to_label.get(key_axis2)
             if legends:
                 title2 = legends[1]
             legend2 = ax2.legend(fontsize="x-large", loc=loc + " right")
-            legend2.set_title(title2, prop = {'size':15})
+            legend2.set_title(title2, prop = {'size': 15})
     if title:
         fig.suptitle(title, fontsize=20)
     return fig

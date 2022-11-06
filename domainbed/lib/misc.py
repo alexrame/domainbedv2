@@ -7,6 +7,7 @@ Things that don't belong anywhere else
 import hashlib
 import json
 import math
+import re
 import os
 import copy
 import itertools
@@ -23,10 +24,47 @@ import tqdm
 import socket
 from collections import Counter
 
+def set_weights(wa_weights, featurizer):
+    for name, param in featurizer.named_parameters():
+        param.data = wa_weights[name]
 
+def get_wa_weights(lambda_interpolation, featurizers):
+    weights = {}
+    list_gen_named_params = [featurizer.named_parameters() for featurizer in featurizers]
+    for name_0, param_0 in featurizers[0].named_parameters():
+        named_params = [next(gen_named_params) for gen_named_params in list_gen_named_params]
+        new_data = torch.zeros_like(param_0.data)
+        sum_lambdas = 0.
+        for i in range(len(featurizers)):
+            lambda_i = lambda_interpolation[i]
+            name_i, param_i = named_params[i]
+            assert name_0 == name_i
+            lambda_i = lambda_interpolation[i]
+            new_data = new_data + lambda_i * param_i
+            sum_lambdas += lambda_i
+        assert sum_lambdas > 0
+        weights[name_0] = new_data / sum_lambdas
+    return weights
 
-def get_aux_path(aux_path):
+def load_featurizer(featurizer, save_dict):
+    try:
+        featurizer.load_state_dict(save_dict, strict=True)
+    except Exception as exc:
+        print(f"Had an issue when loading weights. Try with some renaming.")
+
+        new_save_dict = {
+            re.sub("^0.network", "network", key): value
+            # key.replace("0.network", "network"): value
+            for key, value in save_dict.items()
+            if key not in ["1.weight", "1.bias"]
+        }
+
+        featurizer.load_state_dict(new_save_dict, strict=True)
+
+def get_save_path(save_path):
     dict_shortcut = {
+        "pacs":
+            "/private/home/alexandrerame/dataplace/data/domainbed/inits/pacs/transfer/pacs_erm0123_lp_0916_r0.pkl",
         "dn0":
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_erm0_lp0_r0_t0_0926.pkl",
         "dn1":
@@ -41,6 +79,10 @@ def get_aux_path(aux_path):
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_erm5_lp5_r0_t0_0926.pkl",
         "dn":
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_erm_lp_r0_t0_0926.pkl",
+        "dnerm":
+            "/private/home/alexandrerame/dataplace/experiments/domainbed/dn/dn_erm_lp_0926/439fe416014ec6fbf6e8bf8e01119e90/model_feats.pkl",
+        "rxrxerm": "/private/home/alexandrerame/dataplace/experiments/domainbed/rxrx/rxrx_erm_lp_0926/97424abf45c621f833fc33f6a6c39925/model_feats.pkl",
+        "cameerm": "/private/home/alexandrerame/dataplace/experiments/domainbed/came/came0_erm_lp_0926/7a8760d390c2056f28cd0372d7685220/model_feats.pkl",
         "dnf":
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_ermf_lp_r0_t0_0926.pkl",
         "iwild":
@@ -52,7 +94,7 @@ def get_aux_path(aux_path):
         "rxrx":
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/rxrx/transfer/rxrx_erm_lp_r0_t0_0926.pkl"
     }
-    return dict_shortcut.get(aux_path, aux_path)
+    return dict_shortcut.get(save_path, save_path)
 
 def get_batchdiversity_loss(logits):
     msoftmax = nn.Softmax(dim=1)(logits).mean(dim=0)
@@ -330,21 +372,36 @@ def results_ensembling(algorithm, loader, device, what=[], do_div=True, do_ent=F
         dict_results[("acc_" + key if key != "" else "acc")] = dict_stats[key]["acc"]
 
     if len(algorithm.networks):
+        num_networks = int(min(len(algorithm.networks), float(os.environ.get("MAXM", math.inf))))
         dict_results["acc_netm"] = np.mean(
             [
                 dict_results[f"acc_net{key}"]
-                for key in range(
-                    int(min(len(algorithm.networks), float(os.environ.get("MAXM", math.inf)))))
+                for key in range(num_networks)
             ]
         )
+        dict_results["acc_netmax"] = max(
+            [
+                dict_results[f"acc_net{key}"]
+                for key in range(num_networks)
+            ]
+        )
+        if os.environ.get("SUBWA", "0") != "0":
+            for subwa in [("0", "1"), ("1", "2"), ("2", "3")]:
+                dict_results[f"acc_net{''.join(subwa)}"] = np.mean(
+                    [
+                        dict_results[f"acc_net{key}"]
+                        for key in range(num_networks)
+                        if str(key) in subwa
+                    ]
+                )
         if os.environ.get("DELETE_NETM", "1") != "0":
-            for key in range(int(min(len(algorithm.networks), float(os.environ.get("MAXM", math.inf))))):
+            for key in range(num_networks):
                 del dict_results[f"acc_net{key}"]
 
     if do_div:
         print("Compute prediction diversity")
         targets = torch.cat(aux_dict_stats["batch_classes"]).cpu().numpy()
-        dict_diversity = algorithm.get_dict_diversity(dict_stats, targets, device)
+        dict_diversity = algorithm.get_dict_diversity(dict_stats, targets, device, divregex=do_div)
         dict_results.update(dict_diversity)
     if do_ent:
         print("Compute prediction entropy")
