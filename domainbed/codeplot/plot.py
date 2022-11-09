@@ -63,8 +63,11 @@ from matplotlib import cm
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
-def plot_histogram(l, labels, key, limits={}, lambda_filtering=None):
-
+def plot_histogram(l, labels, key, limits={}, lambda_filtering=None, list_indexes=None, loc="upper right"):
+    if list_indexes is not None:
+        l = [l[i] for i in list_indexes]
+        if labels is not None:
+            labels = [labels[i] for i in list_indexes]
     plt.rcParams["figure.figsize"] = (5, 5)
     kwargs = dict(alpha=0.5, bins=15, density=True, stacked=True)
 
@@ -74,8 +77,6 @@ def plot_histogram(l, labels, key, limits={}, lambda_filtering=None):
         return True
 
     fig = plt.figure()
-    keyname = "Feature" if "divf" in key else "Prediction"
-
     data = []
 
     for c in l:
@@ -91,7 +92,8 @@ def plot_histogram(l, labels, key, limits={}, lambda_filtering=None):
     plt.gca().set_ylabel('Frequency (%)', fontsize=SIZE)
     if key in limits:
         plt.xlim(limits[key][0], limits[key][1])
-    plt.legend(loc="upper right", fontsize=SIZE)
+    if loc:
+        plt.legend(loc=loc, fontsize=SIZE)
     return fig
 
 
@@ -125,7 +127,9 @@ dict_key_to_label = {
     "soup-netm":
     '$Acc(\\frac{\\theta_{1} + \\theta_{2}}{2}) - \\frac{Acc(\\theta_{1}) + Acc(\\theta_{2})}{2}$',
     "lr2-lr1": "Difference in learning rates",
-    "acc-acc_netm": "Accuracy gain",
+    "acc-acc_netm": "OOD test acc. gain",
+    "train_acc-train_acc_netm": "IID val acc. gain",
+
     "divf_netm": "Feature diversity",
     "dist_lambdas": "Difference between $\lambda$",
     "acc-acc_ens":  "Accuracy gain of WA over ENS",
@@ -133,6 +137,7 @@ dict_key_to_label = {
     "divd_netm": "Prediction d-diversity",
     "divp_netm": "Prediction p-diversity",
     "1-divq_netm": "Prediction q-diversity",
+    "1-train_divq_netm": "IID val prediction q-diversity",
     "divq_netm": "Prediction similarity",
     # "hess": "Flatness",
     # "acc_netm": "$\\frac{1}{M}(\\sum Acc(\\theta_m))$",
@@ -229,13 +234,6 @@ def fit_and_plot_with_value(val1, val2, order, label, color, ax=None, linestyle=
         raise ValueError(order)
 
 
-dict_key_to_limit = {
-    "soup-netm": [0.04, 0.12],
-    "df": [0.10, 0.40],
-    "dr": [0.5, 0.8],
-    "soup": [0.65, 0.705]
-}
-
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
@@ -320,7 +318,7 @@ def plot_key(
     markers=None,
     colors=None,
     linestyle=None,
-    _dict_key_to_limit="def",
+    _dict_key_to_limit={},
     _dict_key_to_label="def",
     loc="upper right",
     lambda_filtering=None,
@@ -336,8 +334,6 @@ def plot_key(
 
     if _dict_key_to_label == "def":
         _dict_key_to_label = dict_key_to_label
-    if _dict_key_to_limit == "def":
-        _dict_key_to_limit = dict_key_to_limit
     if colors is None:
         if keycolor is not None:
             colors = ["Blues", "Reds", "Greens", "Oranges", "Greys", "Purples"][:len(l)]
@@ -1049,7 +1045,7 @@ def get_list_l_full(lib_liter):
 
 
 
-def plot_robust(ll_m, key1, orders=None, key_axis1="acc", key_axis2=None, labels=None, key_annot=None, legends=None, title=None, loc="lower left"):
+def plot_robust(ll_m, key1, orders=None, key_axis1="acc", key_axis2=None, labels=None, key_annot=None, legends=None, _dict_key_to_limit={}, title=None, loc="lower left"):
 
     if labels is None:
         labels = [str(i) for i in range(len(ll_m))]
@@ -1094,8 +1090,8 @@ def plot_robust(ll_m, key1, orders=None, key_axis1="acc", key_axis2=None, labels
             order=orders[0],
             linestyle="-"
         )
-    if key_axis1 in dict_key_to_limit:
-        ax1.set_ylim(dict_key_to_limit[key_axis1])
+    if key_axis1 in _dict_key_to_limit:
+        ax1.set_ylim(_dict_key_to_limit[key_axis1])
 
     if key_axis2:
         ax2 = ax1.twinx()
