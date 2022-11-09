@@ -143,9 +143,9 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
         # print("Handling special case where output dir is direclty a path to a model and not a folder")
         return {output_dir: 1.}
 
-    if "done" in output_dir and get_checkpoint_from_folder(folder):
+    if "done" in os.listdir(output_dir) and get_checkpoint_from_folder(output_dir):
         print("Handling special case where output dir is direclty a path to a folder model")
-        return {get_checkpoint_from_folder(folder): 1.}
+        return {get_checkpoint_from_folder(output_dir): 1.}
 
     _output_folders = [os.path.join(output_dir, path) for path in os.listdir(output_dir)]
     output_folders = [
@@ -419,7 +419,7 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
       output_dir.split("/")[-1] for output_dir in inf_args.output_dir
     ])
     if inf_args.checkpoints:
-        dict_results["robust"] = "-".join(
+        dict_results["ckpts"] = "-".join(
             ["{w:.3f}".format(w=ckpt["weight"]) + "_" + str(ckpt["type"])
              for ckpt in inf_args.checkpoints]
         )
@@ -465,7 +465,7 @@ def filter_out(rank_checkpoint, i_weighting, half_len_checkpoint):
 
 def print_results(dict_results):
     results_keys = sorted(list(dict_results.keys()))
-    print("l[key].append(", {_key: dict_results.get(_key, "") for _key in results_keys + ["printres"]}, ")")
+    print("l[key].append(", {_key: dict_results.get(_key, "##") for _key in results_keys + ["printres"]}, ")")
     misc.print_row(results_keys, colwidth=20)
     misc.print_row([dict_results[key] for key in results_keys], colwidth=20)
 
@@ -614,9 +614,15 @@ def main():
                                 i_weighting, rank_checkpoint
                             ),
                         "type":
-                            "network"
+                            os.environ.get("DEFAULTTYPECKPT", "network")
                     } for rank_checkpoint, checkpoint in enumerate(notsorted_checkpoints)
                 ]
+                if inf_args.weighting in ["rank", "filter"]:
+                    if i_weighting == 0.5:
+                        previous_what = [w for w in inf_args.what]
+                        if os.environ.get("DEFAULTTYPECKPT", "network") == "network":
+                            inf_args.what = ["mean", "addnet"] + inf_args.what
+
                 if inf_args.weight_selection == "uniform":
                     if inf_args.checkpoints:
                         print(f"Extending inf_args.checkpoints: {inf_args.checkpoints}")
@@ -631,10 +637,11 @@ def main():
                     )
                 else:
                     raise ValueError(inf_args.weight_selection)
+
                 if inf_args.weighting in ["rank", "filter"]:
                     dict_results["weighting"] = i_weighting
-                    # remove duplicate computation, and only keep means afterward
-                    inf_args.what = ["mean"]
+                    if i_weighting == 0.5:
+                        inf_args.what = previous_what
                 print_results(dict_results)
 
 def wa_restricted(dataset, inf_args, dict_data_splits, device, sorted_checkpoints, dict_checkpoint_to_score):

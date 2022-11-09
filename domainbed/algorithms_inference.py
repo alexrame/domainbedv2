@@ -223,13 +223,11 @@ class DiWA(algorithms.ERM):
         return dict_features
 
     def predict(self, x, **kwargs):
+        dict_predictions = {}
+        if self.classifier is None or os.environ.get("NETWORKINFERENCE", "0") == "1":
+            dict_predictions[""] = self.network(x)
         if self.network_ma is not None:
-            dict_predictions = {"": self.network_ma(x)}
-        elif self.classifier is None or os.environ.get("NETWORKINFERENCE", "0") == "1":
-            dict_predictions = {"": self.network(x)}
-        else:
-            dict_predictions = {}
-
+            dict_predictions["ma"] = self.network_ma(x)
         if self.network_product is not None:
             dict_predictions["prod"] = self.network_product(x)
             if "" in dict_predictions:

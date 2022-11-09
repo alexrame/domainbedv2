@@ -172,6 +172,7 @@ if __name__ == "__main__":
                 group['records'], key_uniq=args.key_uniq)
             for run_acc, hparam_records in best_hparams:
                 output_dir = hparam_records.select('args.output_dir').unique()[0].split("/")[-2]
+                run_acc["run_id"] = hparam_records.select('args.output_dir').unique()[0].split("/")[-1]
                 run_acc["test_env"] = args.test_env
                 print(f'l["{output_dir}"].append({run_acc})')
                 # print(f"\t{run_acc}")

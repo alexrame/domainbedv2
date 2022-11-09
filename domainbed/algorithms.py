@@ -86,6 +86,7 @@ class ERM(Algorithm):
             "clafrozen": "feat"}.get(what_is_trainable, what_is_trainable)
         self._create_network()
         self._load_network(path_for_init)
+        self.update_count = 0
         self._init_optimizer()
 
     def _create_network(self):
@@ -124,16 +125,25 @@ class ERM(Algorithm):
                 self.classifier.reset_parameters()
 
     def _get_training_parameters(self):
+        if self._what_is_trainable in ["warmupnet"]:
+            if self.update_count == self.hparams["warmup"]:
+                what_is_trainable = "all"
+            else:
+                assert self.update_count == 0
+                what_is_trainable = "cla"
+        else:
+            what_is_trainable = self._what_is_trainable
+
         ## DiWA choose weights to be optimized ##
-        if self._what_is_trainable in ["all", "allreset"]:
+        if what_is_trainable in ["all", "allreset"]:
             print("Learn featurizer and classifier")
             training_parameters = self.network.parameters()
-        elif self._what_is_trainable in ["feat", "featreset"]:
+        elif what_is_trainable in ["feat", "featreset"]:
             # useful for linear probing
             print("Learn only featurizer")
             training_parameters = self.featurizer.parameters()
         else:
-            assert self._what_is_trainable in ["cla", "clareset"]
+            assert what_is_trainable in ["cla", "clareset"]
             # useful when learning with fixed vocabulary
             print("Learn only classifier")
             training_parameters = self.classifier.parameters()
@@ -159,6 +169,10 @@ class ERM(Algorithm):
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+        if self.update_count == self.hparams["warmup"] and self._what_is_trainable in ["warmupnet"]:
+            self._init_optimizer()
+        self.update_count += 1
 
         return {'loss': loss.item()}
 
@@ -381,6 +395,8 @@ class TWAMA(TWA):
         dict_preds = {"": self.predict_in_train(x)}
         dict_preds["ma"] = self.network_ma(x)
         return dict_preds
+    # def update_ma(self):
+    #     # do something about lambdas
 
     def save_path_for_future_init(self, path_for_save):
         if not self._use_lambdas:
@@ -408,11 +424,9 @@ class MA(ERM):
         self.network_ma.eval()
         self.ma_start_iter = 100
         self.ma_count = 0
-        self.update_count = 0
 
     def update(self, *args, **kwargs):
         results = ERM.update(self, *args, **kwargs)
-        self.update_count += 1
         self.update_ma()
         return results
 
@@ -547,7 +561,6 @@ class IRM(ERM):
 
     def __init__(self, *args, **kwargs):
         ERM.__init__(self, *args, **kwargs)
-        self.register_buffer('update_count', torch.tensor([0]))
 
     @staticmethod
     def _irm_penalty(logits, y):
@@ -607,7 +620,6 @@ class VREx(ERM):
 
     def __init__(self, *args, **kwargs):
         ERM.__init__(self, *args, **kwargs)
-        self.register_buffer('update_count', torch.tensor([0]))
 
     def update(self, minibatches, unlabeled=None):
         if self.update_count >= self.hparams["vrex_penalty_anneal_iters"]:
@@ -932,7 +944,7 @@ class Fishr(Algorithm):
         self._create_network()
         self._load_network(path_for_init)
 
-        self.register_buffer("update_count", torch.tensor([0]))
+        self.update_count = 0
         self.bce_extended = extend(nn.CrossEntropyLoss(reduction='none'))
         self.ema_per_domain = [
             misc.MovingAverage(ema=self.hparams["ema"], oneminusema_correction=True)

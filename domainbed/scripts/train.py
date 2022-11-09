@@ -318,9 +318,9 @@ if __name__ == "__main__":
             checkpoint_vals = collections.defaultdict(lambda: [])
 
             if misc.is_not_none(args.save_model_every_checkpoint):
-                if step not in [100, 200, 300, 400, 600, 800, 1000, 1200, 1400, 1600, 2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000, 4200, 4400, 4500, 4600, 4700, 4800, 4900]:
-                    pass
-                elif args.save_model_every_checkpoint == "2":
+                # if step not in [100, 200, 300, 400, 600, 800, 1000, 1200, 1400, 1600, 2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000, 4200, 4400, 4500, 4600, 4700, 4800, 4900]:
+                    # pass
+                if (args.save_model_every_checkpoint == "2" and step in [200, 1000, 2000, 4000, 4500]) or (args.save_model_every_checkpoint == "200" and step in [200]):
                     save_checkpoint(
                         f'model_step{step}.pkl', results=json.dumps(results, sort_keys=True, default=misc.np_encoder),
                         light=True)

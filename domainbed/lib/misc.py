@@ -79,12 +79,15 @@ def get_save_path(save_path):
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_erm5_lp5_r0_t0_0926.pkl",
         "dn":
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_erm_lp_r0_t0_0926.pkl",
+        "dnma": "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/continual/dn_ma_lp_0926.pkl",
         "dnerm":
             "/private/home/alexandrerame/dataplace/experiments/domainbed/dn/dn_erm_lp_0926/439fe416014ec6fbf6e8bf8e01119e90/model_feats.pkl",
         "rxrxerm": "/private/home/alexandrerame/dataplace/experiments/domainbed/rxrx/rxrx_erm_lp_0926/97424abf45c621f833fc33f6a6c39925/model_feats.pkl",
         "cameerm": "/private/home/alexandrerame/dataplace/experiments/domainbed/came/came0_erm_lp_0926/7a8760d390c2056f28cd0372d7685220/model_feats.pkl",
         "dnf":
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/transfer/dn_ermf_lp_r0_t0_0926.pkl",
+        "iwildnof":
+            "/private/home/alexandrerame/dataplace/data/domainbed/inits/iwild/transfer/iwild_erm_lp_r0_t0_0926.pkl",
         "iwild":
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/iwild/transfer/iwild_ermf_lp_r0_t0_0926.pkl",
         "wildma":
