@@ -62,6 +62,7 @@ import numpy as np
 from matplotlib import cm
 import matplotlib.pyplot as plt
 from collections import defaultdict
+from matplotlib.ticker import StrMethodFormatter
 
 def plot_histogram(l, labels, key, limits={}, lambda_filtering=None, list_indexes=None, loc="upper right"):
     if list_indexes is not None:
@@ -117,6 +118,7 @@ dict_key_to_label = {
     "robust": "Robust Coeff",
     "step": "# steps",
     "acc": "OOD test acc.",
+    "acc_cla": "OOD test acc.",
     "length": "# training runs",
     "testin_acc": "OOD train acc.",
     "env_1_out_acc+env_2_out_acc+env_3_out_acc/3": "IID val acc.",
@@ -209,7 +211,9 @@ def fit_and_plot_with_value(val1, val2, order, label, color, ax=None, linestyle=
         preds = m3 * np.array(get_x1_sorted)**3 + m2 * np.array(get_x1_sorted)**2 + m1 * np.array(
             get_x1_sorted
         ) + b
-        ax.plot(get_x1_sorted, preds, color=color, linestyle=linestyle)  # label="int."+label)
+        ax.plot(
+            get_x1_sorted, preds, color=color, linestyle=linestyle, linewidth=3
+        )  # label="int."+label)
     elif order == "log":
         m1, b = np.polyfit(np.log(val1), val2, 1)
         log_get_x1_sorted = np.log(get_x1_sorted)
@@ -321,6 +325,7 @@ def plot_key(
     _dict_key_to_limit={},
     _dict_key_to_label="def",
     loc="upper right",
+    legendtitle=None,
     lambda_filtering=None,
     list_indexes=None,
     title=None
@@ -332,8 +337,11 @@ def plot_key(
 
     fig = plt.figure()
 
+    # plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.3f}')) # 2 decimal places
     if _dict_key_to_label == "def":
         _dict_key_to_label = dict_key_to_label
+    else:
+        _dict_key_to_label = {**dict_key_to_label, **_dict_key_to_label}
     if colors is None:
         if keycolor is not None:
             colors = ["Blues", "Reds", "Greens", "Oranges", "Greys", "Purples"][:len(l)]
@@ -397,7 +405,7 @@ def plot_key(
     if key2 in _dict_key_to_limit:
         plt.ylim(_dict_key_to_limit[key2])
     if loc is not "no":
-        plt.legend(loc=loc, fontsize=SIZE)
+        plt.legend(title=legendtitle, loc=loc, fontsize=SIZE)
         if keycolor is not None:
             ax = plt.gca()
             legend = ax.get_legend()
@@ -636,7 +644,7 @@ def plot_soup_soupswa(key1, keys2, order=1, dict_key_to_limit={}):
     return fig
 
 import os
-def save_fig(fig, name, folder="/Users/alexandrerame/code_repository/tex/transfer_and_patching/images/files/"):
+def save_fig(fig, name, folder="/private/home/alexandrerame/slurmconfig/notebook/filesdevfair/"):
     fig.savefig(
         os.path.join(folder, name),
         format='png',
@@ -1130,3 +1138,109 @@ def plot_robust(ll_m, key1, orders=None, key_axis1="acc", key_axis2=None, labels
 
 # list_home_601_erm = get_list_l_full(home_iter_hps_env0_ermmixupcoral.lerm)
 # list_home_601_ermmixupcoral = get_list_l_full(home_iter_hps_env0_ermmixupcoral.lermmixupcoral)
+
+
+def plot_continual(l, labels, name="home0"):
+    list_indexes = range(0, 3)
+
+    labels = [l.replace("RXRX", "RxRx") for l in labels]
+
+    fig_dr = plot_key(
+        l,
+        key1="weighting",
+        key2="acc",
+        labels=labels,
+        order=3,
+        loc="lower right",
+        _dict_key_to_label={},
+        list_indexes=list_indexes,
+    )
+    save_fig(fig_dr, name + "_lmc_hyp1_ood.png")
+    fig_dr = plot_key(
+        l,
+        key1="weighting",
+        key2="train_acc",
+        labels=labels,
+        order=3,
+        loc="lower right",
+        _dict_key_to_label={},
+        list_indexes=list_indexes,
+    )
+    save_fig(fig_dr, name + "_lmc_hyp1_iid.png")
+
+    list_indexes = range(3, 6)
+
+    fig_dr = plot_key(
+        l,
+        key1="weighting",
+        key2="acc",
+        labels=labels,
+        order=3,
+        loc="lower right",
+        _dict_key_to_label={},
+        list_indexes=list_indexes,
+    )
+    save_fig(fig_dr, name + "_lmc_hyp1h_ood.png")
+
+    fig_dr = plot_key(
+        l,
+        key1="weighting",
+        key2="train_acc",
+        labels=labels,
+        order=3,
+        loc="lower right",
+        _dict_key_to_label={},
+        list_indexes=list_indexes,
+    )
+    save_fig(fig_dr, name + "_lmc_hyp1h_iid.png")
+
+
+    list_indexes = range(6, 9)
+
+    fig_dr = plot_key(
+        l,
+        key1="weighting",
+        key2="acc",
+        labels=labels,
+        order=3,
+        loc="lower right",
+        _dict_key_to_label={},
+        list_indexes=list_indexes,
+    )
+    save_fig(fig_dr, name + "_lmc_hyp2_ood.png")
+    fig_dr = plot_key(
+        l,
+        key1="weighting",
+        key2="train_acc",
+        labels=labels,
+        order=3,
+        loc="lower right",
+        _dict_key_to_label={},
+        list_indexes=list_indexes,
+    )
+    save_fig(fig_dr, name + "_lmc_hyp2_iid.png")
+
+    list_indexes = range(9, 12)
+
+    fig_dr = plot_key(
+        l,
+        key1="weighting",
+        key2="acc",
+        labels=labels,
+        order=3,
+        loc="lower right",
+        _dict_key_to_label={},
+        list_indexes=list_indexes,
+    )
+    save_fig(fig_dr, name + "_lmc_hyp2h_ood.png")
+    fig_dr = plot_key(
+        l,
+        key1="weighting",
+        key2="train_acc",
+        labels=labels,
+        order=3,
+        loc="lower right",
+        _dict_key_to_label={},
+        list_indexes=list_indexes,
+    )
+    save_fig(fig_dr, name + "_lmc_hyp2h_iid.png")
