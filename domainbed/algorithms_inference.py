@@ -224,7 +224,7 @@ class DiWA(algorithms.ERM):
 
     def predict(self, x, **kwargs):
         dict_predictions = {}
-        if self.classifier is None or os.environ.get("NETWORKINFERENCE", "0") == "1":
+        if (self.classifier is None or os.environ.get("NETWORKINFERENCE", "0") == "1") and self.network is not None:
             dict_predictions[""] = self.network(x)
         if self.network_ma is not None:
             dict_predictions["ma"] = self.network_ma(x)

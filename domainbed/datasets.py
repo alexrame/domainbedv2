@@ -338,7 +338,7 @@ class MultipleEnvironmentImageFolder(MultipleDomainDataset):
 
 
 class VLCS(MultipleEnvironmentImageFolder):
-    CHECKPOINT_FREQ = 50  ## DiWA ##
+    CHECKPOINT_FREQ = 100  ## DiWA ##
     ENVIRONMENTS = ["C", "L", "S", "V"]
 
     def __init__(self, root, test_envs, hparams):
@@ -366,7 +366,7 @@ class DomainNet(MultipleEnvironmentImageFolder):
 
 
 class iNaturalist(MultipleDomainDataset):
-    CHECKPOINT_FREQ = 500
+    CHECKPOINT_FREQ = 2000
     N_STEPS = 15000
     ENVIRONMENTS = ["Reptiles", "Plants", "Insects", "Fungi", "Birds", "Amphibians"]
 
@@ -484,6 +484,7 @@ class WILDSEnvironment:
 
 
 class WILDSDataset(MultipleDomainDataset):
+    CHECKPOINT_FREQ = 500
     INPUT_SHAPE = (3, 224, 224)
 
     def __init__(self, dataset, metadata_name, test_envs, augment, hparams, value_range=1):
@@ -582,7 +583,7 @@ class iWILDSCam(WILDSDataset):
         "0to35", "36to71", "72to107", "108to143", "144to179", "180to215", "216to251", "252to287",
         "288to323"
     ]
-    CHECKPOINT_FREQ = 500
+    CHECKPOINT_FREQ = 2000
     N_STEPS = 15000
     def __init__(self, root, test_envs, hparams):
         print("Begin loading IWildCamDataset")

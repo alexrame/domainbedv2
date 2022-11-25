@@ -34,7 +34,7 @@ def _hparams(algorithm, dataset, random_seed):
     _hparam('data_augmentation', True, lambda r: True)
     _hparam('resnet18', False, lambda r: False)
     _hparam('resnet_dropout', 0., lambda r: r.choice([0., 0.1, 0.5]))
-    _hparam('warmup', 200., lambda r: r.choice(200))
+    _hparam('warmup', 200., lambda r: r.choice([200]))
     _hparam('class_balanced', False, lambda r: False)
     # TODO: nonlinear classifiers disabled
     _hparam('nonlinear_classifier', False,
@@ -160,8 +160,6 @@ def _hparams(algorithm, dataset, random_seed):
         # _hparam('lossbdi', 0.0, lambda r: r.choice([0.0]))
         _hparam('featurizers_aux', default_featurizers_aux, lambda r: r.choice([default_featurizers_aux]))
         _hparam('featurizers_lambdas', default_featurizers_lambdas, lambda r: r.choice([default_featurizers_lambdas]))
-        _hparam('lwarmup', 0, lambda r: r.choice([0]))
-        _hparam('nwarmup', 200, lambda r: r.choice([200]))
         _hparam('lrl', 0.1, lambda r: r.choice([0.01, 0.05, 0.1]))
     # Dataset-and-algorithm-specific hparam definitions. Each block of code
     # below corresponds to exactly one hparam. Avoid nested conditionals.

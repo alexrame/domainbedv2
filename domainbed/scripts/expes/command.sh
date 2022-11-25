@@ -1,5 +1,17 @@
 ssh utr15kn@jean-zay.idris.fr
-sed -i -- 's/home_twama_lp/home${test_env}_ma_lp/g' *.slurm
+sed -i -- 's/dataset=TerraIncognita/dataset=VLCS/g' *.slurm
+
+
+
+grep "&&" | cut -f2- -d" "| cut -f1 -d")"
+grep "&&" | jq '(.acc|tostring) +" "+ .topk + " " + (.length|tostring) + " " + (.dirs|tostring)'
+
+grep "&&" | jq '(.acc|tostring) +" "+ (.acc_conf|tostring) +" "+ .topk + " " + (.length|tostring)'
+
+grep "&&" | jq '(.acc|tostring) +" " + (.acc_conf|tostring) +" "+ .topk + " " + (.length|tostring) + " " + (.dirs|tostring)'
+
+grep printres | tail -n 10 | jq '(.acc|tostring) + " " + (.acc|tostring)'
+
 sbatch -A gtw@v100
 
 for FILE in enspacs1_erm023wn_idn1erm0921r0_lp_0916_r0.slurm_1801193.out enspacs1_erm023wn_idn1erm0921r20_lp_0916_r0.slurm_1801255.out enspacs1_erm023wn_idn1erm0921r40_lp_0916_r0.slurm_1801272.out enspacs1_erm023wn_idn1erm0921r0_lp_0916_r20.slurm_1801043.out enspacs1_erm023wn_idn1erm0921r20_lp_0916_r20.slurm_1801275.out enspacs1_erm023wn_idn1erm0921r40_lp_0916_r20.slurm_1801326.out

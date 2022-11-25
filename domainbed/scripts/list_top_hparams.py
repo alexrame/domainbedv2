@@ -113,7 +113,7 @@ if __name__ == "__main__":
     # parser.add_argument("--input_dir", required=True)
     parser.add_argument("--input_dirs", nargs="+", type=str, default=[])
     parser.add_argument('--dataset', default="def")
-    parser.add_argument('--algorithm', default="def")
+    parser.add_argument('--algorithms', default="def")
     parser.add_argument('--test_env', type=int, default=0)
     parser.add_argument('--key_uniq', type=str, default="args.hparams_seed")
     args = parser.parse_args()
@@ -127,20 +127,22 @@ if __name__ == "__main__":
     if args.dataset == "def":
         args.dataset = records[0]["dataset"]
         print(f"Choose args.dataset {args.dataset}")
-    if args.algorithm == "def":
-        args.algorithm = records[0]["algorithm"]
-        print(f"Choose args.algorithm {args.algorithm}")
+    if args.algorithms == "def":
+        args.algorithms = [records[0]["algorithm"]]
+        print(f"Choose args.algorithm {args.algorithms}")
+    else:
+        args.algorithms = args.algorithms.split(",")
 
     records = records.filter(
         lambda r:
             r['dataset'] == args.dataset and
-            r['algorithm'] == args.algorithm and
+            r['algorithm'] in args.algorithms and
             r['test_env'] == args.test_env
     )
 
     SELECTION_METHODS = [
-        model_selection.OracleSelectionMethod,
-        # model_selection.IIDAccuracySelectionMethod,
+        # model_selection.OracleSelectionMethod,
+        model_selection.IIDAccuracySelectionMethod,
         # model_selection.LeaveOneOutSelectionMethod,
     ]
 
@@ -165,16 +167,18 @@ if __name__ == "__main__":
     #                 print(f"\t\t\t{output_dir}")
 
     for selection_method in SELECTION_METHODS:
-        # print(f'Model selection: {selection_method.name}')
+        print(f'Model selection: {selection_method.name} with ', len(records))
         for group in records:
-            # print(f"trial_seed: {group['trial_seed']}")
             best_hparams = selection_method.hparams_accs(
                 group['records'], key_uniq=args.key_uniq)
             for run_acc, hparam_records in best_hparams:
                 output_dir = hparam_records.select('args.output_dir').unique()[0].split("/")[-2]
                 run_acc["run_id"] = hparam_records.select('args.output_dir').unique()[0].split("/")[-1]
                 run_acc["test_env"] = args.test_env
-                print(f'l["{output_dir}"].append({run_acc})')
+                # print(run_acc["run_id"])
+                # print(f'l["{output_dir}"].append({run_acc})')
+                # print(f'{run_acc}')
                 # print(f"\t{run_acc}")
                 # for r in hparam_records:
                 #     assert(r['hparams'] == hparam_records[0]['hparams'])
+            print(f"output_dir: {output_dir} with ", len(best_hparams))

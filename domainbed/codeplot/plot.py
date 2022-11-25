@@ -22,18 +22,19 @@ def average(l):
 
 
 def get_x(l, key):
+    if key in l[0]:
+        return [i[key] for i in l if check_condition(i)]
     if key.isnumeric():
-        return [float(key) for ll in l]
-    elif "%" in key:
+        return [float(key) for i in l]
+    if "%" in key:
         return [(i - j)/j for i, j in zip(get_x(l, key.split("%")[0]), get_x(l, "%".join(key.split("%")[1:])))]
-    elif "/" in key:
+    if "/" in key:
         return [i/j for i, j in zip(get_x(l, key.split("/")[0]), get_x(l, "/".join(key.split("/")[1:])))]
-    elif "-" in key:
+    if "-" in key:
         return [i - j for i, j in zip(get_x(l, key.split("-")[0]), get_x(l, "-".join(key.split("-")[1:])))]
-    elif "+" in key:
+    if "+" in key:
         return [i + j for i, j in zip(get_x(l, key.split("+")[0]), get_x(l, "+".join(key.split("+")[1:])))]
-    else:
-        return [(i[key] if key in i else 0) for i in l if check_condition(i)]
+    return [(i[key] if key in i else -10) for i in l if check_condition(i)]
 
 
 ENV = None
@@ -118,6 +119,7 @@ dict_key_to_label = {
     "robust": "Robust Coeff",
     "step": "# steps",
     "acc": "OOD test acc.",
+    "test_acc": "OOD test acc.",
     "acc_cla": "OOD test acc.",
     "length": "# training runs",
     "testin_acc": "OOD train acc.",
@@ -133,7 +135,7 @@ dict_key_to_label = {
     "train_acc-train_acc_netm": "IID val acc. gain",
 
     "divf_netm": "Feature diversity",
-    "dist_lambdas": "Difference between $\lambda$",
+    "dist_lambdas": "$|\kappa_1 - \kappa_0|$",
     "acc-acc_ens":  "Accuracy gain of WA over ENS",
     "divr_netm": "Prediction r-diversity",
     "divd_netm": "Prediction d-diversity",
@@ -148,6 +150,7 @@ dict_key_to_label = {
     # "net": "$Acc(\\{\\theta_m\\}_1^M)$"
     "acc_ens": "$Acc(\\theta_{ENS})$",
     "weighting": '$\lambda$',
+    "lambda": '$\lambda$',
 }
 
 
@@ -214,6 +217,24 @@ def fit_and_plot_with_value(val1, val2, order, label, color, ax=None, linestyle=
         ax.plot(
             get_x1_sorted, preds, color=color, linestyle=linestyle, linewidth=3
         )  # label="int."+label)
+    elif order in [4, "4"]:
+        m4, m3, m2, m1, b = np.polyfit(val1, val2, 4)
+
+        preds = m4 * np.array(get_x1_sorted)**4 + m3 * np.array(get_x1_sorted)**3 + m2 * np.array(get_x1_sorted)**2 + m1 * np.array(
+            get_x1_sorted
+        ) + b
+        ax.plot(
+            get_x1_sorted, preds, color=color, linestyle=linestyle, linewidth=3
+        )  # label="int."+label)
+    elif order in [5, "5"]:
+        m5, m4, m3, m2, m1, b = np.polyfit(val1, val2, 5)
+
+        preds = m5 * np.array(get_x1_sorted)**5 + m4 * np.array(get_x1_sorted)**4 + m3 * np.array(get_x1_sorted)**3 + m2 * np.array(get_x1_sorted)**2 + m1 * np.array(
+            get_x1_sorted
+        ) + b
+        ax.plot(
+            get_x1_sorted, preds, color=color, linestyle=linestyle, linewidth=3
+        )  # label="int."+label)
     elif order == "log":
         m1, b = np.polyfit(np.log(val1), val2, 1)
         log_get_x1_sorted = np.log(get_x1_sorted)
@@ -261,10 +282,12 @@ def fit_and_plot(key1, key2, l, order, label, color, ax=None, linestyle="-"):
 SIZE="medium"
 
 
-def plot_basic_scatter(list_dict_values, key_x, keys_y, _dict_key_to_label="def", colors=None, keycolor=None, order=0, linestyle=None, loc="upper right", title=None):
+def plot_basic_scatter(list_dict_values, key_x, keys_y, _dict_key_to_label="def", colors=None, keycolor=None, order=0, linestyle=None, keys_error=None, loc="upper right", title=None):
     fig = plt.figure()
     if _dict_key_to_label == "def":
         _dict_key_to_label = dict_key_to_label
+    else:
+        _dict_key_to_label = {**dict_key_to_label, **_dict_key_to_label}
     x = get_x(list_dict_values, key_x)
     if colors is None:
         if keycolor is not None:
@@ -276,28 +299,35 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, _dict_key_to_label="def"
         key_y = keys_y[i]
         color = colors[i]
         label = _dict_key_to_label.get(key_y, key_y)
+        label=(label if order != 1 else None)
         y = get_x(list_dict_values, key_y)
-        if keycolor is not None:
+        if keys_error is not None:
+            plt.errorbar(
+                x,
+                y,
+                get_x(list_dict_values, keys_error[i]),
+                color=color,
+                label=label)
+        elif keycolor is not None:
             plt.scatter(
                 x,
                 y,
                 c=get_x(list_dict_values, keycolor),
                 s=200,
                 cmap=color,
-                label=(label if order != 1 else None),
-            )
+                label=label)
             color = cm.get_cmap(color)(0.5)
         else:
             plt.scatter(
                 x,
                 y,
                 color=color,
-                label=(label if order != 1 else None),
+                label=label
             )
         fit_and_plot(key_x, key_y, list_dict_values, order, label, color=color, linestyle=linestyle)
 
     plt.xlabel(_dict_key_to_label.get(key_x, key_x), fontsize=SIZE)
-    if loc is not "no":
+    if loc != "no":
         plt.legend(loc=loc, fontsize=SIZE)
         if keycolor is not None:
             ax = plt.gca()
@@ -309,11 +339,59 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, _dict_key_to_label="def"
         plt.title(title, fontsize=SIZE)
     return fig
 
+import collections
+def lambda_split(l, keysplit, lambda_filtering=None):
+    dict_l = collections.defaultdict(list)
+
+    for line, key in zip(l, get_x(l, keysplit)):
+        line[keysplit] = key
+        if lambda_filtering is None or lambda_filtering(line):
+            dict_l[key].append(line)
+
+    for key_uniq, list_dict_values in list(dict_l.items()):
+        new_ls = [{} for _ in range(1)]
+        for key in list_dict_values[0].keys():
+            if isinstance(list_dict_values[0][key], str) or key in ["count", "testenv"]:
+                # if "divd" in key or "divp" in key or "divf" in key or 'max' in key or "ens1h" in key or "length" in key or key in ["dirs", "count"]:
+                for new_l in new_ls:
+                    new_l[key] = list_dict_values[0][key]
+            else:
+                list_values = [line[key] for line in list_dict_values]
+                # new_l[key + "_std"] = np.std(list_values)
+                for new_l in new_ls:
+                    new_l[key] = np.mean(list_values)# + np.random.normal(0, abs(np.random.normal(0, 0.003)))
+        # dict_l[key_uniq].extend(new_ls)
+        dict_l[key_uniq] = [new_l]
+    new_l = [
+        dict_l[key] for key in sorted(dict_l.keys(), reverse=True)
+    ]
+    return new_l
+
+def lambda_clustering(l, keyclustering):
+    dict_l = collections.defaultdict(list)
+
+    for line, key in zip(l, get_x(l, keyclustering)):
+        line[keyclustering] = key
+        dict_l[key].append(line)
+
+    new_l = []
+    for list_dict_values in list(dict_l.values()):
+        new_l.append({})
+        for key in list_dict_values[0].keys():
+            if isinstance(list_dict_values[0][key], str) or key in ["count"]:
+                # if "divd" in key or "divp" in key or "divf" in key or 'max' in key or "ens1h" in key or "length" in key or key in ["dirs", "count"]:
+                continue
+            list_values = [line[key] for line in list_dict_values]
+            new_l[-1][key + "_std"] = np.std(list_values)
+            new_l[-1][key] = np.mean(list_values)
+    return new_l
+
 
 def plot_key(
     l,
     key1,
     key2,
+    keysplit=None,
     keycolor=None,
     order=1,
     label="",
@@ -327,8 +405,11 @@ def plot_key(
     loc="upper right",
     legendtitle=None,
     lambda_filtering=None,
+    keyclustering=None,
     list_indexes=None,
-    title=None
+    keyerror=None,
+    title=None,
+    kwargs={}
 ):
     if list_indexes is not None:
         l = [l[i] for i in list_indexes]
@@ -337,18 +418,32 @@ def plot_key(
 
     fig = plt.figure()
 
-    # plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.3f}')) # 2 decimal places
+    plt.gca().xaxis.set_major_formatter(StrMethodFormatter('{x:,.3f}')) # 2 decimal places
+    plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.3f}')) # 2 decimal places
     if _dict_key_to_label == "def":
         _dict_key_to_label = dict_key_to_label
     else:
         _dict_key_to_label = {**dict_key_to_label, **_dict_key_to_label}
+
+    if keysplit is not None:
+        assert len(l) == 1
+        l = lambda_split(l[0], keysplit, lambda_filtering=lambda_filtering)
+        if labels == "fromsplit":
+            labels = [label.format(ll[0][keysplit]) for ll in l]
+
     if colors is None:
         if keycolor is not None:
             colors = ["Blues", "Reds", "Greens", "Oranges", "Greys", "Purples"][:len(l)]
         else:
             colors = cm.rainbow(np.linspace(0, 1, len(l)))
+
     if labels is None:
-        labels = [label + str(i) for i in range(len(l))]
+        if label.startswith("."):
+            labels = [
+                ".".join([str(ll[0][key]) for key in label.split(".")[1:]])
+                for ll in l]
+        else:
+            labels = [label + str(i) for i in range(len(l))]
 
     plt.xlabel(_dict_key_to_label.get(key1, key1), fontsize=SIZE)
     plt.ylabel(_dict_key_to_label.get(key2, key2), fontsize=SIZE)
@@ -358,15 +453,28 @@ def plot_key(
         t = get_x(ll, key1)
         if t == []:
             return
-        if keycolor is not None:
+        if keyclustering is not None:
+            ll = lambda_clustering(ll, keyclustering)
+
+        newlabel = (label if order != 1 and label !="no" else None)
+        if keyerror is not None:
+            plt.errorbar(
+                get_x(ll, key1),
+                get_x(ll, key2),
+                get_x(ll, keyerror),
+                color=color,
+                label=newlabel,
+                marker=marker,
+                **kwargs)
+        elif keycolor is not None:
             plt.scatter(
                 get_x(ll, key1),
                 get_x(ll, key2),
-                c=get_x(ll, keycolor),
-                s=200,
+                c=[x for x in get_x(ll, keycolor)],
                 cmap=color,
-                label=(label if order != 1 else None),
-                marker=marker
+                label=newlabel,
+                marker=marker,
+                **kwargs
             )
             color = cm.get_cmap(color)(0.5)
         else:
@@ -374,10 +482,11 @@ def plot_key(
                 get_x(ll, key1),
                 get_x(ll, key2),
                 color=color,
-                label=(label if order != 1 else None),
-                marker=marker
+                label=newlabel,
+                marker=marker,
+                **kwargs
             )
-        fit_and_plot(key1, key2, ll, order, label, color, linestyle=linestyle)
+        fit_and_plot(key1, key2, ll, order, label if order == 1 else None, color, linestyle=linestyle)
 
     for index in range(len(l)):
         if markers is not None:
@@ -404,7 +513,7 @@ def plot_key(
         plt.xlim(_dict_key_to_limit[key1])
     if key2 in _dict_key_to_limit:
         plt.ylim(_dict_key_to_limit[key2])
-    if loc is not "no":
+    if loc != "no":
         plt.legend(title=legendtitle, loc=loc, fontsize=SIZE)
         if keycolor is not None:
             ax = plt.gca()
@@ -1140,107 +1249,128 @@ def plot_robust(ll_m, key1, orders=None, key_axis1="acc", key_axis2=None, labels
 # list_home_601_ermmixupcoral = get_list_l_full(home_iter_hps_env0_ermmixupcoral.lermmixupcoral)
 
 
-def plot_continual(l, labels, name="home0"):
-    list_indexes = range(0, 3)
+def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=False, do_h=True, index_range=3, order=3):
 
-    labels = [l.replace("RXRX", "RxRx") for l in labels]
+    list_indexes = range(0, 0 + index_range)
 
-    fig_dr = plot_key(
-        l,
-        key1="weighting",
-        key2="acc",
-        labels=labels,
-        order=3,
-        loc="lower right",
-        _dict_key_to_label={},
-        list_indexes=list_indexes,
-    )
-    save_fig(fig_dr, name + "_lmc_hyp1_ood.png")
-    fig_dr = plot_key(
-        l,
-        key1="weighting",
-        key2="train_acc",
-        labels=labels,
-        order=3,
-        loc="lower right",
-        _dict_key_to_label={},
-        list_indexes=list_indexes,
-    )
-    save_fig(fig_dr, name + "_lmc_hyp1_iid.png")
-
-    list_indexes = range(3, 6)
+    if labels is not None:
+        labels = [l.replace("RXRX", "RxRx") for l in labels]
 
     fig_dr = plot_key(
         l,
         key1="weighting",
         key2="acc",
         labels=labels,
-        order=3,
+        label=label,
+        order=order,
         loc="lower right",
         _dict_key_to_label={},
         list_indexes=list_indexes,
     )
-    save_fig(fig_dr, name + "_lmc_hyp1h_ood.png")
+    if do_save:
+        save_fig(fig_dr, "lmc/" + name + "_lmc_hyp1_ood.png")
 
-    fig_dr = plot_key(
-        l,
-        key1="weighting",
-        key2="train_acc",
-        labels=labels,
-        order=3,
-        loc="lower right",
-        _dict_key_to_label={},
-        list_indexes=list_indexes,
-    )
-    save_fig(fig_dr, name + "_lmc_hyp1h_iid.png")
+    if do_iid:
+        fig_dr = plot_key(
+            l,
+            key1="weighting",
+            key2="train_acc",
+            labels=labels,
+            label=label,
+            order=order,
+            loc="lower right",
+            _dict_key_to_label={},
+            list_indexes=list_indexes,
+        )
+        if do_save:
+            save_fig(fig_dr, "lmc/" + name + "_lmc_hyp1_iid.png")
+    if do_h:
+        list_indexes = range(3, 3 + index_range)
 
+        fig_dr = plot_key(
+            l,
+            key1="weighting",
+            key2="acc",
+            labels=labels,
+            label=label,
+            order=order,
+            loc="lower right",
+            _dict_key_to_label={},
+            list_indexes=list_indexes,
+        )
+        if do_save:
+            save_fig(fig_dr, "lmc/" + name + "_lmc_hyp1h_ood.png")
+        if do_iid:
+            fig_dr = plot_key(
+                l,
+                key1="weighting",
+                key2="train_acc",
+                labels=labels,
+                label=label,
+                order=order,
+                loc="lower right",
+                _dict_key_to_label={},
+                list_indexes=list_indexes,
+            )
+            if do_save:
+                save_fig(fig_dr, "lmc/" + name + "_lmc_hyp1h_iid.png")
 
-    list_indexes = range(6, 9)
+    list_indexes = range(6, 6 + index_range)
 
     fig_dr = plot_key(
         l,
         key1="weighting",
         key2="acc",
         labels=labels,
-        order=3,
+        label=label,
+        order=order,
         loc="lower right",
         _dict_key_to_label={},
         list_indexes=list_indexes,
     )
-    save_fig(fig_dr, name + "_lmc_hyp2_ood.png")
-    fig_dr = plot_key(
-        l,
-        key1="weighting",
-        key2="train_acc",
-        labels=labels,
-        order=3,
-        loc="lower right",
-        _dict_key_to_label={},
-        list_indexes=list_indexes,
-    )
-    save_fig(fig_dr, name + "_lmc_hyp2_iid.png")
+    if do_save:
+        save_fig(fig_dr, "lmc/" + name + "_lmc_hyp2_ood.png")
+    if do_iid:
+        fig_dr = plot_key(
+            l,
+            key1="weighting",
+            key2="train_acc",
+            labels=labels,
+            label=label,
+            order=order,
+            loc="lower right",
+            _dict_key_to_label={},
+            list_indexes=list_indexes,
+        )
+        if do_save:
+            save_fig(fig_dr, "lmc/" + name + "_lmc_hyp2_iid.png")
 
-    list_indexes = range(9, 12)
-
-    fig_dr = plot_key(
-        l,
-        key1="weighting",
-        key2="acc",
-        labels=labels,
-        order=3,
-        loc="lower right",
-        _dict_key_to_label={},
-        list_indexes=list_indexes,
-    )
-    save_fig(fig_dr, name + "_lmc_hyp2h_ood.png")
-    fig_dr = plot_key(
-        l,
-        key1="weighting",
-        key2="train_acc",
-        labels=labels,
-        order=3,
-        loc="lower right",
-        _dict_key_to_label={},
-        list_indexes=list_indexes,
-    )
-    save_fig(fig_dr, name + "_lmc_hyp2h_iid.png")
+    if do_h:
+        list_indexes = range(9, 9 + index_range)
+        fig_dr = plot_key(
+            l,
+            key1="weighting",
+            key2="acc",
+            labels=labels,
+            label=label,
+            order=order,
+            loc="lower right",
+            _dict_key_to_label={},
+            list_indexes=list_indexes,
+        )
+        if do_save:
+            save_fig(fig_dr, "lmc/" + name + "_lmc_hyp2h_ood.png")
+        if do_iid:
+            fig_dr = plot_key(
+                l,
+                key1="weighting",
+                key2="train_acc",
+                labels=labels,
+                label=label,
+                order=order,
+                loc="lower right",
+                _dict_key_to_label={},
+                list_indexes=list_indexes,
+            )
+            if do_save:
+                save_fig(fig_dr, "lmc/" + name + "_lmc_hyp2h_iid.png")

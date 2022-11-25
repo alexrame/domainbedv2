@@ -10,6 +10,7 @@ import math
 import re
 import os
 import copy
+import random
 import itertools
 import sys
 from shutil import copyfile
@@ -51,7 +52,6 @@ def load_featurizer(featurizer, save_dict):
         featurizer.load_state_dict(save_dict, strict=True)
     except Exception as exc:
         print(f"Had an issue when loading weights. Try with some renaming.")
-
         new_save_dict = {
             re.sub("^0.network", "network", key): value
             # key.replace("0.network", "network"): value
@@ -61,8 +61,46 @@ def load_featurizer(featurizer, save_dict):
 
         featurizer.load_state_dict(new_save_dict, strict=True)
 
-def get_save_path(save_path):
-    dict_shortcut = {
+
+def process_save_path(_subpath_for_init, hparams):
+    subpath_for_init = _subpath_for_init.split("!")[0].split("?")[0].split("*")[0]
+    # ugly fix
+    if "!u" in _subpath_for_init:
+        # u for uniq
+        hparams_seed = hparams.get("hparams_seed", None)
+    else:
+        hparams_seed = None
+    if "?b" in _subpath_for_init:
+        # b for best
+        model_path = "model_bestma.pkl"
+    else:
+        model_path = "model_best.pkl"
+    subpath_for_init = get_save_path(
+        subpath_for_init,
+        hparams_seed=hparams_seed,
+        model_path=model_path)
+    return subpath_for_init
+
+
+def clean_state_dict(state_dict, _subpath_for_init):
+    if "model_dict" in state_dict:
+        state_dict = state_dict["model_dict"]
+    keynetwork = "network"
+    if "*" in _subpath_for_init:
+        keynetwork += "_" + _subpath_for_init.split("*")[1]
+
+    keys = [k for k in state_dict.keys() if k.startswith(keynetwork + ".0")]
+    state_dict = {
+        re.sub("^" + keynetwork + ".0.network", "network", k): state_dict[k]
+        for k in keys
+    }
+    return state_dict
+
+def get_save_path(save_path, hparams_seed=None, model_path="model_best.pkl"):
+    dict_pkls = {
+        "terra": "/private/home/alexandrerame/dataplace/data/domainbed/inits/terra/transfer/terra_erm_lp_t0_0926.pkl",
+        "vlcs": "/private/home/alexandrerame/dataplace/data/domainbed/inits/vlcs/transfer/vlcs_erm_lp_t0_0926.pkl",
+        "home": "/private/home/alexandrerame/dataplace/data/domainbed/inits/home/transfer/home_erm_lp_r0_t0_0926.pkl",
         "pacs":
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/pacs/transfer/pacs_erm0123_lp_0916_r0.pkl",
         "dn0":
@@ -82,6 +120,7 @@ def get_save_path(save_path):
         "dnma": "/private/home/alexandrerame/dataplace/data/domainbed/inits/dn/continual/dn_ma_lp_0926.pkl",
         "dnerm":
             "/private/home/alexandrerame/dataplace/experiments/domainbed/dn/dn_erm_lp_0926/439fe416014ec6fbf6e8bf8e01119e90/model_feats.pkl",
+        "vlcserm": "/private/home/alexandrerame/dataplace/experiments/domainbed/vlcs/vlcs_ma0123_lp_0926/a2bf23072bc96618e252d022f80dee7b/model.pkl",
         "rxrxerm": "/private/home/alexandrerame/dataplace/experiments/domainbed/rxrx/rxrx_erm_lp_0926/97424abf45c621f833fc33f6a6c39925/model_feats.pkl",
         "cameerm": "/private/home/alexandrerame/dataplace/experiments/domainbed/came/came0_erm_lp_0926/7a8760d390c2056f28cd0372d7685220/model_feats.pkl",
         "dnf":
@@ -97,7 +136,42 @@ def get_save_path(save_path):
         "rxrx":
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/rxrx/transfer/rxrx_erm_lp_r0_t0_0926.pkl"
     }
-    return dict_shortcut.get(save_path, save_path)
+    if save_path in dict_pkls:
+        return dict_pkls[save_path]
+
+    dict_folders = {
+        "fdn": "/private/home/alexandrerame/dataplace/experiments/domainbed/dn/dn_erm012345_lp_0926",
+        "fdnma": "/private/home/alexandrerame/dataplace/experiments/domainbed/dn/dn_ma012345_lp_0926",
+        "fhome": "/private/home/alexandrerame/dataplace/experiments/domainbed/home/home_erm0123_lp_0926",
+        "fhomema": "/private/home/alexandrerame/dataplace/experiments/domainbed/home/home_ma0123_lp_0926",
+        "fpacs": "/private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs_erm0123_lp_0926",
+        "fpacsma": "/private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs_ma0123_lp_0926",
+        "fvlcs": "/private/home/alexandrerame/dataplace/experiments/domainbed/vlcs/vlcs_ma0123_lp_0926",
+        "fvlcsma": "/private/home/alexandrerame/dataplace/experiments/domainbed/vlcs/vlcs_ma0123_lp_0926",
+        "fterra": "/private/home/alexandrerame/dataplace/experiments/domainbed/terra/terra_ma0123_lp_0926",
+        "fterrama": "/private/home/alexandrerame/dataplace/experiments/domainbed/terra/terra_ma0123_lp_0926",
+
+        "fiwild": "/private/home/alexandrerame/dataplace/experiments/domainbed/iwild/iwild_erm_lp_0926",
+        "fiwildma": "/private/home/alexandrerame/dataplace/experiments/domainbed/iwild/iwild_ma_lp_0926",
+        "fnatu": "/private/home/alexandrerame/dataplace/experiments/domainbed/natu/natu_erm_lp_0926",
+        "fnatuma": "notdoneyet"
+    }
+    if save_path in dict_folders:
+        folder = dict_folders[save_path]
+        subfolders = [os.path.join(folder, path) for path in os.listdir(folder)]
+        subfolders = sorted([subfolder for subfolder in subfolders if os.path.isdir(subfolder) and model_path in os.listdir(subfolder) and "done" in os.listdir(subfolder)])
+        if len(subfolders) != 20:
+            print("Surprising count of subfolders")
+        if hparams_seed is None:
+            selected_init = os.path.join(random.choice(subfolders), model_path)
+        else:
+            print(f"Take {hparams_seed}")
+            hparams_seed = hparams_seed % len(subfolders)
+            selected_init = os.path.join(subfolders[hparams_seed], model_path)
+        print("select", selected_init, " from subfolders", subfolders, len(subfolders))
+        return selected_init
+
+    return save_path
 
 def get_batchdiversity_loss(logits):
     msoftmax = nn.Softmax(dim=1)(logits).mean(dim=0)
@@ -140,6 +214,9 @@ def get_score(results, test_envs, metric_key="out_acc", model_selection="train")
     if test_envs == [-1] and model_selection == "oracle":
         return 0.
     val_env_keys = []
+    if metric_key == "out_acc" and f'env0_' + metric_key not in results:
+        metric_key="out_Accuracies/acc_net"
+
     for i in itertools.count():
         acc_key = f'env{i}_' + metric_key
         if acc_key in results:

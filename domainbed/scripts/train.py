@@ -94,6 +94,7 @@ if __name__ == "__main__":
     writer = SummaryWriter(log_dir=args.output_dir)
 
     print('HParams:')
+    hparams["hparams_seed"] = args.hparams_seed
     for k, v in sorted(hparams.items()):
         print('\t{}: {}'.format(k, v))
 
@@ -188,6 +189,16 @@ if __name__ == "__main__":
     eval_loader_names += ['env{}_uda'.format(i)
         for i in range(len(uda_splits))]
 
+    # eval_loaders = [FastDataLoader(
+    #     dataset=env,
+    #     batch_size=64,
+    #     num_workers=dataset.N_WORKERS)
+    #     for env, _ in (out_splits)]
+    # eval_weights = [None for _, weights in (out_splits)]
+    # # eval_loader_names = ['env{}_in'.format(i) for i in range(len(in_splits))]
+    # eval_loader_names = ['env{}_out'.format(i) for i in range(len(out_splits))]
+    # # eval_loader_names += ['env{}_uda'.format(i) for i in range(len(uda_splits))]
+
     algorithm = algorithms.get_algorithm_class(args.algorithm)(
         dataset.input_shape,
         dataset.num_classes,
@@ -246,7 +257,6 @@ if __name__ == "__main__":
                     for x,_ in next(uda_minibatches_iterator)]
             else:
                 uda_device = None
-
 
             step_vals = algorithm.update(minibatches_device, uda_device)
             checkpoint_vals['step_time'].append(time.time() - step_start_time)
@@ -319,9 +329,8 @@ if __name__ == "__main__":
 
             save_ckpt = (args.save_model_every_checkpoint == "2" and step in [200, 1000, 2000, 4000, 4500])
             save_ckpt |= str(step) == args.save_model_every_checkpoint and step >= 2
+            save_ckpt |= args.save_model_every_checkpoint == "all" and step in [10, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000, 4200, 4400, 4500, 4600, 4700, 4800, 4900] and args.test_envs == [0]
             if save_ckpt:
-                # if step not in [100, 200, 300, 400, 600, 800, 1000, 1200, 1400, 1600, 2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000, 4200, 4400, 4500, 4600, 4700, 4800, 4900]:
-                    # pass
                 save_checkpoint(
                     f'model_step{step}.pkl', results=json.dumps(results, sort_keys=True, default=misc.np_encoder),
                     light=True)
