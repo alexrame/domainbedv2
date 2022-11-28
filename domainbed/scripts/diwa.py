@@ -5,6 +5,7 @@ import random
 import numpy as np
 import torch
 import torch.utils.data
+import collections
 from domainbed import datasets, algorithms_inference
 from domainbed.lib import misc
 from domainbed.lib.fast_data_loader import FastDataLoader, InfiniteDataLoader
@@ -161,7 +162,8 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
     if len(output_folders) == 0:
         raise ValueError(f"No done folders found for: {output_dir} and: {inf_args}")
 
-    dict_checkpoint_to_score = {}
+
+    dict_dict_checkpoint_to_score = collections.defaultdict(dict)
     for folder in output_folders:
         checkpoint = get_checkpoint_from_folder(folder)
         if device == "cpu":
@@ -193,12 +195,12 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
                 metric_key=os.environ.get("KEYACC", "out_acc" if "ma" not in inf_args.what else "out_acc_ma"),
                 model_selection=os.environ.get("MODEL_SELECTION", "train")
             )
-        dict_checkpoint_to_score[checkpoint] = score
+        dict_dict_checkpoint_to_score[train_args["trial_seed"]][checkpoint] = score
 
-    if len(dict_checkpoint_to_score) == 0:
+    if len(dict_dict_checkpoint_to_score) == 0:
         raise ValueError(f"No folders found for: {output_dir} and: {inf_args}")
 
-    return dict_checkpoint_to_score
+    return list(dict_dict_checkpoint_to_score.values())
 
 
 def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="mean", device="gpu"):
@@ -421,6 +423,7 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
 
     dict_results["testenv"] = inf_args.test_env
     dict_results["topk"] = inf_args.topk
+    dict_results["trialseed"] = inf_args.trial_seed
     from os.path import normpath, basename
     dict_results["dirs"] = ",".join([
         basename(normpath(output_dir)) for output_dir in inf_args.output_dir
@@ -478,7 +481,7 @@ def print_list_results(list_dict_results):
     dict_results = {}
     for _key in results_keys:
         list_values = [dict_results[_key] for dict_results in list_dict_results]
-        if isinstance(list_values[0], (str, list)) or _key in ["step", "topk", "dirs", "ckpts", 'testenv', "length", "lengthf"]:
+        if isinstance(list_values[0], (str, list)) or _key in ["step", "topk", "dirs", "ckpts", 'testenv']:
             dict_results[_key] = list_values[0]
         else:
             # dict_results[_key + "_std"] = np.std(list_values)
@@ -620,20 +623,9 @@ def main():
 
     else:
         for output_dir in inf_args.output_dir:
-            list_dict_checkpoint_to_score_i.append(
+            list_dict_checkpoint_to_score_i.extend(
                 get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=inf_args.train_envs, device=device)
             )
-    # else:
-    #     raise ValueError("PERD not implemented")
-    #     # for output_dir in inf_args.output_dir[1:]:
-    #     #     list_dict_checkpoint_to_score_i.append(
-    #     #         get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=inf_args.train_envs, device=device)
-    #     #     )
-    #     # list_i = [1, 2, 3] if os.environ.get("PERD") == "1" else [int(p) for p in os.environ.get("PERD").split(",")]
-    #     # for i in list_i:
-    #     #     list_dict_checkpoint_to_score_i.append(
-    #     #         get_dict_checkpoint_to_score(inf_args.output_dir[0], inf_args, train_envs=[i], device=device)
-    #     #     )
 
     dict_data_splits = create_data_splits(inf_args, dataset)
     list_dict_results = []

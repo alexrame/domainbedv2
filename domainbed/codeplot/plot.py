@@ -418,7 +418,7 @@ def plot_key(
 
     fig = plt.figure()
 
-    plt.gca().xaxis.set_major_formatter(StrMethodFormatter('{x:,.3f}')) # 2 decimal places
+    plt.gca().xaxis.set_major_formatter(StrMethodFormatter('{x:,.1f}')) # 2 decimal places
     plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.3f}')) # 2 decimal places
     if _dict_key_to_label == "def":
         _dict_key_to_label = dict_key_to_label
