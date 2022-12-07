@@ -2,7 +2,6 @@
 
 import collections
 
-
 import argparse
 import functools
 import glob
@@ -23,20 +22,21 @@ from domainbed import model_selection
 from domainbed.lib.query import Q
 import warnings
 
-def format_mean(data, latex):
+
+def format_mean(data, latex, factor=100):
     """Given a list of datapoints, return a string describing their mean and
     standard error"""
     if len(data) == 0:
         return None, None, "X"
-    mean = 100 * np.mean(list(data))
-    err = 100 * np.std(list(data) / np.sqrt(len(data)))
+    mean = factor * np.mean(list(data))
+    err = factor * np.std(list(data) / np.sqrt(len(data)))
     if latex:
         return mean, err, "{:.1f} $\\pm$ {:.1f}".format(mean, err)
     else:
         return mean, err, "{:.1f} +/- {:.1f}".format(mean, err)
 
-def print_table(table, header_text, row_labels, col_labels, colwidth=10,
-    latex=True):
+
+def print_table(table, header_text, row_labels, col_labels, colwidth=10, latex=True):
     """Pretty-print a 2D array of data, optionally with row/col labels"""
     print("")
 
@@ -53,8 +53,9 @@ def print_table(table, header_text, row_labels, col_labels, colwidth=10,
         row.insert(0, label)
 
     if latex:
-        col_labels = ["\\textbf{" + str(col_label).replace("%", "\\%") + "}"
-            for col_label in col_labels]
+        col_labels = [
+            "\\textbf{" + str(col_label).replace("%", "\\%") + "}" for col_label in col_labels
+        ]
     table.insert(0, col_labels)
 
     for r, row in enumerate(table):
@@ -66,16 +67,21 @@ def print_table(table, header_text, row_labels, col_labels, colwidth=10,
         print("\\end{tabular}}")
         print("\\end{center}")
 
+
 def print_results_tables_algo(records, selection_method, latex):
     """Given all records, print a results table for each dataset."""
-    grouped_records = reporting.get_grouped_records(records).map(lambda group:
-        { **group, "sweep_acc": selection_method.sweep_acc(group["records"]) }
+    grouped_records = reporting.get_grouped_records(records).map(
+        lambda group: {
+            **group, "sweep_acc": selection_method.sweep_acc(group["records"])
+        }
     ).filter(lambda g: g["sweep_acc"] is not None)
 
     # read algorithm names and sort (predefined order)
     alg_names = Q(records).select("args.algorithm").unique()
-    alg_names = ([n for n in algorithms.ALGORITHMS if n in alg_names] +
-        [n for n in alg_names if n not in algorithms.ALGORITHMS])
+    alg_names = (
+        [n for n in algorithms.ALGORITHMS if n in alg_names] +
+        [n for n in alg_names if n not in algorithms.ALGORITHMS]
+    )
 
     # read dataset names and sort (lexicographic order)
     dataset_names = Q(records).select("args.dataset").unique().sorted()
@@ -91,27 +97,29 @@ def print_results_tables_algo(records, selection_method, latex):
         for i, algorithm in enumerate(alg_names):
             means = []
             for j, test_env in enumerate(test_envs):
-                trial_accs = (grouped_records
-                    .filter_equals(
-                        "dataset, algorithm, test_env",
-                        (dataset, algorithm, test_env)
-                    ).select("sweep_acc"))
+                trial_accs = (
+                    grouped_records.filter_equals(
+                        "dataset, algorithm, test_env", (dataset, algorithm, test_env)
+                    ).select("sweep_acc")
+                )
+                # trial_accs = (
+                #     grouped_records.filter_equals(
+                #         "dataset, algorithm, test_env, trial_seed", (dataset, algorithm, test_env, 0)
+                #     ).select("sweep_acc")
+                # )
                 mean, err, table[i][j] = format_mean(trial_accs, latex)
                 means.append(mean)
             if None in means:
                 table[i][-1] = "X"
             else:
-                table[i][-1] = "{:.1f}".format(sum(means) / len(means))
+                table[i][-1] = "{:.1f}".format(
+                    format_mean(means, latex, factor=1))
+                    # sum(means) / len(means))
 
-        col_labels = [
-            "Algorithm",
-            *datasets.get_dataset_class(dataset).ENVIRONMENTS,
-            "Avg"
-        ]
+        col_labels = ["Algorithm", *datasets.get_dataset_class(dataset).ENVIRONMENTS, "Avg"]
         header_text = (f"Dataset: {dataset}, "
-            f"model selection method: {selection_method.name}")
-        print_table(table, header_text, alg_names, list(col_labels),
-            colwidth=20, latex=latex)
+                       f"model selection method: {selection_method.name}")
+        print_table(table, header_text, alg_names, list(col_labels), colwidth=30, latex=latex)
 
     # Print an "averages" table
     if latex:
@@ -122,12 +130,9 @@ def print_results_tables_algo(records, selection_method, latex):
     for i, algorithm in enumerate(alg_names):
         means = []
         for j, dataset in enumerate(dataset_names):
-            trial_averages = (grouped_records
-                .filter_equals("algorithm, dataset", (algorithm, dataset))
-                .group("trial_seed")
-                .map(lambda trial_seed, group:
-                    group.select("sweep_acc").mean()
-                )
+            trial_averages = (
+                grouped_records.filter_equals("algorithm, dataset", (algorithm, dataset)).
+                group("trial_seed").map(lambda trial_seed, group: group.select("sweep_acc").mean())
             )
             mean, err, table[i][j] = format_mean(trial_averages, latex)
             means.append(mean)
@@ -138,14 +143,15 @@ def print_results_tables_algo(records, selection_method, latex):
 
     col_labels = ["Algorithm", *dataset_names, "Avg"]
     header_text = f"Averages, model selection method: {selection_method.name}"
-    print_table(table, header_text, alg_names, col_labels, colwidth=25,
-        latex=latex)
+    print_table(table, header_text, alg_names, col_labels, colwidth=25, latex=latex)
 
 
 def print_results_tables(records, selection_method, latex):
     """Given all records, print a results table for each dataset."""
-    grouped_records = reporting.get_grouped_records(records).map(lambda group:
-        { **group, "sweep_acc": selection_method.sweep_acc(group["records"]) }
+    grouped_records = reporting.get_grouped_records(records).map(
+        lambda group: {
+            **group, "sweep_acc": selection_method.sweep_acc(group["records"])
+        }
     ).filter(lambda g: g["sweep_acc"] is not None)
 
     # read algorithm names and sort (predefined order)
@@ -164,62 +170,46 @@ def print_results_tables(records, selection_method, latex):
         table = [[None for _ in [*test_envs, "Avg"]] for _ in alg_names]
         for i, algorithmid in enumerate(alg_names):
             means = []
+            errs = []
             for j, test_env in enumerate(test_envs):
-                trial_accs = (grouped_records
-                    .filter_equals(
-                        "dataset, algorithmid, test_env",
-                        (dataset, algorithmid, test_env)
-                    ).select("sweep_acc"))
+                if os.environ.get("TRIAL"):
+                    trial_accs = (
+                        grouped_records.filter_equals(
+                            "dataset, algorithmid, test_env, trial_seed",
+                            (dataset, algorithmid, test_env, int(os.environ.get("TRIAL")))
+                        ).select("sweep_acc")
+                    )
+                else:
+                    trial_accs = (
+                        grouped_records.filter_equals(
+                            "dataset, algorithmid, test_env", (dataset, algorithmid, test_env)
+                        ).select("sweep_acc")
+                    )
                 mean, err, table[i][j] = format_mean(trial_accs, latex)
                 means.append(mean)
+                errs.append(err)
             if None in means:
                 table[i][-1] = "X"
             else:
-                table[i][-1] = "{:.1f}".format(sum(means) / len(means))
+                mean = sum(means) / len(means)
+                err = sum(errs) / len(errs)
+                if latex:
+                    table[i][-1] = "{:.1f} $\\pm$ {:.1f}".format(mean, err)
+                else:
+                    table[i][-1] = "{:.1f} +/- {:.1f}".format(mean, err)
 
-        col_labels = [
-            "Algorithm",
-            *datasets.get_dataset_class(dataset).ENVIRONMENTS,
-            "Avg"
-        ]
+
+        col_labels = ["Algorithm", *datasets.get_dataset_class(dataset).ENVIRONMENTS, "Avg"]
         header_text = (f"Dataset: {dataset}, "
-            f"model selection method: {selection_method.name}")
-        print_table(table, header_text, alg_names, list(col_labels),
-            colwidth=20, latex=latex)
+                       f"model selection method: {selection_method.name}")
+        print_table(table, header_text, alg_names, list(col_labels), colwidth=30, latex=latex)
 
-    # # Print an "averages" table
-    # if latex:
-    #     print()
-    #     print("\\subsubsection{Averages}")
 
-    # table = [[None for _ in [*dataset_names, "Avg"]] for _ in alg_names]
-    # for i, algorithm in enumerate(alg_names):
-    #     means = []
-    #     for j, dataset in enumerate(dataset_names):
-    #         trial_averages = (grouped_records
-    #             .filter_equals("algorithm, dataset", (algorithm, dataset))
-    #             .group("trial_seed")
-    #             .map(lambda trial_seed, group:
-    #                 group.select("sweep_acc").mean()
-    #             )
-    #         )
-    #         mean, err, table[i][j] = format_mean(trial_averages, latex)
-    #         means.append(mean)
-    #     if None in means:
-    #         table[i][-1] = "X"
-    #     else:
-    #         table[i][-1] = "{:.1f}".format(sum(means) / len(means))
-
-    # col_labels = ["Algorithm", *dataset_names, "Avg"]
-    # header_text = f"Averages, model selection method: {selection_method.name}"
-    # print_table(table, header_text, alg_names, col_labels, colwidth=25,
-    #     latex=latex)
 
 if __name__ == "__main__":
     np.set_printoptions(suppress=True)
 
-    parser = argparse.ArgumentParser(
-        description="Domain generalization testbed")
+    parser = argparse.ArgumentParser(description="Domain generalization testbed")
     # parser.add_argument("--input_dirs", type=str, required=True)
     parser.add_argument("--input_dirs", nargs="+", type=str, default=[])
     parser.add_argument("--latex", action="store_true")
@@ -250,8 +240,7 @@ if __name__ == "__main__":
     for selection_method in SELECTION_METHODS:
         if args.latex:
             print()
-            print("\\subsection{{Model selection: {}}}".format(
-                selection_method.name))
+            print("\\subsection{{Model selection: {}}}".format(selection_method.name))
         print_results_tables(records, selection_method, args.latex)
 
     if args.latex:

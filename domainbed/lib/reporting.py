@@ -16,6 +16,10 @@ def load_list_records(list_path):
                                 ncols=80,
                                 leave=False):
             results_path = os.path.join(path, subdir, "results.jsonl")
+            if not os.path.exists(os.path.join(path, subdir, "done")):
+                # print(f"{os.path.join(path, subdir)} without done")
+                continue
+                # pass
             try:
                 with open(results_path, "r") as f:
                     for line in f:

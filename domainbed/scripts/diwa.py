@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.utils.data
 import collections
+from os.path import normpath, basename
 from domainbed import datasets, algorithms_inference
 from domainbed.lib import misc
 from domainbed.lib.fast_data_loader import FastDataLoader, InfiniteDataLoader
@@ -162,15 +163,14 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
     if len(output_folders) == 0:
         raise ValueError(f"No done folders found for: {output_dir} and: {inf_args}")
 
-
     dict_dict_checkpoint_to_score = collections.defaultdict(dict)
     for folder in output_folders:
         checkpoint = get_checkpoint_from_folder(folder)
-        if device == "cpu":
-            save_dict = torch.load(checkpoint, map_location=torch.device('cpu'))
-        else:
-            save_dict = torch.load(checkpoint)
-        train_args = save_dict["args"]
+        timedone = os.path.getmtime(os.path.join(folder, "done"))
+        timeckpt = os.path.getmtime(checkpoint)
+        if timedone < timeckpt:
+            print(f"Timestamp error for {folder}")
+        train_args = misc.load_results_jsonl(folder)["args"]
 
         if train_args["dataset"] != inf_args.dataset:
             continue
@@ -187,10 +187,14 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
         if train_args["trial_seed"] != inf_args.trial_seed and inf_args.trial_seed != -1:
             continue
 
+        if inf_args.weight_selection in ["restricted", "best", "erm"]:
+            save_dict = torch.load(checkpoint, map_location=torch.device('cpu'))
+        else:
+            save_dict = {}
         if "results" not in save_dict:
             score = -1
         else:
-            score = misc.get_score(
+            score = misc.get_score_diwa(
                 json.loads(save_dict["results"]), [inf_args.test_env],
                 metric_key=os.environ.get("KEYACC", "out_acc" if "ma" not in inf_args.what else "out_acc_ma"),
                 model_selection=os.environ.get("MODEL_SELECTION", "train")
@@ -407,6 +411,11 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
                     dict_results[
                         new_key + "_to_" + domain] = np.mean(value.detach().float().cpu().numpy())
 
+
+    enrich_dict_results_with_info(dict_results, inf_args)
+    return dict_results
+
+def enrich_dict_results_with_info(dict_results, inf_args):
     # some hacky queries to enrich dict_results
     if "VARM" in os.environ:
         dict_results["varm"] = float(os.environ["VARM"])
@@ -424,17 +433,17 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
     dict_results["testenv"] = inf_args.test_env
     dict_results["topk"] = inf_args.topk
     dict_results["trialseed"] = inf_args.trial_seed
-    from os.path import normpath, basename
-    dict_results["dirs"] = ",".join([
-        basename(normpath(output_dir)) for output_dir in inf_args.output_dir
-    ])
+
+    dict_results["dirs"] = ",".join(
+        [basename(normpath(output_dir)) for output_dir in inf_args.output_dir]
+    )
     if inf_args.checkpoints:
         dict_results["ckpts"] = "-".join(
-            ["{w:.3f}".format(w=ckpt["weight"]) + "_" + str(ckpt["type"])
-             for ckpt in inf_args.checkpoints]
+            [
+                "{w:.3f}".format(w=ckpt["weight"]) + "_" + str(ckpt["type"])
+                for ckpt in inf_args.checkpoints
+            ]
         )
-
-    return dict_results
 
 def weighting_checkpoint(weighting_strategy, len_checkpoint, i_weighting=None, rank_checkpoint=None):
     if weighting_strategy in [None, "uniform", "None"]:
@@ -485,8 +494,9 @@ def print_list_results(list_dict_results):
             dict_results[_key] = list_values[0]
         else:
             # dict_results[_key + "_std"] = np.std(list_values)
+            dict_results[_key + "_max"] = np.max(list_values)
             dict_results[_key + "_conf3"] = np.std(list_values)/np.sqrt(3)
-            dict_results[_key + "_conf"] = np.std(list_values)/np.sqrt(len(list_values))
+            # dict_results[_key + "_conf"] = np.std(list_values)/np.sqrt(len(list_values))
             dict_results[_key] = np.mean(list_values)
     dict_results["numsamples"] = len(list_dict_results)
     print_results(dict_results, default="&&")
@@ -535,6 +545,7 @@ def merge_checkpoints(inf_args, list_dict_checkpoint_to_score_i):
                 if topk <= len(sorted_checkpoints_i):
                     rand_nums = sorted(random.sample(range(len(sorted_checkpoints_i)), topk))
                 else:
+                    raise ValueError("topk is too large")
                     rand_nums = range(0, len(sorted_checkpoints_i))
             sorted_checkpoints_i = [sorted_checkpoints_i[i] for i in rand_nums if i < len(sorted_checkpoints_i)]
         random.shuffle(sorted_checkpoints_i)
@@ -635,7 +646,23 @@ def main():
         )
 
         # compute score after weight averaging
-        if inf_args.weight_selection == "restricted":
+        if inf_args.weight_selection in ["best", "erm"]:
+            selected_checkpoint = sorted(
+                notsorted_checkpoints, key=lambda x: dict_checkpoint_to_score[x], reverse=True
+            )[0]
+            save_dict = torch.load(selected_checkpoint, map_location=torch.device('cpu'))
+            ood_score = misc.get_score_diwa(
+                json.loads(save_dict["results"]), [inf_args.test_env],
+                metric_key="in_acc" if "ma" not in inf_args.what else "in_acc_ma",
+                model_selection="oracle"
+            )
+            dict_results = {"acc": ood_score, "length": 1.}
+            enrich_dict_results_with_info(dict_results, inf_args)
+            # dict_results = get_wa_results(
+            #             [selected_checkpoint], dataset, inf_args, dict_data_splits, device
+            #         )
+            print_results(dict_results, "&&" if inf_args.num_samples == 1 else "##")
+        elif inf_args.weight_selection == "restricted":
             sorted_checkpoints = sorted(
                 notsorted_checkpoints, key=lambda x: dict_checkpoint_to_score[x], reverse=True
             )

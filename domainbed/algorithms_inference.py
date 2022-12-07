@@ -224,7 +224,7 @@ class DiWA(algorithms.ERM):
 
     def predict(self, x, **kwargs):
         dict_predictions = {}
-        if (self.classifier is None or os.environ.get("NETWORKINFERENCE", "0") == "1") and self.network is not None:
+        if self.network is not None:
             dict_predictions[""] = self.network(x)
         if self.network_ma is not None:
             dict_predictions["ma"] = self.network_ma(x)
@@ -278,6 +278,23 @@ class DiWA(algorithms.ERM):
                 sum_weights = np.sum(self.classifiers_weights)
                 dict_predictions["enscla"
                                 ] = torch.sum(torch.stack(logits_enscla, dim=0), 0) / sum_weights
+
+        if len(self.featurizers):
+            assert len(self.classifiers) != 0
+            logits_f = []
+            logits_f_at_f = []
+            for f, featurizer in enumerate(self.featurizers):
+                features_f = featurizer(x)
+                logits_i_at_f = []
+                for i, classifier in enumerate(self.classifiers):
+                    dict_predictions[f"cla{f}{i}"] = classifier(features_f)
+                    logits_i_at_f.append(dict_predictions[f"cla{f}{i}"])
+                    if i == f:
+                        logits_f_at_f.append(dict_predictions[f"cla{f}{i}"])
+                dict_predictions[f"cla{f}"] = torch.mean(torch.stack(logits_i_at_f, dim=0), 0)
+                logits_f.extend(logits_i_at_f)
+            dict_predictions[f"ens"] = torch.mean(torch.stack(logits_f_at_f, dim=0), 0)
+            dict_predictions[f"ensc"] = torch.mean(torch.stack(logits_f, dim=0), 0)
 
         if self.featurizer_product is not None:
             features_product = self.featurizer_product(x)
@@ -429,7 +446,7 @@ class DiWA(algorithms.ERM):
                     pdb.set_trace()
                     break
 
-                if count_batch < float(os.environ.get("DIVFEATS", "10")):
+                if count_batch < float(os.environ.get("DIVFEATS", "0")):
                     dict_feats = self.predict_feat(x)
                     for key in dict_feats.keys():
                         if "feats" not in dict_stats[key]:
@@ -506,7 +523,14 @@ class DiWA(algorithms.ERM):
                 diversity_metrics.double_fault(targets, preds0, preds1)
             )
 
-            if os.environ.get("DIVFEATS", "10") != "0" and "feats" in dict_stats[
+            dict_diversity[f"divn_{regexname}"].append(
+                diversity_metrics.normalized_disagreement(
+                    targets,
+                    preds0=dict_stats[key0]["logits"].numpy(),
+                    preds1=dict_stats[key0]["logits"].numpy())
+            )
+
+            if os.environ.get("DIVFEATS", "0") != "0" and "feats" in dict_stats[
                 key0] and "feats" in dict_stats[key1]:
                 feats0 = dict_stats[key0]["feats"]
                 feats1 = dict_stats[key1]["feats"]

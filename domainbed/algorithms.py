@@ -262,14 +262,14 @@ class TWA(ERM):
     def _get_training_parameters(self):
 
         if self._what_is_trainable in ["warmupnet", "warmupcla"]:
+            print("No longer using lambdas, back to ERM")
             if self.update_count == self.hparams["warmup"]:
                 what_is_trainable = "all"
-                print("No longer using lambdas, back to ERM")
                 misc.set_weights(self.get_featurizer_wa_weights(), self.featurizer)
                 self._use_lambdas = False
             else:
                 assert self.update_count == 0
-                what_is_trainable = "lambdascla" if self._what_is_trainable in ["warmupnet"] else "lambdas"
+                what_is_trainable = "lambdascla" if self._what_is_trainable in ["warmupnet"] else "cla"
         else:
             what_is_trainable = self._what_is_trainable
 
@@ -317,7 +317,9 @@ class TWA(ERM):
         objective.backward()
         self.optimizer.step()
 
-        if self.update_count == self.hparams["warmup"] and self._what_is_trainable in ["warmupnet"]:
+        if self.update_count == self.hparams["warmup"] and self._what_is_trainable in [
+            "warmupnet", "warmupcla"
+        ]:
             self._init_optimizer()
 
         self.update_count += 1

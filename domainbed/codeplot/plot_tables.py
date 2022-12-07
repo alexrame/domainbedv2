@@ -19,7 +19,9 @@ def mcs(l, factor=1):
 
 def format_val(x, e, add_std=True, prec=1):
     if np.issubdtype(type(x), np.floating):
-        if prec == 2:
+        if prec == 5:
+            x = "{:.5f}".format(x)
+        elif prec == 2:
             x = "{:.2f}".format(x)
         else:
             x = "{:.1f}".format(x)

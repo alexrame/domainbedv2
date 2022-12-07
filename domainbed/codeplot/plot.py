@@ -98,6 +98,66 @@ def plot_histogram(l, labels, key, limits={}, lambda_filtering=None, list_indexe
         plt.legend(loc=loc, fontsize=SIZE)
     return fig
 
+from matplotlib import pyplot
+from matplotlib.patches import Rectangle
+
+def plot_histogram_two(l, labels, key1, key2, limits={}, lambda_filtering=None, list_indexes=None, loc="upper right"):
+    if list_indexes is not None:
+        l = [l[i] for i in list_indexes]
+        if labels is not None:
+            labels = [labels[i] for i in list_indexes]
+    plt.rcParams["figure.figsize"] = (5, 5)
+    kwargs = dict(alpha=0.5, bins=15, density=True, stacked=True)
+
+    def check_line(line):
+        if lambda_filtering is not None:
+            return lambda_filtering(line)
+        return True
+
+    fig = plt.figure()
+    plt.gca().set_xlabel(dict_key_to_label.get(key2, key2), fontsize=SIZE)
+    plt.gca().set_ylabel('Frequency (%)', fontsize=SIZE)
+
+    data = []
+    for c in l:
+        data.append(get_x([line for line in c if check_line(line)], key1))
+
+    colors = cm.Blues(np.linspace(0.3, 1, len(labels)))
+    plot_lines_1 = []
+    for i in range(len(labels)):
+        hist_i = plt.hist(data[i], **kwargs, color=colors[i], label=labels[i])
+        plot_lines_1.append(hist_i[-1])
+    handles = [Rectangle((0, 0), 1, 1, color=c, alpha=0.5) for c in colors]
+    first_legend = plt.legend(
+        handles=handles,
+        labels=labels,
+        title="Val IID:",
+        loc='upper right',
+        bbox_to_anchor=(1.0, 1.0),
+        fontsize=SIZE
+    )
+    plt.gca().add_artist(first_legend)
+
+    data = []
+    for c in l:
+        data.append(get_x([line for line in c if check_line(line)], key2))
+
+    colors = cm.Reds(np.linspace(0.3, 1, len(labels)))
+    plot_lines_2 = []
+    for i in range(len(labels)):
+        hist_i = plt.hist(data[i], **kwargs, color=colors[i], label=labels[i])
+        plot_lines_2.append(hist_i[-1])
+    handles = [Rectangle((0, 0), 1, 1, color=c, alpha=0.5) for c in colors]
+    plt.legend(
+        handles=handles,
+        labels=labels,
+        title="Test OOD:",
+        loc='upper right',
+        bbox_to_anchor=(1.0, 0.75),
+        fontsize=SIZE
+    )
+
+    return fig
 
 
 
@@ -118,6 +178,7 @@ dict_key_to_label = {
     "length": "$M$",
     "robust": "Robust Coeff",
     "step": "# steps",
+    # "acc": "$Acc(WA)$",
     "acc": "OOD test acc.",
     "test_acc": "OOD test acc.",
     "acc_cla": "OOD test acc.",
@@ -148,7 +209,7 @@ dict_key_to_label = {
     "acc_netm": "Individual acc.",
     "soup": "$Acc(\\theta_{WA})$",
     # "net": "$Acc(\\{\\theta_m\\}_1^M)$"
-    "acc_ens": "$Acc(\\theta_{ENS})$",
+    "acc_ens": "$Acc(ENS)$",
     "weighting": '$\lambda$',
     "lambda": '$\lambda$',
 }
@@ -215,7 +276,7 @@ def fit_and_plot_with_value(val1, val2, order, label, color, ax=None, linestyle=
             get_x1_sorted
         ) + b
         ax.plot(
-            get_x1_sorted, preds, color=color, linestyle=linestyle, linewidth=3
+            get_x1_sorted, preds, color=color, linestyle=linestyle, linewidth=3, label=label
         )  # label="int."+label)
     elif order in [4, "4"]:
         m4, m3, m2, m1, b = np.polyfit(val1, val2, 4)
@@ -224,7 +285,7 @@ def fit_and_plot_with_value(val1, val2, order, label, color, ax=None, linestyle=
             get_x1_sorted
         ) + b
         ax.plot(
-            get_x1_sorted, preds, color=color, linestyle=linestyle, linewidth=3
+            get_x1_sorted, preds, color=color, linestyle=linestyle, linewidth=3, label=label
         )  # label="int."+label)
     elif order in [5, "5"]:
         m5, m4, m3, m2, m1, b = np.polyfit(val1, val2, 5)
@@ -233,26 +294,26 @@ def fit_and_plot_with_value(val1, val2, order, label, color, ax=None, linestyle=
             get_x1_sorted
         ) + b
         ax.plot(
-            get_x1_sorted, preds, color=color, linestyle=linestyle, linewidth=3
+            get_x1_sorted, preds, color=color, linestyle=linestyle, linewidth=3, label=label
         )  # label="int."+label)
     elif order == "log":
         m1, b = np.polyfit(np.log(val1), val2, 1)
         log_get_x1_sorted = np.log(get_x1_sorted)
         preds = m1 * np.array(log_get_x1_sorted) + b
-        ax.plot(get_x1_sorted, preds, color=color, linestyle=linestyle)  # label="int."+label)
+        ax.plot(get_x1_sorted, preds, color=color, label=label, linestyle=linestyle)  # label="int."+label)
     elif order == "2log":
         m2, m1, b = np.polyfit(np.log(val1), val2, 2)
         log_get_x1_sorted = np.log(get_x1_sorted)
         preds = m2 * np.array(log_get_x1_sorted)**2 + m1 * np.array(log_get_x1_sorted) + b
 
-        ax.plot(get_x1_sorted, preds, color=color, linestyle=linestyle)  # label="int."+label)
+        ax.plot(get_x1_sorted, preds, color=color, label=label, linestyle=linestyle)  # label="int."+label)
     elif order == "3log":
         m3, m2, m1, b = np.polyfit(np.log(val1), val2, 3)
         log_get_x1_sorted = np.log(get_x1_sorted)
         preds = m3 * np.array(log_get_x1_sorted)**3 + m2 * np.array(log_get_x1_sorted)**2 + m1 * np.array(
             log_get_x1_sorted
         ) + b
-        ax.plot(get_x1_sorted, preds, color=color, linestyle=linestyle)  # label="int."+label)
+        ax.plot(get_x1_sorted, preds, color=color, label=label, linestyle=linestyle)  # label="int."+label)
     elif order in [0, -1, None, "", "0"]:
         return
     else:
@@ -386,7 +447,8 @@ def lambda_clustering(l, keyclustering):
             new_l[-1][key] = np.mean(list_values)
     return new_l
 
-
+FORMAT_X=0
+FORMAT_Y=0
 def plot_key(
     l,
     key1,
@@ -399,7 +461,7 @@ def plot_key(
     diag=False,
     markers=None,
     colors=None,
-    linestyle=None,
+    linestyles=None,
     _dict_key_to_limit={},
     _dict_key_to_label="def",
     loc="upper right",
@@ -417,9 +479,10 @@ def plot_key(
             labels = [labels[i] for i in list_indexes]
 
     fig = plt.figure()
-
-    plt.gca().xaxis.set_major_formatter(StrMethodFormatter('{x:,.1f}')) # 2 decimal places
-    plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.3f}')) # 2 decimal places
+    if FORMAT_X:
+        plt.gca().xaxis.set_major_formatter(StrMethodFormatter('{x:,.1f}')) # 2 decimal places
+    if FORMAT_Y:
+        plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.3f}')) # 2 decimal places
     if _dict_key_to_label == "def":
         _dict_key_to_label = dict_key_to_label
     else:
@@ -448,7 +511,7 @@ def plot_key(
     plt.xlabel(_dict_key_to_label.get(key1, key1), fontsize=SIZE)
     plt.ylabel(_dict_key_to_label.get(key2, key2), fontsize=SIZE)
 
-    def plot_with_int(ll, color, label, marker):
+    def plot_with_int(ll, color, label, marker, linestyle):
         ll = [lll for lll in ll if lambda_filtering is None or lambda_filtering(lll)]
         t = get_x(ll, key1)
         if t == []:
@@ -456,7 +519,7 @@ def plot_key(
         if keyclustering is not None:
             ll = lambda_clustering(ll, keyclustering)
 
-        newlabel = (label if order != 1 and label !="no" else None)
+        newlabel = label if (linestyle is None and label !="no") else None
         if keyerror is not None:
             plt.errorbar(
                 get_x(ll, key1),
@@ -486,7 +549,9 @@ def plot_key(
                 marker=marker,
                 **kwargs
             )
-        fit_and_plot(key1, key2, ll, order, label if order == 1 else None, color, linestyle=linestyle)
+        fit_and_plot(
+            key1, key2, ll, order, label if linestyle is not None else None, color, linestyle=linestyle
+        )
 
     for index in range(len(l)):
         if markers is not None:
@@ -495,7 +560,11 @@ def plot_key(
         else:
             marker = None
             label = labels[index]
-        plot_with_int(l[index], color=colors[index], label=label, marker=marker)
+        if linestyles is not None:
+            linestyle = linestyles[index]
+        else:
+            linestyle = None
+        plot_with_int(l[index], color=colors[index], label=label, marker=marker, linestyle=linestyle)
     if diag:
         xpoints = ypoints = plt.xlim()
         plt.plot(
@@ -1249,7 +1318,7 @@ def plot_robust(ll_m, key1, orders=None, key_axis1="acc", key_axis2=None, labels
 # list_home_601_ermmixupcoral = get_list_l_full(home_iter_hps_env0_ermmixupcoral.lermmixupcoral)
 
 
-def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=False, do_h=True, index_range=3, order=3):
+def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=False, do_h=True, index_range=3, order=3, linestyles=["solid", "dashed", "dotted"]):
 
     list_indexes = range(0, 0 + index_range)
 
@@ -1266,6 +1335,7 @@ def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=Fa
         loc="lower right",
         _dict_key_to_label={},
         list_indexes=list_indexes,
+        linestyles=linestyles
     )
     if do_save:
         save_fig(fig_dr, "lmc/" + name + "_lmc_hyp1_ood.png")
@@ -1281,6 +1351,7 @@ def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=Fa
             loc="lower right",
             _dict_key_to_label={},
             list_indexes=list_indexes,
+            linestyles=linestyles
         )
         if do_save:
             save_fig(fig_dr, "lmc/" + name + "_lmc_hyp1_iid.png")
@@ -1297,6 +1368,7 @@ def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=Fa
             loc="lower right",
             _dict_key_to_label={},
             list_indexes=list_indexes,
+            linestyles=linestyles
         )
         if do_save:
             save_fig(fig_dr, "lmc/" + name + "_lmc_hyp1h_ood.png")
@@ -1311,6 +1383,7 @@ def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=Fa
                 loc="lower right",
                 _dict_key_to_label={},
                 list_indexes=list_indexes,
+                linestyles=linestyles
             )
             if do_save:
                 save_fig(fig_dr, "lmc/" + name + "_lmc_hyp1h_iid.png")
@@ -1327,6 +1400,7 @@ def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=Fa
         loc="lower right",
         _dict_key_to_label={},
         list_indexes=list_indexes,
+        linestyles=linestyles
     )
     if do_save:
         save_fig(fig_dr, "lmc/" + name + "_lmc_hyp2_ood.png")
@@ -1341,6 +1415,7 @@ def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=Fa
             loc="lower right",
             _dict_key_to_label={},
             list_indexes=list_indexes,
+            linestyles=linestyles
         )
         if do_save:
             save_fig(fig_dr, "lmc/" + name + "_lmc_hyp2_iid.png")
@@ -1357,6 +1432,7 @@ def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=Fa
             loc="lower right",
             _dict_key_to_label={},
             list_indexes=list_indexes,
+            linestyles=linestyles
         )
         if do_save:
             save_fig(fig_dr, "lmc/" + name + "_lmc_hyp2h_ood.png")
@@ -1371,6 +1447,7 @@ def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=Fa
                 loc="lower right",
                 _dict_key_to_label={},
                 list_indexes=list_indexes,
+                linestyles=linestyles
             )
             if do_save:
                 save_fig(fig_dr, "lmc/" + name + "_lmc_hyp2h_iid.png")

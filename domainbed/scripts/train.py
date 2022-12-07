@@ -82,6 +82,10 @@ if __name__ == "__main__":
             )
         else:
             args.output_dir = os.path.join(f"logs/singleruns/{args.dataset}", run_name)
+    # if os.environ.get("FROMSWEEP", "1") != "0" and os.path.exists(os.path.join(args.output_dir, 'out.txt')) and args.dataset != "TerraIncognita":
+    #     time.sleep(1)
+    #     print(f"Output {args.output_dir} directory already exists, exiting")
+    #     sys.exit(0)
 
     print('Args:')
     for k, v in sorted(vars(args).items()):
@@ -280,10 +284,11 @@ if __name__ == "__main__":
 
             evals = zip(eval_loader_names, eval_loaders, eval_weights)
             for name, loader, weights in evals:
-                _results_name = misc.accuracy(algorithm, loader, weights, device)
-                for key, value in _results_name.items():
-                    results[name + '_' + key] = value
-                    writer.add_scalar(name + '_' + key, value, step)
+                if "_out" in name or "env" + str(args.test_envs[0]) in name:
+                    _results_name = misc.accuracy(algorithm, loader, weights, device)
+                    for key, value in _results_name.items():
+                        results[name + '_' + key] = value
+                        writer.add_scalar(name + '_' + key, value, step)
 
             results['mem_gb'] = torch.cuda.max_memory_allocated() / (1024.*1024.*1024.)
             # results["holdout_fraction"] = args.holdout_fraction
