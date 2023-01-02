@@ -65,7 +65,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 from matplotlib.ticker import StrMethodFormatter
 
-def plot_histogram(l, labels, key, limits={}, lambda_filtering=None, list_indexes=None, loc="upper right"):
+def plot_histogram(l, labels, key, limits={}, lambda_filtering=None, list_indexes=None, loc="upper right", size=None):
     if list_indexes is not None:
         l = [l[i] for i in list_indexes]
         if labels is not None:
@@ -90,12 +90,12 @@ def plot_histogram(l, labels, key, limits={}, lambda_filtering=None, list_indexe
         plt.hist(data[i], **kwargs, color=colors[i], label=labels[i])
 
     plt.gca().set_xlabel(
-        dict_key_to_label.get(key, key), fontsize=SIZE)
-    plt.gca().set_ylabel('Frequency (%)', fontsize=SIZE)
+        dict_key_to_label.get(key, key), fontsize=SIZE_AXIS)
+    plt.gca().set_ylabel('Frequency (\%)', fontsize=SIZE_AXIS)
     if key in limits:
         plt.xlim(limits[key][0], limits[key][1])
     if loc:
-        plt.legend(loc=loc, fontsize=SIZE)
+        plt.legend(loc=loc, fontsize=size or SIZE)
     return fig
 
 from matplotlib import pyplot
@@ -115,8 +115,8 @@ def plot_histogram_two(l, labels, key1, key2, limits={}, lambda_filtering=None, 
         return True
 
     fig = plt.figure()
-    plt.gca().set_xlabel(dict_key_to_label.get(key2, key2), fontsize=SIZE)
-    plt.gca().set_ylabel('Frequency (%)', fontsize=SIZE)
+    plt.gca().set_xlabel(dict_key_to_label.get(key2, key2), fontsize=SIZE_AXIS)
+    plt.gca().set_ylabel('Frequency (\%)', fontsize=SIZE_AXIS)
 
     data = []
     for c in l:
@@ -131,10 +131,10 @@ def plot_histogram_two(l, labels, key1, key2, limits={}, lambda_filtering=None, 
     first_legend = plt.legend(
         handles=handles,
         labels=labels,
-        title="Val IID:",
+        title="Val ID:",
         loc='upper right',
         bbox_to_anchor=(1.0, 1.0),
-        fontsize=SIZE
+        fontsize="small"
     )
     plt.gca().add_artist(first_legend)
 
@@ -154,7 +154,7 @@ def plot_histogram_two(l, labels, key1, key2, limits={}, lambda_filtering=None, 
         title="Test OOD:",
         loc='upper right',
         bbox_to_anchor=(1.0, 0.75),
-        fontsize=SIZE
+        fontsize="small"
     )
 
     return fig
@@ -177,15 +177,16 @@ def plot_histogram_two(l, labels, key1, key2, limits={}, lambda_filtering=None, 
 dict_key_to_label = {
     "length": "$M$",
     "robust": "Robust Coeff",
-    "step": "# steps",
+    "step": "\# steps",
     # "acc": "$Acc(WA)$",
     "acc": "OOD test acc.",
     "test_acc": "OOD test acc.",
     "acc_cla": "OOD test acc.",
     "length": "# training runs",
     "testin_acc": "OOD train acc.",
-    "env_1_out_acc+env_2_out_acc+env_3_out_acc/3": "IID val acc.",
-    "train_acc": "IID val acc.",
+    "env_1_out_acc+env_2_out_acc+env_3_out_acc/3": "ID val acc.",
+    "train_acc": "ID val acc.",
+    "val_acc": "ID val acc.",
     # "soupswa": "Acc. sw",
     # "thess": "Train Flatness",
     # "soup-netm": "$Acc(\\theta_{WA}) - \\frac{1}{M}(\\sum Acc(\\theta_m))$",
@@ -193,7 +194,7 @@ dict_key_to_label = {
     '$Acc(\\frac{\\theta_{1} + \\theta_{2}}{2}) - \\frac{Acc(\\theta_{1}) + Acc(\\theta_{2})}{2}$',
     "lr2-lr1": "Difference in learning rates",
     "acc-acc_netm": "OOD test acc. gain",
-    "train_acc-train_acc_netm": "IID val acc. gain",
+    "train_acc-train_acc_netm": "ID val acc. gain",
 
     "divf_netm": "Feature diversity",
     "dist_lambdas": "$|\kappa_1 - \kappa_0|$",
@@ -202,7 +203,7 @@ dict_key_to_label = {
     "divd_netm": "Prediction d-diversity",
     "divp_netm": "Prediction p-diversity",
     "1-divq_netm": "Prediction q-diversity",
-    "1-train_divq_netm": "IID val prediction q-diversity",
+    "1-train_divq_netm": "ID val prediction q-diversity",
     "divq_netm": "Prediction similarity",
     # "hess": "Flatness",
     # "acc_netm": "$\\frac{1}{M}(\\sum Acc(\\theta_m))$",
@@ -340,7 +341,8 @@ def fit_and_plot(key1, key2, l, order, label, color, ax=None, linestyle="-"):
         linestyle=linestyle
     )
 
-SIZE="medium"
+SIZE="large"
+SIZE_AXIS="xx-large"
 
 
 def plot_basic_scatter(list_dict_values, key_x, keys_y, _dict_key_to_label="def", colors=None, keycolor=None, order=0, linestyle=None, keys_error=None, loc="upper right", title=None):
@@ -480,8 +482,10 @@ def plot_key(
 
     fig = plt.figure()
     if FORMAT_X:
+        assert FORMAT_X == 1
         plt.gca().xaxis.set_major_formatter(StrMethodFormatter('{x:,.1f}')) # 2 decimal places
     if FORMAT_Y:
+        assert FORMAT_Y == 3
         plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.3f}')) # 2 decimal places
     if _dict_key_to_label == "def":
         _dict_key_to_label = dict_key_to_label
@@ -508,8 +512,8 @@ def plot_key(
         else:
             labels = [label + str(i) for i in range(len(l))]
 
-    plt.xlabel(_dict_key_to_label.get(key1, key1), fontsize=SIZE)
-    plt.ylabel(_dict_key_to_label.get(key2, key2), fontsize=SIZE)
+    plt.xlabel(_dict_key_to_label.get(key1, key1), fontsize=SIZE_AXIS)
+    plt.ylabel(_dict_key_to_label.get(key2, key2), fontsize=SIZE_AXIS)
 
     def plot_with_int(ll, color, label, marker, linestyle):
         ll = [lll for lll in ll if lambda_filtering is None or lambda_filtering(lll)]
@@ -597,8 +601,8 @@ def plot_key(
 
 def plot_iter(key1, key2, order=1, dict_key_to_limit={}):
     fig = plt.figure()
-    plt.xlabel(dict_key_to_label.get(key1, key1), fontsize=SIZE)
-    plt.ylabel(dict_key_to_label.get(key2, key2), fontsize=SIZE)
+    plt.xlabel(dict_key_to_label.get(key1, key1), fontsize=SIZE_AXIS)
+    plt.ylabel(dict_key_to_label.get(key2, key2), fontsize=SIZE_AXIS)
 
     def plot_with_int(l, color, label):
         t = get_x(l, key1)
@@ -647,8 +651,8 @@ def plot_iter_soupacc(key1, order=1, do_ens=False, do_soup=True, ood=False):
         dict_key_to_limit = {"soup": [0.832, 0.874]}
 
     fig = plt.figure()
-    plt.xlabel(dict_key_to_label.get(key1, key1), fontsize=SIZE)
-    plt.ylabel(dict_key_to_label.get("soup", "soup"), fontsize=SIZE)
+    plt.xlabel(dict_key_to_label.get(key1, key1), fontsize=SIZE_AXIS)
+    plt.ylabel(dict_key_to_label.get("soup", "soup"), fontsize=SIZE_AXIS)
 
     colors = cm.rainbow(np.linspace(0.2, 1, 3))
 
@@ -744,10 +748,10 @@ def plot_iter_dir(
 
     if xlabel is None:
         xlabel = dict_key_to_label.get(key1, key1)
-    ax1.set_xlabel(xlabel, fontsize=SIZE)
-    ax1.set_ylabel(dict_key_to_label.get(key2, key2), fontsize=SIZE)
+    ax1.set_xlabel(xlabel, fontsize=SIZE_AXIS)
+    ax1.set_ylabel(dict_key_to_label.get(key2, key2), fontsize=SIZE_AXIS)
     if key3:
-        ax2.set_ylabel(dict_key_to_label.get(key3, key3), fontsize=SIZE)
+        ax2.set_ylabel(dict_key_to_label.get(key3, key3), fontsize=SIZE_AXIS)
 
     def plot_with_int(l, color, label):
         t = get_x(l, key1)
@@ -796,8 +800,8 @@ def plot_iter_dir(
 
 
 def plot_soup_soupswa(key1, keys2, order=1, dict_key_to_limit={}):
-    plt.xlabel(dict_key_to_label.get(key1, key1), fontsize=SIZE)
-    plt.ylabel(dict_key_to_label["soup"], fontsize=SIZE)
+    plt.xlabel(dict_key_to_label.get(key1, key1), fontsize=SIZE_AXIS)
+    plt.ylabel(dict_key_to_label["soup"], fontsize=SIZE_AXIS)
 
     def plot_with_int(l, color, label, key2):
         t = x(l, key1)
@@ -822,10 +826,11 @@ def plot_soup_soupswa(key1, keys2, order=1, dict_key_to_limit={}):
     return fig
 
 import os
-def save_fig(fig, name, folder="/private/home/alexandrerame/slurmconfig/notebook/filesdevfair/"):
+# def save_fig(fig, name, folder="/private/home/alexandrerame/slurmconfig/notebook/filesdevfair/"):
+def save_fig(fig, name, folder="/Users/alexandrerame/code_repository/tex/model_recycling/images/filesdevfair"):
     fig.savefig(
         os.path.join(folder, name),
-        format='png',
+        format='pdf',
         dpi=600,
         bbox_inches='tight'
     )
@@ -1127,8 +1132,8 @@ def plot_slope():
         label="M=",
         _dict_key_to_label=dict_key_to_label
     )
-    save_fig(fig_df, "samediffruns_df_soup.png")
-    save_fig(fig_dr, "samediffruns_dr_soup.png")
+    save_fig(fig_df, "samediffruns_df_soup.pdf")
+    save_fig(fig_dr, "samediffruns_dr_soup.pdf")
 
 
 def plot_large_hp():
@@ -1157,8 +1162,8 @@ def plot_large_hp():
         _dict_key_to_label=dict_key_to_label,
         _dict_key_to_limit=dict_key_to_limit
     )
-    save_fig(fig_df, "samediffrunslargehp_df_soup.png")
-    save_fig(fig_dr, "samediffrunslargehp_dr_soup.png")
+    save_fig(fig_df, "samediffrunslargehp_df_soup.pdf")
+    save_fig(fig_dr, "samediffrunslargehp_dr_soup.pdf")
 
 
 def plot_large_hp():
@@ -1188,7 +1193,7 @@ def plot_large_hp():
         _dict_key_to_limit={}
     )
 
-    save_fig(fig_dr, "diffrunslargehp_dr_soup-netm.png")
+    save_fig(fig_dr, "diffrunslargehp_dr_soup-netm.pdf")
 
 
 def plot_fig_hess():
@@ -1206,7 +1211,7 @@ def plot_fig_hess():
             "soup-netm": [0.02, 0.12]
         }
     )
-    save_fig(fig_ehess_soup, "diffruns_ehess_soup.png")
+    save_fig(fig_ehess_soup, "diffruns_ehess_soup.pdf")
     fig_ehess_dr = plot_key(
         l=merge(lhesssoup)[:-1],
         key1="hess",
@@ -1218,7 +1223,7 @@ def plot_fig_hess():
             "soup-netm": [0.02, 0.12]
         }
     )
-    save_fig(fig_ehess_dr, "diffruns_ehess_dr.png")
+    save_fig(fig_ehess_dr, "diffruns_ehess_dr.pdf")
 
 
 def get_list_l_full(lib_liter):
@@ -1240,9 +1245,9 @@ def plot_robust(ll_m, key1, orders=None, key_axis1="acc", key_axis2=None, labels
     if not isinstance(orders, list):
         orders = [orders for i in range(len(ll_m))]
     fig, ax1 = plt.subplots()
-    plt.xlabel(dict_key_to_label.get(key1, key1), fontsize=SIZE)
+    plt.xlabel(dict_key_to_label.get(key1, key1), fontsize=SIZE_AXIS)
     colors = cm.rainbow(np.linspace(0.3, 1, len(ll_m)))
-    ax1.set_ylabel(dict_key_to_label[key_axis1], fontsize=SIZE)
+    ax1.set_ylabel(dict_key_to_label[key_axis1], fontsize=SIZE_AXIS)
 
     def plot_with_int(l, ax, color, label, key2, marker, linestyle, order):
         t = get_x(l, key1)
@@ -1338,7 +1343,7 @@ def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=Fa
         linestyles=linestyles
     )
     if do_save:
-        save_fig(fig_dr, "lmc/" + name + "_lmc_hyp1_ood.png")
+        save_fig(fig_dr, "lmc/" + name + "_lmc_hyp1_ood.pdf")
 
     if do_iid:
         fig_dr = plot_key(
@@ -1354,7 +1359,7 @@ def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=Fa
             linestyles=linestyles
         )
         if do_save:
-            save_fig(fig_dr, "lmc/" + name + "_lmc_hyp1_iid.png")
+            save_fig(fig_dr, "lmc/" + name + "_lmc_hyp1_iid.pdf")
     if do_h:
         list_indexes = range(3, 3 + index_range)
 
@@ -1371,7 +1376,7 @@ def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=Fa
             linestyles=linestyles
         )
         if do_save:
-            save_fig(fig_dr, "lmc/" + name + "_lmc_hyp1h_ood.png")
+            save_fig(fig_dr, "lmc/" + name + "_lmc_hyp1h_ood.pdf")
         if do_iid:
             fig_dr = plot_key(
                 l,
@@ -1386,7 +1391,7 @@ def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=Fa
                 linestyles=linestyles
             )
             if do_save:
-                save_fig(fig_dr, "lmc/" + name + "_lmc_hyp1h_iid.png")
+                save_fig(fig_dr, "lmc/" + name + "_lmc_hyp1h_iid.pdf")
 
     list_indexes = range(6, 6 + index_range)
 
@@ -1403,7 +1408,7 @@ def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=Fa
         linestyles=linestyles
     )
     if do_save:
-        save_fig(fig_dr, "lmc/" + name + "_lmc_hyp2_ood.png")
+        save_fig(fig_dr, "lmc/" + name + "_lmc_hyp2_ood.pdf")
     if do_iid:
         fig_dr = plot_key(
             l,
@@ -1418,7 +1423,7 @@ def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=Fa
             linestyles=linestyles
         )
         if do_save:
-            save_fig(fig_dr, "lmc/" + name + "_lmc_hyp2_iid.png")
+            save_fig(fig_dr, "lmc/" + name + "_lmc_hyp2_iid.pdf")
 
     if do_h:
         list_indexes = range(9, 9 + index_range)
@@ -1435,7 +1440,7 @@ def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=Fa
             linestyles=linestyles
         )
         if do_save:
-            save_fig(fig_dr, "lmc/" + name + "_lmc_hyp2h_ood.png")
+            save_fig(fig_dr, "lmc/" + name + "_lmc_hyp2h_ood.pdf")
         if do_iid:
             fig_dr = plot_key(
                 l,
@@ -1450,4 +1455,4 @@ def plot_continual(l, labels, label=None, name="home0", do_iid=False, do_save=Fa
                 linestyles=linestyles
             )
             if do_save:
-                save_fig(fig_dr, "lmc/" + name + "_lmc_hyp2h_iid.png")
+                save_fig(fig_dr, "lmc/" + name + "_lmc_hyp2h_iid.pdf")
