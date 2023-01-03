@@ -127,9 +127,12 @@ class ERM(Algorithm):
                 self.classifier.reset_parameters()
 
     def _get_training_parameters(self):
-        if self._what_is_trainable in ["warmupnet"]:
+        if self._what_is_trainable in ["warmupnet", "warmupff"]:
             if self.update_count == self.hparams["warmup"]:
-                what_is_trainable = "all"
+                if self._what_is_trainable == "warmupff":
+                    what_is_trainable = "firstfrozen"
+                else:
+                    what_is_trainable = "all"
             else:
                 assert self.update_count == 0
                 what_is_trainable = "cla"
@@ -140,6 +143,10 @@ class ERM(Algorithm):
         if what_is_trainable in ["all", ]:
             print("Learn featurizer and classifier")
             training_parameters = self.network.parameters()
+        elif what_is_trainable in ["firstfrozen", ]:
+            # import pdb; pdb.set_trace()
+            print("Learn featurizer except first and classifier")
+            training_parameters = [p for n,p in list(self.network.named_parameters()) if n not in ["0.network.conv1.weight", "0.network.bn1.weight", "0.network.bn1.bias"]]
         elif what_is_trainable in ["feat"]:
             # useful for linear probing
             print("Learn only featurizer")
@@ -172,7 +179,9 @@ class ERM(Algorithm):
         loss.backward()
         self.optimizer.step()
 
-        if self.update_count == self.hparams["warmup"] and self._what_is_trainable in ["warmupnet"]:
+        if self.update_count == self.hparams["warmup"] and self._what_is_trainable in [
+            "warmupnet", "warmupff"
+        ]:
             self._init_optimizer()
         self.update_count += 1
 
@@ -419,7 +428,7 @@ class MA(ERM):
         self.network_ma = copy.deepcopy(self.network)
         self.network_ma.eval()
         self.ma_start_iter = 100
-        if self._what_is_trainable in ["warmupnet"]:
+        if self._what_is_trainable in ["warmupnet", "warmupff", "warmupcla"]:
             self.ma_start_iter += self.hparams["warmup"]
         self.ma_count = 0
 

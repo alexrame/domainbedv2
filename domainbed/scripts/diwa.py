@@ -34,9 +34,10 @@ def _get_args():
     parser.add_argument('--hparams', type=json.loads, default="{}")
 
     # select which checkpoints
-    parser.add_argument('--weight_selection', type=str, default="uniform")  # or "restricted"
+    parser.add_argument('--weight_selection', type=str, default="uniform")  # or "restricted" or "best"/"erm"
     parser.add_argument('--path_for_init', type=str, default=None)
     parser.add_argument('--topk', type=str, default=0)
+    parser.add_argument('--gtopk', type=int, default=0)
     parser.add_argument('--num_samples', type=int, default=1)
     parser.add_argument('--num_weightings', type=int, default=1)
     parser.add_argument('--divregex', type=str, default="net")
@@ -114,7 +115,6 @@ def create_splits(domain, inf_args, dataset, _filter, holdout_fraction):
 
 
 def get_checkpoint_from_folder(output_folder):
-
     whichmodel = os.environ.get("WHICHMODEL", "best")
     name = None
     if whichmodel in ['best', "stepbest"]:
@@ -493,10 +493,10 @@ def print_list_results(list_dict_results):
         if isinstance(list_values[0], (str, list)) or _key in ["step", "topk", "dirs", "ckpts", 'testenv']:
             dict_results[_key] = list_values[0]
         else:
-            # dict_results[_key + "_std"] = np.std(list_values)
-            dict_results[_key + "_max"] = np.max(list_values)
-            dict_results[_key + "_conf3"] = np.std(list_values)/np.sqrt(3)
-            # dict_results[_key + "_conf"] = np.std(list_values)/np.sqrt(len(list_values))
+            dict_results[_key + "_std"] = np.std(list_values)
+            # dict_results[_key + "_max"] = np.max(list_values)
+            # dict_results[_key + "_conf3"] = np.std(list_values)/np.sqrt(3)
+            dict_results[_key + "_conf"] = np.std(list_values)/np.sqrt(len(list_values))
             dict_results[_key] = np.mean(list_values)
     dict_results["numsamples"] = len(list_dict_results)
     print_results(dict_results, default="&&")
@@ -556,6 +556,16 @@ def merge_checkpoints(inf_args, list_dict_checkpoint_to_score_i):
 
     if os.environ.get("DEBUG"):
         import pdb; pdb.set_trace()
+
+    if inf_args.gtopk != 0:
+        if inf_args.gtopk > 0:
+            notsorted_checkpoints = sorted(
+                notsorted_checkpoints, key=lambda x: dict_checkpoint_to_score[x], reverse=True
+            )[:inf_args.gtopk]
+        else:
+            random.shuffle(notsorted_checkpoints)
+            notsorted_checkpoints = notsorted_checkpoints[:-inf_args.gtopk]
+        random.shuffle(notsorted_checkpoints)
 
     return dict_checkpoint_to_score, notsorted_checkpoints
 

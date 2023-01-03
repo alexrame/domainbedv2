@@ -523,12 +523,12 @@ class DiWA(algorithms.ERM):
                 diversity_metrics.double_fault(targets, preds0, preds1)
             )
 
-            dict_diversity[f"divn_{regexname}"].append(
-                diversity_metrics.normalized_disagreement(
-                    targets,
-                    preds0=dict_stats[key0]["logits"].numpy(),
-                    preds1=dict_stats[key0]["logits"].numpy())
-            )
+            # dict_diversity[f"divn_{regexname}"].append(
+            #     diversity_metrics.normalized_disagreement(
+            #         targets,
+            #         preds0=dict_stats[key0]["logits"].numpy(),
+            #         preds1=dict_stats[key0]["logits"].numpy())
+            # )
 
             if os.environ.get("DIVFEATS", "0") != "0" and "feats" in dict_stats[
                 key0] and "feats" in dict_stats[key1]:
