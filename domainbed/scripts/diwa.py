@@ -148,11 +148,11 @@ def get_checkpoint_from_folder(output_folder):
 def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="cuda"):
     if output_dir.endswith(".pkl"):
         # print("Handling special case where output dir is direclty a path to a model and not a folder")
-        return {output_dir: 1.}
+        return [{output_dir: 1.}]
 
     if "done" in os.listdir(output_dir) and get_checkpoint_from_folder(output_dir) or os.environ.get("FORCESPECIALFOLDER", "0") != "0":
         print("Handling special case where output dir is direclty a path to a folder model")
-        return {get_checkpoint_from_folder(output_dir): 1.}
+        return [{get_checkpoint_from_folder(output_dir): 1.}]
 
     _output_folders = [os.path.join(output_dir, path) for path in os.listdir(output_dir)]
     output_folders = [
