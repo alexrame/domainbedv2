@@ -176,8 +176,8 @@ if __name__ == "__main__":
                 run_acc["run_id"] = hparam_records.select('args.output_dir').unique()[0].split("/")[-1]
                 run_acc["test_env"] = args.test_env
                 # print(run_acc["run_id"])
-                # print(f'l["{output_dir}"].append({run_acc})')
-                # print(f'{run_acc}')
+                print(f'l["{output_dir}"].append({run_acc})')
+                print(f'{run_acc}')
                 # print(f"\t{run_acc}")
                 # for r in hparam_records:
                 #     assert(r['hparams'] == hparam_records[0]['hparams'])

@@ -540,16 +540,16 @@ class DiWA(algorithms.ERM):
 
         dict_results = {key: np.mean(value) for key, value in dict_diversity.items()}
 
-        if num_members > 0:
-            # cf https://arxiv.org/abs/2110.13786
-            def div_pac(row):
-                max_row = np.max(row)
-                normalized_row = [r / (math.sqrt(2) * max_row + 1e-7) for r in row]
-                return np.var(normalized_row)
+        # if num_members > 0:
+        #     # cf https://arxiv.org/abs/2110.13786
+        #     def div_pac(row):
+        #         max_row = np.max(row)
+        #         normalized_row = [r / (math.sqrt(2) * max_row + 1e-7) for r in row]
+        #         return np.var(normalized_row)
 
-            tcps = [dict_stats[f"net{i}"]["tcp"].numpy() for i in range(num_members)]
-            tcps = np.stack(tcps, axis=1)
-            dict_results["divp_netm"] = np.mean(np.apply_along_axis(div_pac, 1, tcps))
+        #     tcps = [dict_stats[f"net{i}"]["tcp"].numpy() for i in range(num_members)]
+        #     tcps = np.stack(tcps, axis=1)
+        #     dict_results["divp_netm"] = np.mean(np.apply_along_axis(div_pac, 1, tcps))
 
         return dict_results
 

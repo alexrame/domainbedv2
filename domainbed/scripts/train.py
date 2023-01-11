@@ -221,7 +221,10 @@ if __name__ == "__main__":
     steps_per_epoch = min([len(env)/hparams['batch_size'] for env,_ in in_splits])
 
     n_steps = args.steps if args.steps is not None else dataset.N_STEPS
-    checkpoint_freq = args.checkpoint_freq or dataset.CHECKPOINT_FREQ
+    if args.save_model_every_checkpoint!= "0" and args.save_model_every_checkpoint.isdigit():
+        checkpoint_freq = int(args.save_model_every_checkpoint)
+    else:
+        checkpoint_freq = args.checkpoint_freq or dataset.CHECKPOINT_FREQ
 
     def save_checkpoint(filename, results=None, light=False):
         if args.skip_model_save:
@@ -334,6 +337,8 @@ if __name__ == "__main__":
 
             save_ckpt = (args.save_model_every_checkpoint == "2" and step in [200, 1000, 2000, 4000, 4500])
             save_ckpt |= str(step) == args.save_model_every_checkpoint and step >= 2
+            save_ckpt |= args.save_model_every_checkpoint == "1000" and step % 1000 == 0
+            save_ckpt |= args.save_model_every_checkpoint == "100" and step % 100 == 0
             save_ckpt |= args.save_model_every_checkpoint == "all" and step in [200, 400, 600, 800, 1000, 1200, 1400, 1600, 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000, 4200, 4400, 4600, 4800, 4900]
             if save_ckpt:
                 save_checkpoint(

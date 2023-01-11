@@ -10,7 +10,7 @@ grep "&&" | jq '(.acc|tostring) +" "+ (.acc_conf|tostring) +" "+ .topk + " " + (
 
 grep "&&" | jq '(.acc|tostring) +" " + (.acc_conf|tostring) +" "+ .topk + " " + (.length|tostring) + " " + (.dirs|tostring)'
 
-grep printres | tail -n 10 | jq '(.acc|tostring) + " " + (.acc|tostring)'
+grep printres | tail -n 10 | jq '(.env0_out_acc|tostring) + " " + (.step|tostring)'
 
 sbatch -A gtw@v100
 
