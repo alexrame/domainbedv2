@@ -4,6 +4,7 @@ sed -i -- 's/dataset=TerraIncognita/dataset=VLCS/g' *.slurm
 
 
 grep "&&" | cut -f2- -d" "| cut -f1 -d")"
+grep "&&" | jq '(.acc|tostring) +" "+ (.length|tostring)'
 grep "&&" | jq '(.acc|tostring) +" "+ .topk + " " + (.length|tostring) + " " + (.dirs|tostring)'
 
 grep "&&" | jq '(.acc|tostring) +" "+ (.acc_conf|tostring) +" "+ .topk + " " + (.length|tostring)'

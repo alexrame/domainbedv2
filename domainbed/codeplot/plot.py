@@ -65,13 +65,13 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 from matplotlib.ticker import StrMethodFormatter
 
-def plot_histogram(l, labels, key, limits={}, lambda_filtering=None, list_indexes=None, loc="upper right", size=None):
+def plot_histogram(l, labels, key, limits={}, lambda_filtering=None, list_indexes=None, loc="upper right", size=None, bins=25):
     if list_indexes is not None:
         l = [l[i] for i in list_indexes]
         if labels is not None:
             labels = [labels[i] for i in list_indexes]
     plt.rcParams["figure.figsize"] = (5, 5)
-    kwargs = dict(alpha=0.5, bins=15, density=True, stacked=True)
+    kwargs = dict(alpha=0.5, bins=bins, density=True, stacked=True)
 
     def check_line(line):
         if lambda_filtering is not None:
@@ -182,6 +182,7 @@ dict_key_to_label = {
     "acc": "OOD test acc.",
     "test_acc": "OOD test acc.",
     "acc_cla": "OOD test acc.",
+    "lengthf": "\# training runs",
     "length": "# training runs",
     "testin_acc": "OOD train acc.",
     "env_1_out_acc+env_2_out_acc+env_3_out_acc/3": "ID val acc.",
@@ -200,8 +201,10 @@ dict_key_to_label = {
     "dist_lambdas": "$|\kappa_1 - \kappa_0|$",
     "acc-acc_ens":  "Accuracy gain of WA over ENS",
     "divr_netm": "Prediction r-diversity",
+    "divr_net": "Prediction r-diversity",
     "divd_netm": "Prediction d-diversity",
     "divp_netm": "Prediction p-diversity",
+    "1-divq_net": "Prediction q-diversity",
     "1-divq_netm": "Prediction q-diversity",
     "1-train_divq_netm": "ID val prediction q-diversity",
     "divq_netm": "Prediction similarity",
@@ -445,7 +448,7 @@ def lambda_clustering(l, keyclustering):
                 # if "divd" in key or "divp" in key or "divf" in key or 'max' in key or "ens1h" in key or "length" in key or key in ["dirs", "count"]:
                 continue
             list_values = [line[key] for line in list_dict_values]
-            new_l[-1][key + "_std"] = np.std(list_values)
+            new_l[-1][key + "_stdc"] = np.std(list_values)
             new_l[-1][key] = np.mean(list_values)
     return new_l
 
@@ -482,8 +485,11 @@ def plot_key(
 
     fig = plt.figure()
     if FORMAT_X:
-        assert FORMAT_X == 1
-        plt.gca().xaxis.set_major_formatter(StrMethodFormatter('{x:,.1f}')) # 2 decimal places
+        if FORMAT_X == 1:
+            plt.gca().xaxis.set_major_formatter(StrMethodFormatter('{x:,.1f}')) # 2 decimal places
+        elif isinstance(FORMAT_X, list):
+            plt.gca().set_xticks(FORMAT_X)
+
     if FORMAT_Y:
         assert FORMAT_Y == 3
         plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.3f}')) # 2 decimal places
@@ -525,14 +531,27 @@ def plot_key(
 
         newlabel = label if (linestyle is None and label !="no") else None
         if keyerror is not None:
-            plt.errorbar(
+            plt.scatter(
                 get_x(ll, key1),
                 get_x(ll, key2),
-                get_x(ll, keyerror),
                 color=color,
                 label=newlabel,
                 marker=marker,
-                **kwargs)
+                **kwargs
+            )
+            plt.fill_between(get_x(ll, key1),
+                get_x(ll, key2 + "-" + keyerror),
+                get_x(ll, key2 + "+" + keyerror),
+                alpha=0.5,
+                )
+            # plt.errorbar(
+            #     get_x(ll, key1),
+            #     get_x(ll, key2),
+            #     get_x(ll, keyerror),
+            #     color=color,
+            #     label=newlabel,
+            #     marker=marker,
+            #     **kwargs)
         elif keycolor is not None:
             plt.scatter(
                 get_x(ll, key1),
@@ -569,18 +588,34 @@ def plot_key(
         else:
             linestyle = None
         plot_with_int(l[index], color=colors[index], label=label, marker=marker, linestyle=linestyle)
+
     if diag:
-        xpoints = ypoints = plt.xlim()
-        plt.plot(
-            xpoints,
-            ypoints,
-            linestyle='--',
-            color='k',
-            lw=3,
-            scalex=False,
-            scaley=False,
-            label="y=x"
-        )
+        if diag != 1:
+            xpoints = plt.xlim()
+            print(xpoints)
+            ypoints = [diag for x in xpoints]
+            plt.plot(
+                xpoints,
+                ypoints,
+                linestyle='-',
+                color='black',
+                lw=3,
+                scalex=False,
+                scaley=False,
+                label="Model ratatouille"
+            )
+        else:
+            xpoints = ypoints = plt.xlim()
+            plt.plot(
+                xpoints,
+                ypoints,
+                linestyle='--',
+                color='k',
+                lw=3,
+                scalex=False,
+                scaley=False,
+                label="y=x"
+            )
 
     if key1 in _dict_key_to_limit:
         plt.xlim(_dict_key_to_limit[key1])
@@ -827,7 +862,7 @@ def plot_soup_soupswa(key1, keys2, order=1, dict_key_to_limit={}):
 
 import os
 # def save_fig(fig, name, folder="/private/home/alexandrerame/slurmconfig/notebook/filesdevfair/"):
-def save_fig(fig, name, folder="/Users/alexandrerame/code_repository/tex/model_recycling/images/filesdevfair"):
+def save_fig(fig, name, folder="/Users/alexandrerame/code_repository/tex/model_recycling_icml/images/filesdevfair"):
     fig.savefig(
         os.path.join(folder, name),
         format='pdf',
