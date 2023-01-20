@@ -188,6 +188,8 @@ class IIDAccuracySelectionMethod(SelectionMethod):
         for i in itertools.count():
             if f'env{i}_out_acc' + keyacc not in record:
                 break
+            if f'env{i}_in_acc' + keyacc in record:
+                dict_acc[f'env{i}_in_acc'] = record[f'env{i}_in_acc' + keyacc]
             dict_acc[f'env{i}_out_acc'] = record[f'env{i}_out_acc' + keyacc]
             if i not in test_envs:
                 train_env_keys.append(f'env{i}_in_acc' + keyacc)
