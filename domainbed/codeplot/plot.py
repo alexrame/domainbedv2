@@ -447,6 +447,8 @@ def lambda_clustering(l, keyclustering):
             list_values = [line[key] for line in list_dict_values]
             new_l[-1][key + "_std"] = np.std(list_values)
             new_l[-1][key] = np.mean(list_values)
+            if key == "step":
+                new_l[-1][key] = int(new_l[-1][key])
     return new_l
 
 FORMAT_X=0

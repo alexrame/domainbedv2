@@ -38,6 +38,7 @@ def _get_args():
     parser.add_argument('--path_for_init', type=str, default=None)
     parser.add_argument('--topk', type=str, default=0)
     parser.add_argument('--gtopk', type=int, default=0)
+    parser.add_argument('--dtopk', type=int, default=0)
     parser.add_argument('--num_samples', type=int, default=1)
     parser.add_argument('--num_weightings', type=int, default=1)
     parser.add_argument('--divregex', type=str, default="net")
@@ -166,10 +167,10 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
     dict_dict_checkpoint_to_score = collections.defaultdict(dict)
     for folder in output_folders:
         checkpoint = get_checkpoint_from_folder(folder)
-        timedone = os.path.getmtime(os.path.join(folder, "done"))
-        timeckpt = os.path.getmtime(checkpoint)
-        if timedone < timeckpt:
-            print(f"Timestamp error for {folder}")
+        # timedone = os.path.getmtime(os.path.join(folder, "done"))
+        # timeckpt = os.path.getmtime(checkpoint)
+        # if timedone < timeckpt:
+        #     print(f"Timestamp error for {folder}")
         train_args = misc.load_results_jsonl(folder)["args"]
 
         if train_args["dataset"] != inf_args.dataset:
@@ -187,7 +188,7 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
         if train_args["trial_seed"] != inf_args.trial_seed and inf_args.trial_seed != -1:
             continue
 
-        if inf_args.weight_selection in ["restricted", "best", "erm"]:
+        if inf_args.weight_selection in ["restricted", "best", "erm"] or inf_args.topk != "0":
             save_dict = torch.load(checkpoint, map_location=torch.device('cpu'))
         else:
             save_dict = {}
@@ -433,7 +434,7 @@ def enrich_dict_results_with_info(dict_results, inf_args):
     dict_results["testenv"] = inf_args.test_env
     dict_results["topk"] = inf_args.topk
     dict_results["trialseed"] = inf_args.trial_seed
-
+    dict_results["dirslen"] = len(inf_args.output_dir)
     dict_results["dirs"] = ",".join(
         [basename(normpath(output_dir)) for output_dir in inf_args.output_dir]
     )
@@ -517,12 +518,22 @@ def merge_checkpoints(inf_args, list_dict_checkpoint_to_score_i):
     dict_checkpoint_to_score = {}
     notsorted_checkpoints = []
 
-    for i, dict_checkpoint_to_score_i in enumerate(list_dict_checkpoint_to_score_i):
+    if inf_args.dtopk != 0:
+        list_dict_checkpoint_to_score_i = list_dict_checkpoint_to_score_i.copy()
+        random.shuffle(list_dict_checkpoint_to_score_i)
+        list_dict_checkpoint_to_score_i = list_dict_checkpoint_to_score_i[:inf_args.dtopk]
+        inf_args.output_dir = [
+            "/".join(list(dict_checkpoint_to_score_i.keys())[0].split("/")[:-2])
+            for dict_checkpoint_to_score_i in list_dict_checkpoint_to_score_i
+            ]
+
+    count = 0
+    for dict_checkpoint_to_score_i in list_dict_checkpoint_to_score_i:
         if "_" in inf_args.topk:
-            if len(inf_args.topk.split("_"))<=i:
+            if len(inf_args.topk.split("_")) <= count:
                 topk = inf_args.topk.split("_")[-1]
             else:
-                topk = inf_args.topk.split("_")[i]
+                topk = inf_args.topk.split("_")[count]
             if topk == "no":
                 continue
             if topk[-1] == "-":
@@ -530,12 +541,13 @@ def merge_checkpoints(inf_args, list_dict_checkpoint_to_score_i):
             topk = int(topk)
         else:
             topk = int(inf_args.topk)
-        sorted_checkpoints_i = sorted(
-            dict_checkpoint_to_score_i.keys(),
-            key=lambda x: dict_checkpoint_to_score_i[x],
-            reverse=True
-        )
+        sorted_checkpoints_i = dict_checkpoint_to_score_i.keys()
         if topk != 0:
+            sorted_checkpoints_i = sorted(
+                sorted_checkpoints_i,
+                key=lambda x: dict_checkpoint_to_score_i[x],
+                reverse=True
+            )
             if topk > 0:
                 # select best according to metrics
                 rand_nums = range(0, topk)
@@ -549,10 +561,9 @@ def merge_checkpoints(inf_args, list_dict_checkpoint_to_score_i):
                     rand_nums = range(0, len(sorted_checkpoints_i))
             sorted_checkpoints_i = [sorted_checkpoints_i[i] for i in rand_nums if i < len(sorted_checkpoints_i)]
         random.shuffle(sorted_checkpoints_i)
-        for checkpoint in sorted_checkpoints_i:
-            print("Found: ", checkpoint, " with score: ", dict_checkpoint_to_score_i[checkpoint])
         dict_checkpoint_to_score.update(dict_checkpoint_to_score_i)
         notsorted_checkpoints.extend(sorted_checkpoints_i)
+        count += 1
 
     if os.environ.get("DEBUG"):
         import pdb; pdb.set_trace()

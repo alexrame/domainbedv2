@@ -287,7 +287,7 @@ if __name__ == "__main__":
 
             evals = zip(eval_loader_names, eval_loaders, eval_weights)
             for name, loader, weights in evals:
-                if "_out" in name or "env" + str(args.test_envs[0]) in name:
+                if "_out" in name or "env" + str(args.test_envs[0]) in name or True:
                     _results_name = misc.accuracy(algorithm, loader, weights, device)
                     for key, value in _results_name.items():
                         results[name + '_' + key] = value
@@ -339,6 +339,7 @@ if __name__ == "__main__":
             save_ckpt |= str(step) == args.save_model_every_checkpoint and step >= 2
             save_ckpt |= args.save_model_every_checkpoint == "1000" and step % 1000 == 0
             save_ckpt |= args.save_model_every_checkpoint == "100" and step % 100 == 0
+            save_ckpt |= args.save_model_every_checkpoint == "500" and step % 500 == 0
             save_ckpt |= args.save_model_every_checkpoint == "all" and step in [200, 400, 600, 800, 1000, 1200, 1400, 1600, 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000, 4200, 4400, 4600, 4800, 4900]
             if save_ckpt:
                 save_checkpoint(
