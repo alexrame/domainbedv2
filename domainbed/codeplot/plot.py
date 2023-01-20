@@ -182,6 +182,7 @@ dict_key_to_label = {
     "acc": "OOD test acc.",
     "test_acc": "OOD test acc.",
     "acc_cla": "OOD test acc.",
+    "dirslen": "\# auxiliary tasks",
     "lengthf": "\# training runs",
     "length": "# training runs",
     "testin_acc": "OOD train acc.",

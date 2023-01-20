@@ -1,5 +1,5 @@
 ssh utr15kn@jean-zay.idris.fr
-sed -i -- 's/dataset=TerraIncognita/dataset=VLCS/g' *.slurm
+sed -i -- 's/##SBATCH/#SBATCH/g' *.slurm
 
 
 
