@@ -494,10 +494,10 @@ def print_list_results(list_dict_results):
         if isinstance(list_values[0], (str, list)) or _key in ["step", "topk", "dirs", "ckpts", 'testenv']:
             dict_results[_key] = list_values[0]
         else:
-            dict_results[_key + "_std"] = np.std(list_values)
+            # dict_results[_key + "_std"] = np.std(list_values)
             # dict_results[_key + "_max"] = np.max(list_values)
             # dict_results[_key + "_conf3"] = np.std(list_values)/np.sqrt(3)
-            dict_results[_key + "_conf"] = np.std(list_values)/np.sqrt(len(list_values))
+            # dict_results[_key + "_conf"] = np.std(list_values)/np.sqrt(len(list_values))
             dict_results[_key] = np.mean(list_values)
     dict_results["numsamples"] = len(list_dict_results)
     print_results(dict_results, default="&&")
@@ -706,11 +706,11 @@ def main():
                             os.environ.get("DEFAULTTYPECKPT", "network")
                     } for rank_checkpoint, checkpoint in enumerate(notsorted_checkpoints)
                 ]
-                if inf_args.weighting in ["rank", "filter"]:
-                    if i_weighting == 0.5:
-                        previous_what = [w for w in inf_args.what]
-                        if os.environ.get("DEFAULTTYPECKPT", "network") == "network":
-                            inf_args.what = ["mean", "addnet"] + inf_args.what
+                # if inf_args.weighting in ["rank", "filter"]:
+                #     if i_weighting == 0.5:
+                #         previous_what = [w for w in inf_args.what]
+                #         if os.environ.get("DEFAULTTYPECKPT", "network") == "network":
+                #             inf_args.what = ["mean", "addnet"] + inf_args.what
 
                 if inf_args.weight_selection == "uniform":
                     if inf_args.checkpoints:
@@ -729,8 +729,8 @@ def main():
 
                 if inf_args.weighting in ["rank", "filter"]:
                     dict_results["weighting"] = i_weighting
-                    if i_weighting == 0.5:
-                        inf_args.what = previous_what
+                    # if i_weighting == 0.5:
+                    #     inf_args.what = previous_what
                 print_results(dict_results, "&&" if inf_args.num_samples == 1 else "##")
         list_dict_results.append(dict_results)
     print_list_results(list_dict_results)

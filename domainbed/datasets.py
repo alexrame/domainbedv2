@@ -38,6 +38,7 @@ DATASETS = [
     "ColoredRotatedMNISTClean",
     # Big images
     "OfficeHome",
+    "OfficeHomeCorrupt",
     "VLCS",
     "PACS",
     "DomainNet",
@@ -433,6 +434,84 @@ class OfficeHome(MultipleEnvironmentImageFolder):
         self.dir = os.path.join(root, "office_home/")
         super().__init__(self.dir, test_envs, hparams['data_augmentation'], hparams)
 
+import random
+def _corrupt_samples(env_dataset, corrupt_prop):
+    random.seed(0)
+    corrupted_indexes = random.sample(range(len(env_dataset.samples)), int(corrupt_prop * len(env_dataset.samples)))
+    print("Corrupt indexes:", len(corrupted_indexes), "out of:", len(env_dataset.samples))
+
+    for i in corrupted_indexes:
+        env_dataset.samples[i] = (
+            env_dataset.samples[i][0],
+            (env_dataset.samples[i][1] + 1) % len(env_dataset.classes))
+
+
+def _corrupt_samples_filter(env_dataset, corrupt_prop, which="in"):
+    random.seed(0)
+    corrupted_indexes = random.sample(range(len(env_dataset.samples)), int(corrupt_prop * len(env_dataset.samples)))
+    new_samples = []
+    for i in range(len(env_dataset.samples)):
+        if i in corrupted_indexes:
+            add = (which == "in")
+            new_target = (env_dataset.samples[i][1] + 1) % len(env_dataset.classes)
+        else:
+            add = (which == "out")
+            new_target = env_dataset.samples[i][1]
+        if add:
+            new_tuple = (
+                env_dataset.samples[i][0],
+                new_target
+                )
+            new_samples.append(new_tuple)
+
+    env_dataset.samples = new_samples
+    env_dataset.imgs = new_samples
+    env_dataset.targets = [s[1] for s in new_samples]
+    print("Len index:", len(env_dataset.samples), "which:", which)
+
+class OfficeHomeCorrupt(MultipleDomainDataset):
+    CHECKPOINT_FREQ = 100  ## DiWA ##
+    ENVIRONMENTS = ["A", "R", "R_corrupt"]
+
+    def __init__(self, root, test_envs, hparams):
+        self.dir = os.path.join(root, "office_home_corrupt/")
+        self.super_init(self.dir, test_envs, False, hparams)
+
+    def super_init(self, root, test_envs, augment, hparams):
+        super().__init__()
+        environments = [f.name for f in os.scandir(root) if f.is_dir()]
+        environments = sorted(environments)
+
+        transform = transforms.Compose(
+            [
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            ]
+        )
+
+        self.datasets = []
+        for i, environment in enumerate(environments):
+            path = os.path.join(root, environment)
+            env_dataset = ImageFolder(path, transform=transform)
+
+            prop = float(os.environ.get("PROP", 0.1))
+            if "Corrupt" in environment:
+                if 'corrupt_prop' in hparams:
+                    _corrupt_samples(env_dataset, hparams['corrupt_prop'])
+                else:
+                    _corrupt_samples_filter(env_dataset, prop, which="in")
+            elif environment + "Corrupt" in environments:
+                _corrupt_samples_filter(env_dataset, prop, which="out")
+
+            self.datasets.append(env_dataset)
+
+        self.input_shape = (
+            3,
+            224,
+            224,
+        )
+        self.num_classes = len(self.datasets[-1].classes)
 
 class TerraIncognita(MultipleEnvironmentImageFolder):
     CHECKPOINT_FREQ = 100  ## DiWA ##

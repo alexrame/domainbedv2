@@ -151,6 +151,13 @@ class ERM(Algorithm):
             # useful for linear probing
             print("Learn only featurizer")
             training_parameters = self.featurizer.parameters()
+        elif what_is_trainable.startswith("frozen_"):
+            layer = int(what_is_trainable.split("_")[1])
+            training_parameters = [
+                p for n, p in list(self.featurizer.named_parameters())
+                if n.startswith("network.layer") and int(n.split(".")[1][-1]) >= layer
+            ]
+            training_parameters += list(self.classifier.parameters())
         else:
             assert what_is_trainable in ["cla"]
             # useful when learning with fixed vocabulary
