@@ -754,8 +754,10 @@ def plot_soup_soupswa(key1, keys2, order=1, dict_key_to_limit={}):
 
 import os
 def save_fig(fig, name, folder="/private/home/alexandrerame/slurmconfig/notebook/filesdevfair/"):
+    if folder is not None:
+        name = os.path.join(folder, name)
     fig.savefig(
-        os.path.join(folder, name),
+        name,
         format='png',
         dpi=600,
         bbox_inches='tight'

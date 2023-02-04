@@ -3,7 +3,7 @@ from datafb.transfer import home_fb_1002_top1, pacs_fb_1002_top1, terradn, home_
 from datafb.transfer import home3dn_tr, pacs_fb_1001, home_fb_1001, home_fb_notransfer, home_fb, home0dn_tr, home2dn_transferrobustv3, home2dn_transferrobustv2, home2dn_transferrobust
 from datafb.transfer import home2dn_transfer, homepacs_mixed, home0top1_patch, home3dn_patch, pacs_from_imagenet, home_from_imagenet, home0123dn, pacs0123dn, pacs3, home2dn, pacs1dn, pacs2dn, home3dn, pacs3dn, home0, home0top1, home0few, home0dn, home1, home1dn, pacs3few, pacs0, pacs0dn
 
-from codeplot.plot import get_x, fit_and_plot, dict_key_to_limit
+from domainbed.codeplot.plot import get_x, fit_and_plot, save_fig
 import numpy as np
 from matplotlib import cm
 import matplotlib.pyplot as plt
@@ -130,14 +130,14 @@ def get_values_from_list(data, y="ood", metric="best", what="acc"):
     return dict_best_value
 
 
-def compare_auxiliary(dataset, pts, metric, plot_only_ood=True, orders=2, figsize=(14, 8), dict_key_to_label=None, labels=None, what="acc", list_limits=None):
+def compare_auxiliary(dataset, pts, metric, plot_only_ood=True, orders=2, figsize=(14, 8), dict_key_to_label=None, labels=None, what="acc", list_limits=None, save_path=None, loc="upper right"):
     list_list_l = []
     list_domain_names = dict_dataset_to_domain_names[dataset]
 
     plt.rcParams["figure.figsize"] = figsize
-    kwargs = {"legends": ["Approach:"], "labels": pts if labels is None else labels, "orders": orders}
+    kwargs = {"legends": ["Approach:"], "labels": pts if labels is None else labels, "orders": orders, "loc": loc}
     if plot_only_ood:
-        _, axes = plt.subplots(2, 2)
+        fig, axes = plt.subplots(2, 2)
     for domain in range(4):
 
         def get_dict_cleanx(x):
@@ -211,7 +211,8 @@ def compare_auxiliary(dataset, pts, metric, plot_only_ood=True, orders=2, figsiz
                 dict_key_to_limit=dict_key_to_limit,
                 **kwargs
             )
-        #save_fig(fig, dataset + str(domain) + "_editing_ermdiwa.png")
+    if save_path is not None:
+        save_fig(fig, save_path, folder=None)
     return list_list_l
 
 
