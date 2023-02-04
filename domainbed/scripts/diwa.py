@@ -5,6 +5,8 @@ import random
 import numpy as np
 import torch
 import torch.utils.data
+import collections
+from os.path import normpath, basename
 from domainbed import datasets, algorithms_inference
 from domainbed.lib import misc
 from domainbed.lib.fast_data_loader import FastDataLoader, InfiniteDataLoader
@@ -32,9 +34,11 @@ def _get_args():
     parser.add_argument('--hparams', type=json.loads, default="{}")
 
     # select which checkpoints
-    parser.add_argument('--weight_selection', type=str, default="uniform")  # or "restricted"
+    parser.add_argument('--weight_selection', type=str, default="uniform")  # or "restricted" or "best"/"erm"
     parser.add_argument('--path_for_init', type=str, default=None)
     parser.add_argument('--topk', type=str, default=0)
+    parser.add_argument('--gtopk', type=int, default=0)
+    parser.add_argument('--dtopk', type=int, default=0)
     parser.add_argument('--num_samples', type=int, default=1)
     parser.add_argument('--num_weightings', type=int, default=1)
     parser.add_argument('--divregex', type=str, default="net")
@@ -112,7 +116,6 @@ def create_splits(domain, inf_args, dataset, _filter, holdout_fraction):
 
 
 def get_checkpoint_from_folder(output_folder):
-
     whichmodel = os.environ.get("WHICHMODEL", "best")
     name = None
     if whichmodel in ['best', "stepbest"]:
@@ -146,11 +149,11 @@ def get_checkpoint_from_folder(output_folder):
 def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="cuda"):
     if output_dir.endswith(".pkl"):
         # print("Handling special case where output dir is direclty a path to a model and not a folder")
-        return {output_dir: 1.}
+        return [{output_dir: 1.}]
 
     if "done" in os.listdir(output_dir) and get_checkpoint_from_folder(output_dir) or os.environ.get("FORCESPECIALFOLDER", "0") != "0":
         print("Handling special case where output dir is direclty a path to a folder model")
-        return {get_checkpoint_from_folder(output_dir): 1.}
+        return [{get_checkpoint_from_folder(output_dir): 1.}]
 
     _output_folders = [os.path.join(output_dir, path) for path in os.listdir(output_dir)]
     output_folders = [
@@ -161,14 +164,14 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
     if len(output_folders) == 0:
         raise ValueError(f"No done folders found for: {output_dir} and: {inf_args}")
 
-    dict_checkpoint_to_score = {}
+    dict_dict_checkpoint_to_score = collections.defaultdict(dict)
     for folder in output_folders:
         checkpoint = get_checkpoint_from_folder(folder)
-        if device == "cpu":
-            save_dict = torch.load(checkpoint, map_location=torch.device('cpu'))
-        else:
-            save_dict = torch.load(checkpoint)
-        train_args = save_dict["args"]
+        # timedone = os.path.getmtime(os.path.join(folder, "done"))
+        # timeckpt = os.path.getmtime(checkpoint)
+        # if timedone < timeckpt:
+        #     print(f"Timestamp error for {folder}")
+        train_args = misc.load_results_jsonl(folder)["args"]
 
         if train_args["dataset"] != inf_args.dataset:
             continue
@@ -185,20 +188,24 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
         if train_args["trial_seed"] != inf_args.trial_seed and inf_args.trial_seed != -1:
             continue
 
+        if inf_args.weight_selection in ["restricted", "best", "erm"] or inf_args.topk != "0":
+            save_dict = torch.load(checkpoint, map_location=torch.device('cpu'))
+        else:
+            save_dict = {}
         if "results" not in save_dict:
             score = -1
         else:
-            score = misc.get_score(
+            score = misc.get_score_diwa(
                 json.loads(save_dict["results"]), [inf_args.test_env],
                 metric_key=os.environ.get("KEYACC", "out_acc" if "ma" not in inf_args.what else "out_acc_ma"),
                 model_selection=os.environ.get("MODEL_SELECTION", "train")
             )
-        dict_checkpoint_to_score[checkpoint] = score
+        dict_dict_checkpoint_to_score[train_args["trial_seed"]][checkpoint] = score
 
-    if len(dict_checkpoint_to_score) == 0:
+    if len(dict_dict_checkpoint_to_score) == 0:
         raise ValueError(f"No folders found for: {output_dir} and: {inf_args}")
 
-    return dict_checkpoint_to_score
+    return list(dict_dict_checkpoint_to_score.values())
 
 
 def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="mean", device="gpu"):
@@ -405,6 +412,11 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
                     dict_results[
                         new_key + "_to_" + domain] = np.mean(value.detach().float().cpu().numpy())
 
+
+    enrich_dict_results_with_info(dict_results, inf_args)
+    return dict_results
+
+def enrich_dict_results_with_info(dict_results, inf_args):
     # some hacky queries to enrich dict_results
     if "VARM" in os.environ:
         dict_results["varm"] = float(os.environ["VARM"])
@@ -421,17 +433,18 @@ def eval_after_loading_wa(wa_algorithm, dict_data_loaders, device, inf_args):
 
     dict_results["testenv"] = inf_args.test_env
     dict_results["topk"] = inf_args.topk
-    from os.path import normpath, basename
-    dict_results["dirs"] = ",".join([
-        basename(normpath(output_dir)) for output_dir in inf_args.output_dir
-    ])
+    dict_results["trialseed"] = inf_args.trial_seed
+    dict_results["dirslen"] = len(inf_args.output_dir)
+    dict_results["dirs"] = ",".join(
+        [basename(normpath(output_dir)) for output_dir in inf_args.output_dir]
+    )
     if inf_args.checkpoints:
         dict_results["ckpts"] = "-".join(
-            ["{w:.3f}".format(w=ckpt["weight"]) + "_" + str(ckpt["type"])
-             for ckpt in inf_args.checkpoints]
+            [
+                "{w:.3f}".format(w=ckpt["weight"]) + "_" + str(ckpt["type"])
+                for ckpt in inf_args.checkpoints
+            ]
         )
-
-    return dict_results
 
 def weighting_checkpoint(weighting_strategy, len_checkpoint, i_weighting=None, rank_checkpoint=None):
     if weighting_strategy in [None, "uniform", "None"]:
@@ -478,12 +491,13 @@ def print_list_results(list_dict_results):
     dict_results = {}
     for _key in results_keys:
         list_values = [dict_results[_key] for dict_results in list_dict_results]
-        if isinstance(list_values[0], (str, list)) or _key in ["step", "topk", "dirs", "ckpts", 'testenv', "length", "lengthf"]:
+        if isinstance(list_values[0], (str, list)) or _key in ["step", "topk", "dirs", "ckpts", 'testenv']:
             dict_results[_key] = list_values[0]
         else:
             # dict_results[_key + "_std"] = np.std(list_values)
-            dict_results[_key + "_conf3"] = np.std(list_values)/np.sqrt(3)
-            dict_results[_key + "_conf"] = np.std(list_values)/np.sqrt(len(list_values))
+            # dict_results[_key + "_max"] = np.max(list_values)
+            # dict_results[_key + "_conf3"] = np.std(list_values)/np.sqrt(3)
+            # dict_results[_key + "_conf"] = np.std(list_values)/np.sqrt(len(list_values))
             dict_results[_key] = np.mean(list_values)
     dict_results["numsamples"] = len(list_dict_results)
     print_results(dict_results, default="&&")
@@ -504,12 +518,22 @@ def merge_checkpoints(inf_args, list_dict_checkpoint_to_score_i):
     dict_checkpoint_to_score = {}
     notsorted_checkpoints = []
 
-    for i, dict_checkpoint_to_score_i in enumerate(list_dict_checkpoint_to_score_i):
+    if inf_args.dtopk != 0:
+        list_dict_checkpoint_to_score_i = list_dict_checkpoint_to_score_i.copy()
+        random.shuffle(list_dict_checkpoint_to_score_i)
+        list_dict_checkpoint_to_score_i = list_dict_checkpoint_to_score_i[:inf_args.dtopk]
+        inf_args.output_dir = [
+            "/".join(list(dict_checkpoint_to_score_i.keys())[0].split("/")[:-2])
+            for dict_checkpoint_to_score_i in list_dict_checkpoint_to_score_i
+            ]
+
+    count = 0
+    for dict_checkpoint_to_score_i in list_dict_checkpoint_to_score_i:
         if "_" in inf_args.topk:
-            if len(inf_args.topk.split("_"))<=i:
+            if len(inf_args.topk.split("_")) <= count:
                 topk = inf_args.topk.split("_")[-1]
             else:
-                topk = inf_args.topk.split("_")[i]
+                topk = inf_args.topk.split("_")[count]
             if topk == "no":
                 continue
             if topk[-1] == "-":
@@ -517,12 +541,13 @@ def merge_checkpoints(inf_args, list_dict_checkpoint_to_score_i):
             topk = int(topk)
         else:
             topk = int(inf_args.topk)
-        sorted_checkpoints_i = sorted(
-            dict_checkpoint_to_score_i.keys(),
-            key=lambda x: dict_checkpoint_to_score_i[x],
-            reverse=True
-        )
+        sorted_checkpoints_i = dict_checkpoint_to_score_i.keys()
         if topk != 0:
+            sorted_checkpoints_i = sorted(
+                sorted_checkpoints_i,
+                key=lambda x: dict_checkpoint_to_score_i[x],
+                reverse=True
+            )
             if topk > 0:
                 # select best according to metrics
                 rand_nums = range(0, topk)
@@ -532,16 +557,26 @@ def merge_checkpoints(inf_args, list_dict_checkpoint_to_score_i):
                 if topk <= len(sorted_checkpoints_i):
                     rand_nums = sorted(random.sample(range(len(sorted_checkpoints_i)), topk))
                 else:
+                    raise ValueError("topk is too large")
                     rand_nums = range(0, len(sorted_checkpoints_i))
             sorted_checkpoints_i = [sorted_checkpoints_i[i] for i in rand_nums if i < len(sorted_checkpoints_i)]
         random.shuffle(sorted_checkpoints_i)
-        for checkpoint in sorted_checkpoints_i:
-            print("Found: ", checkpoint, " with score: ", dict_checkpoint_to_score_i[checkpoint])
         dict_checkpoint_to_score.update(dict_checkpoint_to_score_i)
         notsorted_checkpoints.extend(sorted_checkpoints_i)
+        count += 1
 
     if os.environ.get("DEBUG"):
         import pdb; pdb.set_trace()
+
+    if inf_args.gtopk != 0:
+        if inf_args.gtopk > 0:
+            notsorted_checkpoints = sorted(
+                notsorted_checkpoints, key=lambda x: dict_checkpoint_to_score[x], reverse=True
+            )[:inf_args.gtopk]
+        else:
+            random.shuffle(notsorted_checkpoints)
+            notsorted_checkpoints = notsorted_checkpoints[:-inf_args.gtopk]
+        random.shuffle(notsorted_checkpoints)
 
     return dict_checkpoint_to_score, notsorted_checkpoints
 
@@ -620,20 +655,9 @@ def main():
 
     else:
         for output_dir in inf_args.output_dir:
-            list_dict_checkpoint_to_score_i.append(
+            list_dict_checkpoint_to_score_i.extend(
                 get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=inf_args.train_envs, device=device)
             )
-    # else:
-    #     raise ValueError("PERD not implemented")
-    #     # for output_dir in inf_args.output_dir[1:]:
-    #     #     list_dict_checkpoint_to_score_i.append(
-    #     #         get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=inf_args.train_envs, device=device)
-    #     #     )
-    #     # list_i = [1, 2, 3] if os.environ.get("PERD") == "1" else [int(p) for p in os.environ.get("PERD").split(",")]
-    #     # for i in list_i:
-    #     #     list_dict_checkpoint_to_score_i.append(
-    #     #         get_dict_checkpoint_to_score(inf_args.output_dir[0], inf_args, train_envs=[i], device=device)
-    #     #     )
 
     dict_data_splits = create_data_splits(inf_args, dataset)
     list_dict_results = []
@@ -643,7 +667,23 @@ def main():
         )
 
         # compute score after weight averaging
-        if inf_args.weight_selection == "restricted":
+        if inf_args.weight_selection in ["best", "erm"]:
+            selected_checkpoint = sorted(
+                notsorted_checkpoints, key=lambda x: dict_checkpoint_to_score[x], reverse=True
+            )[0]
+            save_dict = torch.load(selected_checkpoint, map_location=torch.device('cpu'))
+            ood_score = misc.get_score_diwa(
+                json.loads(save_dict["results"]), [inf_args.test_env],
+                metric_key="in_acc" if "ma" not in inf_args.what else "in_acc_ma",
+                model_selection="oracle"
+            )
+            dict_results = {"acc": ood_score, "length": 1.}
+            enrich_dict_results_with_info(dict_results, inf_args)
+            # dict_results = get_wa_results(
+            #             [selected_checkpoint], dataset, inf_args, dict_data_splits, device
+            #         )
+            print_results(dict_results, "&&" if inf_args.num_samples == 1 else "##")
+        elif inf_args.weight_selection == "restricted":
             sorted_checkpoints = sorted(
                 notsorted_checkpoints, key=lambda x: dict_checkpoint_to_score[x], reverse=True
             )
@@ -666,11 +706,11 @@ def main():
                             os.environ.get("DEFAULTTYPECKPT", "network")
                     } for rank_checkpoint, checkpoint in enumerate(notsorted_checkpoints)
                 ]
-                if inf_args.weighting in ["rank", "filter"]:
-                    if i_weighting == 0.5:
-                        previous_what = [w for w in inf_args.what]
-                        if os.environ.get("DEFAULTTYPECKPT", "network") == "network":
-                            inf_args.what = ["mean", "addnet"] + inf_args.what
+                # if inf_args.weighting in ["rank", "filter"]:
+                #     if i_weighting == 0.5:
+                #         previous_what = [w for w in inf_args.what]
+                #         if os.environ.get("DEFAULTTYPECKPT", "network") == "network":
+                #             inf_args.what = ["mean", "addnet"] + inf_args.what
 
                 if inf_args.weight_selection == "uniform":
                     if inf_args.checkpoints:
@@ -689,8 +729,8 @@ def main():
 
                 if inf_args.weighting in ["rank", "filter"]:
                     dict_results["weighting"] = i_weighting
-                    if i_weighting == 0.5:
-                        inf_args.what = previous_what
+                    # if i_weighting == 0.5:
+                    #     inf_args.what = previous_what
                 print_results(dict_results, "&&" if inf_args.num_samples == 1 else "##")
         list_dict_results.append(dict_results)
     print_list_results(list_dict_results)

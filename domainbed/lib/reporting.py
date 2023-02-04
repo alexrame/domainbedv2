@@ -16,6 +16,10 @@ def load_list_records(list_path):
                                 ncols=80,
                                 leave=False):
             results_path = os.path.join(path, subdir, "results.jsonl")
+            if not os.path.exists(os.path.join(path, subdir, "done")) and os.environ.get("DONEOPTIONAL", "0") == "0":
+                # print(f"{os.path.join(path, subdir)} without done")
+                continue
+                # pass
             try:
                 with open(results_path, "r") as f:
                     for line in f:
@@ -48,7 +52,7 @@ def get_grouped_records(records):
     for r in records:
         r["args"]["hpstep"] = str(r["args"]["hparams_seed"]) + "_" + str(r["step"])
         for test_env in r["args"]["test_envs"]:
-            output_dir_clean = "_".join(r["args"]["output_dir"].split("/")[-2].split("_")[1:])
+            output_dir_clean = "_".join(r["args"]["output_dir"].split("/")[-2].split("_")[0:])
             group = (r["args"]["trial_seed"],
                 r["args"]["dataset"],
                 r["args"]["algorithm"],

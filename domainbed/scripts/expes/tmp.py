@@ -1,19 +1,35 @@
-num_weightings = 5
-half_num_weightings = (num_weightings - 1) // 2
-weightings = [0.5 + 0.5 * (c-half_num_weightings) / max(1, half_num_weightings) for c in range(num_weightings)]
-
-import math
-def filter_out(i_weighting, rank_checkpoint, half_len_checkpoint):
-    max_len = i_weighting * half_len_checkpoint
-    assert math.abs(int(max_len) - max_len) < 0.000001
-    max_len = round(max_len)
-    if rank_checkpoint < max_len:
-        return 1
-    else:
-        return 0
-ranks = range(10)
-half_len_checkpoint = 10
-for rank_checkpoint in ranks:
-    for i_w in range(0, 1, 11):
-        print(rank_checkpoint, i_w)
-        print(filter_out(i_w, rank_checkpoint, half_len_checkpoint))
+(pytorch) alexandrerame@devfair0751:~/slurmconfig/dn0926/trainsweep$ sc
+     JOBID PARTITION                           NAME     USER ST       TIME  NODES NODELIST(REASON)
+    177076  learnlab dn_twama45_imhomepacsvlcsterra alexandr PD       0:00      1 (Priority)
+    177075  learnlab dn_twama23_imhomepacsvlcsterra alexandr PD       0:00      1 (Priority)
+    177074  learnlab dn_twama01_imhomepacsvlcsterra alexandr PD       0:00      1 (Priority)
+    177072  learnlab dn_twama23_imhomepacsvlcsterra alexandr PD       0:00      1 (Priority)
+    177073  learnlab dn_twama45_imhomepacsvlcsterra alexandr PD       0:00      1 (Priority)
+    177071  learnlab dn_twama01_imhomepacsvlcsterra alexandr PD       0:00      1 (Priority)
+    177213  learnlab dn_twama01_imhomepacsvlcsterra alexandr PD       0:00      1 (Priority)
+    177214  learnlab dn_twama23_imhomepacsvlcsterra alexandr PD       0:00      1 (Priority)
+    177215  learnlab dn_twama45_imhomepacsvlcsterra alexandr PD       0:00      1 (Priority)
+    177236  learnlab dn_ma_fvlcsu_lp_0926_seed2.slu alexandr PD       0:00      1 (None)
+    177235  learnlab dn_ma_fterrau_lp_0926_seed2.sl alexandr PD       0:00      1 (None)
+    177234  learnlab dn_ma_fpacsu_lp_0926_seed2.slu alexandr PD       0:00      1 (None)
+    177233  learnlab dn_ma_fhomeu_lp_0926_seed2.slu alexandr PD       0:00      1 (None)
+    177232  learnlab dn_ma_fvlcsu_lp_0926_seed1.slu alexandr PD       0:00      1 (None)
+    177231  learnlab dn_ma_fterrau_lp_0926_seed1.sl alexandr PD       0:00      1 (None)
+    177230  learnlab dn_ma_fpacsu_lp_0926_seed1.slu alexandr PD       0:00      1 (None)
+    177229  learnlab dn_ma_fhomeu_lp_0926_seed1.slu alexandr PD       0:00      1 (None)
+    167568  learnlab dn_ma_fhomeu_lp_0926_seed2.slu alexandr  R    7:20:41      1 learnfair7458
+    167569  learnlab dn_ma_fpacsu_lp_0926_seed2.slu alexandr  R    7:20:41      1 learnfair7513
+    167570  learnlab dn_ma_fterrau_lp_0926_seed2.sl alexandr  R    7:20:41      1 learnfair7598
+    167571  learnlab dn_ma_fvlcsu_lp_0926_seed2.slu alexandr  R    7:20:41      1 learnfair7631
+    167567  learnlab dn_ma_fvlcsu_lp_0926_seed1.slu alexandr  R    7:23:14      1 learnfair7459
+    167566  learnlab dn_ma_fterrau_lp_0926_seed1.sl alexandr  R    7:39:27      1 learnfair5163
+    167453  learnlab     dn_ma_fvlcsu_lp_0926.slurm alexandr  R    7:49:54      1 learnfair7622
+    167565  learnlab dn_ma_fpacsu_lp_0926_seed1.slu alexandr  R    7:41:33      1 learnfair7640
+    167564  learnlab dn_ma_fhomeu_lp_0926_seed1.slu alexandr  R    7:45:52      1 learnfair7646
+    167441  learnlab     dn_ma_fpacsu_lp_0926.slurm alexandr  R    7:51:54      1 learnfair5233
+    167450  learnlab    dn_ma_fterrau_lp_0926.slurm alexandr  R    7:51:54      1 learnfair7495
+    167451  learnlab     dn_ma_fhomeu_lp_0926.slurm alexandr  R    7:51:54      1 learnfair7731
+    170311  learnlab terra_twama_imdnhomepacsvlcs_l alexandr  R    4:53:31      1 learnfair5098
+    175263  learnlab dn_twama_imhomepacsvlcsterra_l alexandr  R    1:37:16      1 learnfair5200
+    175260  learnlab dn_ma_fterraubma_lp_0926.slurm alexandr  R    1:48:40      1 learnfair7508
+    175231  learnlab  dn_ma_fvlcsubma_lp_0926.slurm alexandr  R    1:54:15      1 learnfair7623

@@ -188,6 +188,8 @@ class IIDAccuracySelectionMethod(SelectionMethod):
         for i in itertools.count():
             if f'env{i}_out_acc' + keyacc not in record:
                 break
+            if f'env{i}_in_acc' + keyacc in record:
+                dict_acc[f'env{i}_in_acc'] = record[f'env{i}_in_acc' + keyacc]
             dict_acc[f'env{i}_out_acc'] = record[f'env{i}_out_acc' + keyacc]
             if i not in test_envs:
                 train_env_keys.append(f'env{i}_in_acc' + keyacc)
@@ -197,7 +199,7 @@ class IIDAccuracySelectionMethod(SelectionMethod):
                 test_env_keys.append(f'env{i}_in_acc' + keyacc)
 
         dict_acc.update({
-            'train_acc': np.mean([record[key] for key in train_env_keys]),
+            # 'train_acc': np.mean([record[key] for key in train_env_keys]),
             'val_acc': np.mean([record[key] for key in val_env_keys]),
             'test_acc': np.mean([record[key] for key in test_env_keys]),
             'testout_acc': np.mean([record[key] for key in testout_env_keys]),

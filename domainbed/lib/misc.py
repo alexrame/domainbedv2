@@ -25,6 +25,15 @@ import tqdm
 import socket
 from collections import Counter
 
+
+def load_results_jsonl(folder):
+    if "results.jsonl" not in os.listdir(folder):
+        return {}
+    results_path = os.path.join(folder, "results.jsonl")
+    with open(results_path, "r") as f:
+        for line in f:
+            return json.loads(line[:-1])
+
 def set_weights(wa_weights, featurizer):
     for name, param in featurizer.named_parameters():
         param.data = wa_weights[name]
@@ -210,12 +219,16 @@ def get_machine_name():
     return socket.gethostname()
 
 ## DiWA ##
-def get_score(results, test_envs, metric_key="out_acc", model_selection="train"):
+def get_score_diwa(results, test_envs, metric_key="out_acc", model_selection="train"):
     if test_envs == [-1] and model_selection == "oracle":
         return 0.
     val_env_keys = []
-    if metric_key == "out_acc" and f'env0_' + metric_key not in results:
+
+    i = test_envs[0]
+    if metric_key == "out_acc" and f'env{i}_' + metric_key not in results:
         metric_key="out_Accuracies/acc_net"
+    if metric_key == "in_acc" and f'env{i}_' + metric_key not in results:
+        metric_key="in_Accuracies/acc_net"
 
     for i in itertools.count():
         acc_key = f'env{i}_' + metric_key
@@ -223,12 +236,45 @@ def get_score(results, test_envs, metric_key="out_acc", model_selection="train")
             if model_selection == "train":
                 if i not in test_envs:
                     val_env_keys.append(acc_key)
-            else:
-                assert model_selection == "oracle"
+            elif model_selection == "oracle":
                 if i in test_envs:
                     val_env_keys.append(acc_key)
+            else:
+                raise ValueError(f"Unknown model_selection {model_selection}")
         else:
-            break
+            if len(test_envs) == 0 or i > max(test_envs):
+                break
+    if i == 0:
+        assert "ma" in metric_key, results
+        return 0
+    return np.mean([results[key] for key in val_env_keys])
+
+
+def get_score(results, test_envs, metric_key="out_acc", model_selection="train"):
+    if test_envs == [-1] and model_selection == "oracle":
+        return 0.
+    val_env_keys = []
+
+    if metric_key == "out_acc" and f'env0_' + metric_key not in results:
+        metric_key="out_Accuracies/acc_net"
+
+    if metric_key == "in_acc" and f'env0_' + metric_key not in results:
+        metric_key="in_Accuracies/acc_net"
+
+    for i in itertools.count():
+        acc_key = f'env{i}_' + metric_key
+        if acc_key in results:
+            if model_selection == "train":
+                if i not in test_envs:
+                    val_env_keys.append(acc_key)
+            elif model_selection == "oracle":
+                if i in test_envs:
+                    val_env_keys.append(acc_key)
+            else:
+                raise ValueError(f"Unknown model_selection {model_selection}")
+        else:
+            if len(test_envs) == 0 or i > max(test_envs):
+                break
     if i == 0:
         assert "ma" in metric_key, results
         return 0

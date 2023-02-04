@@ -82,6 +82,10 @@ if __name__ == "__main__":
             )
         else:
             args.output_dir = os.path.join(f"logs/singleruns/{args.dataset}", run_name)
+    # if os.environ.get("FROMSWEEP", "1") != "0" and os.path.exists(os.path.join(args.output_dir, 'out.txt')) and args.dataset != "TerraIncognita":
+    #     time.sleep(1)
+    #     print(f"Output {args.output_dir} directory already exists, exiting")
+    #     sys.exit(0)
 
     print('Args:')
     for k, v in sorted(vars(args).items()):
@@ -217,7 +221,10 @@ if __name__ == "__main__":
     steps_per_epoch = min([len(env)/hparams['batch_size'] for env,_ in in_splits])
 
     n_steps = args.steps if args.steps is not None else dataset.N_STEPS
-    checkpoint_freq = args.checkpoint_freq or dataset.CHECKPOINT_FREQ
+    if args.save_model_every_checkpoint!= "0" and args.save_model_every_checkpoint.isdigit():
+        checkpoint_freq = int(args.save_model_every_checkpoint)
+    else:
+        checkpoint_freq = args.checkpoint_freq or dataset.CHECKPOINT_FREQ
 
     def save_checkpoint(filename, results=None, light=False):
         if args.skip_model_save:
@@ -280,10 +287,11 @@ if __name__ == "__main__":
 
             evals = zip(eval_loader_names, eval_loaders, eval_weights)
             for name, loader, weights in evals:
-                _results_name = misc.accuracy(algorithm, loader, weights, device)
-                for key, value in _results_name.items():
-                    results[name + '_' + key] = value
-                    writer.add_scalar(name + '_' + key, value, step)
+                if "_out" in name or "env" + str(args.test_envs[0]) in name or True:
+                    _results_name = misc.accuracy(algorithm, loader, weights, device)
+                    for key, value in _results_name.items():
+                        results[name + '_' + key] = value
+                        writer.add_scalar(name + '_' + key, value, step)
 
             results['mem_gb'] = torch.cuda.max_memory_allocated() / (1024.*1024.*1024.)
             # results["holdout_fraction"] = args.holdout_fraction
@@ -329,7 +337,10 @@ if __name__ == "__main__":
 
             save_ckpt = (args.save_model_every_checkpoint == "2" and step in [200, 1000, 2000, 4000, 4500])
             save_ckpt |= str(step) == args.save_model_every_checkpoint and step >= 2
-            save_ckpt |= args.save_model_every_checkpoint == "all" and step in [10, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 2000, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000, 4200, 4400, 4500, 4600, 4700, 4800, 4900] and args.test_envs == [0]
+            save_ckpt |= args.save_model_every_checkpoint == "1000" and step % 1000 == 0
+            save_ckpt |= args.save_model_every_checkpoint == "100" and step % 100 == 0
+            save_ckpt |= args.save_model_every_checkpoint == "500" and step % 500 == 0
+            save_ckpt |= args.save_model_every_checkpoint == "all" and step in [200, 400, 600, 800, 1000, 1200, 1400, 1600, 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000, 4200, 4400, 4600, 4800, 4900]
             if save_ckpt:
                 save_checkpoint(
                     f'model_step{step}.pkl', results=json.dumps(results, sort_keys=True, default=misc.np_encoder),

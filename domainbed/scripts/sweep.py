@@ -110,7 +110,11 @@ def make_args_list(
     holdout_fraction, single_test_envs, hparams, force_test_envs, **kwargs
 ):
     args_list = []
-    for trial_seed in range(n_trials):
+    start_trials = 0
+    if n_trials < 0:
+        n_trials = - n_trials
+        start_trials = n_trials - 1
+    for trial_seed in range(start_trials, n_trials):
         for dataset in dataset_names:
             for algorithm in algorithms:
 
@@ -206,7 +210,8 @@ if __name__ == "__main__":
     )
 
     jobs = [Job(train_args, args.output_dir) for train_args in args_list]
-
+    if os.environ.get("REVERSE"):
+        jobs = jobs[::-1]
     for job in jobs:
         print(job)
     print(

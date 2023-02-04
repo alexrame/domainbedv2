@@ -1,18 +1,25 @@
 ssh utr15kn@jean-zay.idris.fr
-sed -i -- 's/dataset=TerraIncognita/dataset=VLCS/g' *.slurm
+sed -i -- 's/ModelRecycling/ModelRatatouille/g' *.slurm
+
+
+grep "&&" | jq '(.acc|tostring) +" " + (.acc_conf|tostring) +" "+ .topk + " " + (.length|tostring) + " " + (.dirs|tostring)'
 
 
 
 grep "&&" | cut -f2- -d" "| cut -f1 -d")"
-grep "&&" | jq '(.acc|tostring) +" "+ .topk + " " + (.length|tostring) + " " + (.dirs|tostring)'
+cat infhomecorrupt01_0120.slurm_2223741.out | grep "&&" | jq '(.length|tostring) + " " + (.env_0_in_acc|tostring) + " " + (.env_1_in_acc|tostring) + " " + (.env_2_in_acc|tostring) + " " + (.env_2_in_acc_ens|tostring) + " " +  (.dirs|tostring)'
 
 grep "&&" | jq '(.acc|tostring) +" "+ (.acc_conf|tostring) +" "+ .topk + " " + (.length|tostring)'
 
 grep "&&" | jq '(.acc|tostring) +" " + (.acc_conf|tostring) +" "+ .topk + " " + (.length|tostring) + " " + (.dirs|tostring)'
 
-grep printres | tail -n 10 | jq '(.acc|tostring) + " " + (.acc|tostring)'
+grep printres | tail -n 10 | jq '(.env0_out_acc|tostring) + " " + (.step|tostring)'
 
 sbatch -A gtw@v100
+
+
+/private/home/alexandrerame/.conda/envs/pytorch/bin/python3 /private/home/alexandrerame/domainbedv2/domainbed/scripts/train.py --data_dir ${data_dir} --dataset ${dataset} --algorithm ERM --path_for_init ${data_dir}/inits/home/home0_lp_0926.pkl --output_dir ${expe_dir}/homecorrupt/train_homecorrupt1_erm2_lp_0120 --test_envs 0 1 --hparams '{"corrupt_prop": 0.1, "resnet_dropout": 0.0, "data_augmentation": 0}' --steps 20000 --save_model_every_checkpoint 1000
+
 
 for FILE in enspacs1_erm023wn_idn1erm0921r0_lp_0916_r0.slurm_1801193.out enspacs1_erm023wn_idn1erm0921r20_lp_0916_r0.slurm_1801255.out enspacs1_erm023wn_idn1erm0921r40_lp_0916_r0.slurm_1801272.out enspacs1_erm023wn_idn1erm0921r0_lp_0916_r20.slurm_1801043.out enspacs1_erm023wn_idn1erm0921r20_lp_0916_r20.slurm_1801275.out enspacs1_erm023wn_idn1erm0921r40_lp_0916_r20.slurm_1801326.out
 do
