@@ -110,11 +110,14 @@ class ERM(Algorithm):
                     raise ValueError(f"Your initialization {subpath_for_init} has not been saved yet")
 
                 state_dict = torch.load(subpath_for_init)
-                if os.environ.get("LOAD_ONLY_FEATURES") or i > 0:
+                if os.environ.get("LOAD_ONLY_FEATURES", "0") != "0" or i > 0:
                     if "model_dict" in state_dict:
                         state_dict = misc.clean_state_dict(state_dict, _subpath_for_init)
                     print(f"Load featurizer from: {subpath_for_init} at i: {i}")
                     misc.load_featurizer(self.featurizer, state_dict)
+                elif "network_dict" in state_dict:
+                    print(f"Load network from: {subpath_for_init}")
+                    self.network.load_state_dict(state_dict["network_dict"])
                 elif "model_dict" in state_dict:
                     print(f"Load model from: {subpath_for_init}")
                     self.load_state_dict(state_dict["model_dict"])
