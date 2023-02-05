@@ -1,5 +1,5 @@
 ssh utr15kn@jean-zay.idris.fr
-sed -i -- 's/##SBATCH/#SBATCH/g' *.slurm
+sed -i -- 's/topk \-1/topk \-2/g' inf2homecorrupt*.slurm
 
 
 
