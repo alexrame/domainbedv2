@@ -220,7 +220,7 @@ if __name__ == "__main__":
 
     n_steps = args.steps if args.steps is not None else dataset.N_STEPS
     if args.save_model_every_checkpoint!= "0" and args.save_model_every_checkpoint.isdigit():
-        checkpoint_freq = int(args.save_model_every_checkpoint)
+        checkpoint_freq = args.checkpoint_freq or int(args.save_model_every_checkpoint)
     else:
         checkpoint_freq = args.checkpoint_freq or dataset.CHECKPOINT_FREQ
 

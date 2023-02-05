@@ -64,6 +64,7 @@ class DiWA(algorithms.ERM):
         self.network_var = None
         self.networks = []
         self.networks_wa = []
+        self.networks_weights = []
 
         self.featurizers = []
         self.featurizers_weights = []
@@ -203,8 +204,9 @@ class DiWA(algorithms.ERM):
                 # param_n.data = param_m.data + * gaussian_noise
             self.add_network(network)
 
-    def add_network(self, network):
+    def add_network(self, network, weight=1):
         self.networks.append(network)
+        self.networks_weights.append(weight)
 
     def add_featurizer(self, network, weight):
         self.featurizers.append(network)
@@ -237,13 +239,18 @@ class DiWA(algorithms.ERM):
 
         if len(self.networks) != 0:
             logits_ens = []
+            prob_ens = []
             len_network = len(self.networks)
             for i in range(len_network):
                 _logits_i = self.networks[i](x)
-                logits_ens.append(_logits_i)
+                logits_ens.append(_logits_i * self.networks_weights[i])
+                prob_ens.append(
+                    nn.Softmax(dim=1)(_logits_i) * self.networks_weights[i]
+                )
                 if i < float(os.environ.get("MAXM", math.inf)):
                     dict_predictions["net" + str(i)] = _logits_i
-            dict_predictions["ens"] = torch.mean(torch.stack(logits_ens, dim=0), 0)
+            dict_predictions["ens"] = torch.sum(torch.stack(logits_ens, dim=0), 0) / np.sum(self.networks_weights)
+            dict_predictions["ensp"] = torch.sum(torch.stack(prob_ens, dim=0), 0) / np.sum(self.networks_weights)
             if os.environ.get("SUBWA", "0") != "0":
                 dict_predictions["ens01"] = torch.mean(torch.stack([logits_ens[0], logits_ens[1]], dim=0), 0)
                 dict_predictions["ens12"] = torch.mean(torch.stack([logits_ens[1], logits_ens[2]], dim=0), 0)
@@ -274,10 +281,11 @@ class DiWA(algorithms.ERM):
                 for i, classifier in enumerate(self.classifiers):
                     _logits_i = classifier(features)
                     logits_enscla.append(_logits_i * self.classifiers_weights[i])
-                    # dict_predictions["cla" + str(i)] = _logits_i
-                sum_weights = np.sum(self.classifiers_weights)
-                dict_predictions["enscla"
-                                ] = torch.sum(torch.stack(logits_enscla, dim=0), 0) / sum_weights
+                    if i < 2:
+                        dict_predictions["cla" + str(i)] = _logits_i
+                # sum_weights = np.sum(self.classifiers_weights)
+                # dict_predictions["enscla"
+                #                 ] = torch.sum(torch.stack(logits_enscla, dim=0), 0) / sum_weights
 
         if len(self.featurizers):
             assert len(self.classifiers) != 0
@@ -513,15 +521,16 @@ class DiWA(algorithms.ERM):
 
             preds0 = dict_stats[key0]["preds"].numpy()
             preds1 = dict_stats[key1]["preds"].numpy()
-            dict_diversity[f"divr_{regexname}"].append(
-                diversity_metrics.ratio_errors(targets, preds0, preds1)
-            )
-            dict_diversity[f"divq_{regexname}"].append(
-                diversity_metrics.Q_statistic(targets, preds0, preds1)
-            )
-            dict_diversity[f"divd_{regexname}"].append(
-                diversity_metrics.double_fault(targets, preds0, preds1)
-            )
+            if os.environ.get("DIV"):
+                dict_diversity[f"divr_{regexname}"].append(
+                    diversity_metrics.ratio_errors(targets, preds0, preds1)
+                )
+                dict_diversity[f"divq_{regexname}"].append(
+                    diversity_metrics.Q_statistic(targets, preds0, preds1)
+                )
+                dict_diversity[f"divd_{regexname}"].append(
+                    diversity_metrics.double_fault(targets, preds0, preds1)
+                )
 
             # dict_diversity[f"divn_{regexname}"].append(
             #     diversity_metrics.normalized_disagreement(

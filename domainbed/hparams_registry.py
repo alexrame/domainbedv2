@@ -174,6 +174,9 @@ def _hparams(algorithm, dataset, random_seed):
     else:
         _hparam('lr', 5e-5, lambda r: r.choice([1e-5, 3e-5, 5e-5]))
 
+    if dataset.endswith("Corrupt"):
+        _hparam('corrupt_prop', 0.1, lambda r: r.choice([0.1]))
+
     if os.environ.get("HP") == "L":
         if dataset in SMALL_IMAGES:
             _hparam('weight_decay', 0., lambda r: 0.)

@@ -1,7 +1,23 @@
+
+
+
 ssh utr15kn@jean-zay.idris.fr
 sed -i -- 's/topk \-1/topk \-2/g' inf2homecorrupt*.slurm
+sed -i -- 's/1-_-4/1-_-2/g' *.slurm
 
 
+grep "&&" | jq '(.step|tostring) + " " + (.acc|tostring) +" " + (.acc_conf|tostring) +" "+ .topk + " " + (.length|tostring) + " " + (.dirs|tostring)'
+
+grep "&&" | jq '(.step|tostring) + " " +  (.length|tostring) + " " + (.env_0_in_acc|tostring) + " " + (.env_1_in_acc|tostring) + " " + (.env_2_in_acc|tostring)  + " " + (.topk|tostring)'
+
+grep "&&" | jq '(.step|tostring) + " " +  (.length|tostring) + " " + (.acc|tostring) + " " + (.acc_ens|tostring) + " " + (.env_1_in_acc|tostring) + " " + (.env_1_in_acc_ens|tostring) + " " + (.env_2_in_acc|tostring) + " " + (.env_2_in_acc_ens|tostring) + " " + (.env_1_out_acc|tostring) + " " + (.env_1_out_acc_ens|tostring) + " " + (.env_2_out_acc|tostring) + " " + (.env_2_out_acc_ens|tostring) + " " + (.topk|tostring)'
+
+
+
+{"acc": 0.661722290894108, "acc_ens": 0.6501854140914709, "dirs": "homecorrupt1_erm2_lp_0120,homecorrupt0_erm2_lp_0120", "dirslen": 2, "env_1_in_acc": 0.9742038216560509, "env_1_in_acc_ens": 0.9729299363057324, "env_1_out_acc": 0.9782608695652174, "env_1_out_acc_ens": 0.9782608695652174, "env_2_in_acc": 0.2689075630252101, "env_2_in_acc_ens": 0.05042016806722689, "env_2_out_acc": 0.0, "env_2_out_acc_ens": 0.0, "length": 2, "lengthf": 2, "maxm": 0, "step": 10000, "testenv": 0, "topk": "1-_-1", "trialseed": 0, "printres": "&&"}
+
+
+{"acc": 0.6683147919241862, "acc_cla0": 0.6736711990111248, "acc_cla1": 0.6641944787803873, "acc_ens": 0.6621343222084879, "acc_enscla": 0.6683147919241862, "acc_netm": 0.6312319736299958, "acc_netmax": 0.6468891635764318, "dirs": "homecorrupt1_erm2_lp_0120,homecorrupt0_erm2_lp_0120", "dirslen": 2, "divd_netm": 0.2913061392665843, "divq_netm": 0.9311051226084943, "divr_netm": 0.5318246110325319, "env_0_in_acc": 0.6652935118434603, "env_0_in_acc_cla0": 0.668898043254377, "env_0_in_acc_cla1": 0.6616889804325438, "env_0_in_acc_ens": 0.6580844490216272, "env_0_in_acc_enscla": 0.6652935118434603, "env_0_in_acc_netm": 0.6302780638516993, "env_0_in_acc_netmax": 0.6483007209062822, "env_0_in_divd_netm": 0.2909371781668383, "env_0_in_divq_netm": 0.9292713681992159, "env_0_in_divr_netm": 0.5415929203539823, "env_0_out_acc": 0.6804123711340206, "env_0_out_acc_cla0": 0.6927835051546392, "env_0_out_acc_cla1": 0.6742268041237114, "env_0_out_acc_ens": 0.6783505154639176, "env_0_out_acc_enscla": 0.6804123711340206, "env_0_out_acc_netm": 0.6350515463917525, "env_0_out_acc_netmax": 0.6412371134020619, "env_0_out_divd_netm": 0.2927835051546392, "env_0_out_divq_netm": 0.939172627682457, "env_0_out_divr_netm": 0.4929577464788732, "env_1_in_acc": 0.9745060548119822, "env_1_in_acc_cla0": 0.9741873804971319, "env_1_in_acc_cla1": 0.9745060548119822, "env_1_in_acc_ens": 0.9741873804971319, "env_1_in_acc_enscla": 0.9745060548119822, "env_1_in_acc_netm": 0.9681325685149778, "env_1_in_acc_netmax": 0.9732313575525813, "env_1_in_divd_netm": 0.020395156150414276, "env_1_in_divq_netm": 0.9892321709599933, "env_1_in_divr_netm": 1.125, "env_1_out_acc": 0.9668367346938775, "env_1_out_acc_cla0": 0.9655612244897959, "env_1_out_acc_cla1": 0.9642857142857143, "env_1_out_acc_ens": 0.9668367346938775, "env_1_out_acc_enscla": 0.9668367346938775, "env_1_out_acc_netm": 0.9642857142857142, "env_1_out_acc_netmax": 0.9693877551020408, "env_1_out_divd_netm": 0.025510204081632654, "env_1_out_divq_netm": 0.9936034115138593, "env_1_out_divr_netm": 0.7999999999999999, "env_2_in_acc": 0.028735632183908046, "env_2_in_acc_cla0": 0.02586206896551724, "env_2_in_acc_cla1": 0.02586206896551724, "env_2_in_acc_ens": 0.05172413793103448, "env_2_in_acc_enscla": 0.028735632183908046, "env_2_in_acc_netm": 0.41235632183908044, "env_2_in_acc_netmax": 0.8247126436781609, "env_2_in_divd_netm": 0.1752873563218391, "env_2_in_divq_netm": nan, "env_2_in_divr_netm": 4.7049180327868845, "env_2_out_acc": 0.011494252873563218, "env_2_out_acc_cla0": 0.0, "env_2_out_acc_cla1": 0.011494252873563218, "env_2_out_acc_ens": 0.011494252873563218, "env_2_out_acc_enscla": 0.011494252873563218, "env_2_out_acc_netm": 0.39655172413793105, "env_2_out_acc_netmax": 0.7931034482758621, "env_2_out_divd_netm": 0.20689655172413793, "env_2_out_divq_netm": nan, "env_2_out_divr_netm": 3.8333333333333335, "length": 2, "lengthf": 2, "step": 5000, "testenv": 0, "topk": "1-_-1", "trialseed": 0, "printres": "&&"}
 
 grep "&&" | cut -f2- -d" "| cut -f1 -d")"
 grep "&&" | jq '(.acc|tostring) +" "+ (.length|tostring)'
@@ -14,6 +30,10 @@ grep "&&" | jq '(.acc|tostring) +" " + (.acc_conf|tostring) +" "+ .topk + " " + 
 grep printres | tail -n 10 | jq '(.env0_out_acc|tostring) + " " + (.step|tostring)'
 
 sbatch -A gtw@v100
+
+
+/private/home/alexandrerame/.conda/envs/pytorch/bin/python3 /private/home/alexandrerame/domainbedv2/domainbed/scripts/train.py --data_dir ${data_dir} --dataset ${dataset} --algorithm ERM --path_for_init ${data_dir}/inits/home/home0_lp_0926.pkl --output_dir ${expe_dir}/homecorrupt/train_homecorrupt1_erm2_lp_0120 --test_envs 0 1 --hparams '{"corrupt_prop": 0.1, "resnet_dropout": 0.0, "data_augmentation": 0}' --steps 20000 --save_model_every_checkpoint 1000
+
 
 for FILE in enspacs1_erm023wn_idn1erm0921r0_lp_0916_r0.slurm_1801193.out enspacs1_erm023wn_idn1erm0921r20_lp_0916_r0.slurm_1801255.out enspacs1_erm023wn_idn1erm0921r40_lp_0916_r0.slurm_1801272.out enspacs1_erm023wn_idn1erm0921r0_lp_0916_r20.slurm_1801043.out enspacs1_erm023wn_idn1erm0921r20_lp_0916_r20.slurm_1801275.out enspacs1_erm023wn_idn1erm0921r40_lp_0916_r20.slurm_1801326.out
 do
