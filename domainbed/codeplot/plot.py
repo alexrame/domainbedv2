@@ -23,7 +23,7 @@ def average(l):
 
 def get_x(l, key):
     if key in l[0]:
-        return [i[key] for i in l if check_condition(i)]
+        return [(i[key] if key in i else -1000) for i in l if check_condition(i)]
     if key.isnumeric():
         return [float(key) for i in l]
     if "%" in key:
@@ -90,8 +90,10 @@ def plot_histogram(l, labels, key, limits={}, lambda_filtering=None, list_indexe
         plt.hist(data[i], **kwargs, color=colors[i], label=labels[i])
 
     plt.gca().set_xlabel(
-        dict_key_to_label.get(key, key), fontsize=SIZE_AXIS)
-    plt.gca().set_ylabel('Frequency (\%)', fontsize=SIZE_AXIS)
+        # "Prediction diversity",
+        dict_key_to_label.get(key, key),
+        fontsize=SIZE_AXIS)
+    plt.gca().set_ylabel('Frequency (%)', fontsize=SIZE_AXIS)
     if key in limits:
         plt.xlim(limits[key][0], limits[key][1])
     if loc:
@@ -124,7 +126,8 @@ def plot_histogram_keys(ll, list_keys, labels=None, limits={}, lambda_filtering=
 
     data = []
     for key in list_keys:
-        data.append(get_x([line for line in ll if check_line(line)], key))
+        sublines = [line for line in ll if key.split("-")[0] in line]
+        data.append(get_x([line for line in sublines if check_line(line)], key))
 
     if labels is None:
         labels = list_keys
@@ -475,6 +478,7 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, _dict_key_to_label="def"
         fit_and_plot(key_x, key_y, list_dict_values, order, label, color=color, linestyle=linestyle, ax=ax1)
 
     ax1.set_xlabel(_dict_key_to_label.get(key_x, key_x), fontsize=SIZE)
+    ax1.set_ylabel("OOD Accuracy", fontsize=SIZE)
     if loc != "no":
         ax1.legend(loc=loc, fontsize=SIZE)
         # if keycolor is not None:
@@ -616,7 +620,8 @@ def plot_key(
         if keyclustering is not None:
             ll = lambda_clustering(ll, keyclustering)
 
-        newlabel = label# if (linestyle is None and label !="no") else None
+        newlabel = label if (linestyle is None and label !="no") else None
+        # if label !="no" else None#
         if keyerror is not None:
             ax.errorbar(
                 get_x(ll, key_x),
@@ -665,7 +670,7 @@ def plot_key(
             key_y,
             ll,
             order,
-            label,# if linestyle is not None else None,
+            label if linestyle is not None else None,
             color,
             linestyle=linestyle
         )
