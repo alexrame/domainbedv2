@@ -214,7 +214,6 @@ def is_none(arg):
 def is_not_none(arg):
     return not is_none(arg)
 
-
 def get_machine_name():
     return socket.gethostname()
 
