@@ -65,12 +65,18 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 from matplotlib.ticker import StrMethodFormatter
 
+def concat_lists(l):
+    new_l = []
+    for ll in l:
+        new_l.extend(ll)
+    return new_l
+
 def plot_histogram(l, labels, key, limits={}, lambda_filtering=None, list_indexes=None, loc="upper right", size=None):
     if list_indexes is not None:
         l = [l[i] for i in list_indexes]
         if labels is not None:
             labels = [labels[i] for i in list_indexes]
-    plt.rcParams["figure.figsize"] = (5, 5)
+    plt.rcParams["figure.figsize"] = (8, 8)
     kwargs = dict(alpha=0.5, bins=15, density=True, stacked=True)
 
     def check_line(line):
@@ -91,7 +97,7 @@ def plot_histogram(l, labels, key, limits={}, lambda_filtering=None, list_indexe
 
     plt.gca().set_xlabel(
         dict_key_to_label.get(key, key), fontsize=SIZE_AXIS)
-    plt.gca().set_ylabel('Frequency (\%)', fontsize=SIZE_AXIS)
+    plt.gca().set_ylabel('Frequency (%)', fontsize=SIZE_AXIS)
     if key in limits:
         plt.xlim(limits[key][0], limits[key][1])
     if loc:
@@ -562,10 +568,9 @@ def plot_key(
     for index in range(len(l)):
         if markers is not None:
             marker = markers[index]
-            label = None
         else:
             marker = None
-            label = labels[index]
+        label = labels[index]
         if linestyles is not None:
             linestyle = linestyles[index]
         else:
@@ -828,12 +833,13 @@ def plot_soup_soupswa(key1, keys2, order=1, dict_key_to_limit={}):
     return fig
 
 import os
-def save_fig(fig, name, folder="/private/home/alexandrerame/slurmconfig/notebook/filesdevfair/"):
-    if folder is not None:
-        name = os.path.join(folder, name)
+def save_fig(fig, name, folder="/Users/alexandrerame/code_repository/tex/model_recycling/images/filesdevfair"):
     fig.savefig(
-        name,
-        format='png',
+        os.path.join(folder, name),
+        format='pdf',
+        dpi=600,
+        bbox_inches='tight'
+    )
 # def save_fig(fig, name, folder="/private/home/alexandrerame/slurmconfig/notebook/filesdevfair/"):
 # def save_fig(fig, name, folder="/Users/alexandrerame/code_repository/tex/model_recycling/images/filesdevfair"):
 
