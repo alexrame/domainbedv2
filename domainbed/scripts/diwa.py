@@ -84,7 +84,7 @@ def create_splits(domain, inf_args, dataset, _filter, holdout_fraction):
     for env_i, env in enumerate(dataset):
         if domain.startswith("test") and env_i != inf_args.test_env:
             continue
-        elif domain == "train" and env_i == inf_args.test_env:
+        elif domain.startswith("train") and env_i == inf_args.test_env:
             continue
         elif domain.startswith("env") and env_i != int(domain.split("_")[1]):
             continue
@@ -92,9 +92,19 @@ def create_splits(domain, inf_args, dataset, _filter, holdout_fraction):
         if _filter == "full":
             splits.append(env)
         else:
-            out_, in_ = misc.split_dataset(
-                env, int(len(env) * holdout_fraction), misc.seed_hash(inf_args.trial_seed, env_i)
-            )
+
+            if hasattr(env, "need_none_filtering"):
+                # TODO: env 2 hardcoded
+                out_, in_ = misc.split_dataset(
+                        env, int(len(env) * holdout_fraction), misc.seed_hash(inf_args.trial_seed, 2)
+                    )
+                print(env_i, env.need_none_filtering, _filter)
+                misc.filternone_dataset(out_)
+                misc.filternone_dataset(in_)
+            else:
+                out_, in_ = misc.split_dataset(
+                        env, int(len(env) * holdout_fraction), misc.seed_hash(inf_args.trial_seed, env_i)
+                    )
             if _filter == "in":
                 splits.append(in_)
             elif _filter == "out":
@@ -111,6 +121,8 @@ def create_splits(domain, inf_args, dataset, _filter, holdout_fraction):
                 splits.append(outsmall_)
             else:
                 raise ValueError(_filter)
+            if hasattr(env, "need_none_filtering"):
+                print(len(splits[-1]))
 
     return splits
 
@@ -208,9 +220,11 @@ def get_dict_checkpoint_to_score(output_dir, inf_args, train_envs=None, device="
     return list(dict_dict_checkpoint_to_score.values())
 
 
-def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="mean", device="gpu"):
+def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="mean", device="gpu", hparams=None):
     model_hparams = {
         "nonlinear_classifier": False, "resnet18": False, "resnet_dropout": 0}
+    if hparams is not None:
+        model_hparams.update(hparams)
 
     for i, ckpt in enumerate(good_checkpoints):
         checkpoint = misc.get_save_path(ckpt["name"])
@@ -263,7 +277,7 @@ def load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action="me
                 wa_algorithm.update_mean_network_ma(algorithm.network_ma2, weight=checkpoint_weight)
 
             if "addnet" in action:
-                wa_algorithm.add_network(algorithm.network)
+                wa_algorithm.add_network(algorithm.network, weight=checkpoint_weight)
             elif "addnetma" in action:
                 wa_algorithm.add_network(algorithm.network_ma)
             elif "addnetma2" in action:
@@ -356,10 +370,18 @@ def get_wa_results(good_checkpoints, dataset, inf_args, dict_data_splits, device
     }
     # print("selected_checkpoints: ", good_checkpoints)
     load_and_update_networks(
-        wa_algorithm, good_checkpoints, dataset, action=inf_args.what, device=device
+        wa_algorithm, good_checkpoints, dataset, action=inf_args.what, device=device,
+        hparams=inf_args.hparams
     )
     if "var" in inf_args.what:
-        load_and_update_networks(wa_algorithm, good_checkpoints, dataset, action=["var"], device=device)
+        load_and_update_networks(
+            wa_algorithm,
+            good_checkpoints,
+            dataset,
+            action=["var"],
+            device=device,
+            hparams=inf_args.hparams
+        )
         wa_algorithm.create_stochastic_networks()
 
     wa_algorithm.to(device)
@@ -452,11 +474,18 @@ def weighting_checkpoint(weighting_strategy, len_checkpoint, i_weighting=None, r
     if weighting_strategy in ["norm"]:
         return 1/len_checkpoint
     if weighting_strategy in ["rank"]:
-        assert len_checkpoint % 2 == 0
-        if rank_checkpoint >= len_checkpoint / 2:
-            return 1. - i_weighting
+        if len_checkpoint % 2 == 0:
+            if rank_checkpoint >= len_checkpoint / 2:
+                return 1. - i_weighting
+            else:
+                return i_weighting
+        elif len_checkpoint == 3:
+            if rank_checkpoint == 0:
+                return i_weighting
+            else:
+                return (1. - i_weighting)/2
         else:
-            return i_weighting
+            raise ValueError(len_checkpoint)
     if weighting_strategy in ["filter"]:
         assert len_checkpoint % 2 == 0
         if rank_checkpoint >= len_checkpoint // 2:
@@ -541,7 +570,7 @@ def merge_checkpoints(inf_args, list_dict_checkpoint_to_score_i):
             topk = int(topk)
         else:
             topk = int(inf_args.topk)
-        sorted_checkpoints_i = dict_checkpoint_to_score_i.keys()
+        sorted_checkpoints_i = list(dict_checkpoint_to_score_i.keys())
         if topk != 0:
             sorted_checkpoints_i = sorted(
                 sorted_checkpoints_i,
@@ -591,23 +620,29 @@ def create_data_splits(inf_args, dataset):
     else:
         dict_domain_to_filter = {}
 
-    if inf_args.weight_selection == "train" and inf_args.hparams.get("coralloss", None) is not None or os.environ.get("INCLUDEVAL", "0") != "0":
+    if os.environ.get("INCLUDEVAL", "0") != "0":
         dict_domain_to_filter["train"] = "out"
+    if os.environ.get("INCLUDETRAIN", "0") != "0":
+        dict_domain_to_filter["trainin"] = "in"
 
     if os.environ.get("INCLUDE_UPTO", "0") != "0":
         for env_i in range(0, int(os.environ.get("INCLUDE_UPTO", "0"))):
-            dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
-            dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
+            if env_i != inf_args.test_env:
+                dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
+                dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
     if os.environ.get("INCLUDETSV_UPTO", "0") != "0":
         for env_i in range(0, int(os.environ.get("INCLUDETSV_UPTO", "0"))):
-            dict_domain_to_filter["env_" + str(env_i) + "_in"] = "insmall"
-            dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
+            if env_i != inf_args.test_env:
+                dict_domain_to_filter["env_" + str(env_i) + "_in"] = "insmall"
+                dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
     if os.environ.get("INCLUDETRAIN_UPTO", "0") != "0":
         for env_i in range(0, int(os.environ.get("INCLUDETRAIN_UPTO", "0"))):
-            dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
+            if env_i != inf_args.test_env:
+                dict_domain_to_filter["env_" + str(env_i) + "_in"] = "in"
     if os.environ.get("INCLUDEVAL_UPTO", "0") != "0":
         for env_i in range(0, int(os.environ.get("INCLUDEVAL_UPTO", "0"))):
-            dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
+            if env_i != inf_args.test_env:
+                dict_domain_to_filter["env_" + str(env_i) + "_out"] = "out"
 
     for domain in dict_domain_to_filter:
         _data_splits = create_splits(
@@ -668,20 +703,23 @@ def main():
 
         # compute score after weight averaging
         if inf_args.weight_selection in ["best", "erm"]:
-            selected_checkpoint = sorted(
+            selected_checkpoint = {
+                "name": sorted(
                 notsorted_checkpoints, key=lambda x: dict_checkpoint_to_score[x], reverse=True
-            )[0]
-            save_dict = torch.load(selected_checkpoint, map_location=torch.device('cpu'))
-            ood_score = misc.get_score_diwa(
-                json.loads(save_dict["results"]), [inf_args.test_env],
-                metric_key="in_acc" if "ma" not in inf_args.what else "in_acc_ma",
-                model_selection="oracle"
-            )
-            dict_results = {"acc": ood_score, "length": 1.}
-            enrich_dict_results_with_info(dict_results, inf_args)
-            # dict_results = get_wa_results(
-            #             [selected_checkpoint], dataset, inf_args, dict_data_splits, device
-            #         )
+            )[0],
+                "weight": 1,
+                "type": "network"}
+            # save_dict = torch.load(selected_checkpoint, map_location=torch.device('cpu'))
+            # ood_score = misc.get_score_diwa(
+            #     json.loads(save_dict["results"]), [inf_args.test_env],
+            #     metric_key="in_acc" if "ma" not in inf_args.what else "in_acc_ma",
+            #     model_selection="oracle"
+            # )
+            # dict_results = {"acc": ood_score, "length": 1.}
+            # enrich_dict_results_with_info(dict_results, inf_args)
+            dict_results = get_wa_results(
+                        [selected_checkpoint], dataset, inf_args, dict_data_splits, device
+                    )
             print_results(dict_results, "&&" if inf_args.num_samples == 1 else "##")
         elif inf_args.weight_selection == "restricted":
             sorted_checkpoints = sorted(

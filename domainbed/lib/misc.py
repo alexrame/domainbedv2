@@ -214,7 +214,6 @@ def is_none(arg):
 def is_not_none(arg):
     return not is_none(arg)
 
-
 def get_machine_name():
     return socket.gethostname()
 
@@ -401,6 +400,14 @@ class _SplitDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.keys)
 
+def filternone_dataset(dataset):
+    new_keys = [
+        key for key in dataset.keys
+        if dataset.underlying_dataset.samples[key][0] is not None]
+    print("Len index:", len(new_keys), new_keys[:10])
+    print("out of", len(dataset.keys), dataset.keys[:10])
+    dataset.keys = new_keys
+
 def split_dataset(dataset, n, seed=0):
     """
     Return a pair of datasets corresponding to a random split of the given
@@ -413,6 +420,21 @@ def split_dataset(dataset, n, seed=0):
     keys_1 = keys[:n]
     keys_2 = keys[n:]
     return _SplitDataset(dataset, keys_1), _SplitDataset(dataset, keys_2)
+
+
+def split_dataset(dataset, n, seed=0):
+    """
+    Return a pair of datasets corresponding to a random split of the given
+    dataset, with n datapoints in the first dataset and the rest in the last,
+    using the given random seed
+    """
+    assert(n <= len(dataset))
+    keys = list(range(len(dataset)))
+    np.random.RandomState(seed).shuffle(keys)
+    keys_1 = keys[:n]
+    keys_2 = keys[n:]
+    return _SplitDataset(dataset, keys_1), _SplitDataset(dataset, keys_2)
+
 
 def random_pairs_of_minibatches(minibatches):
     perm = torch.randperm(len(minibatches)).tolist()
@@ -499,18 +521,19 @@ def results_ensembling(algorithm, loader, device, what=[], do_div=True, do_ent=F
 
     if len(algorithm.networks):
         num_networks = int(min(len(algorithm.networks), float(os.environ.get("MAXM", math.inf))))
-        dict_results["acc_netm"] = np.mean(
-            [
-                dict_results[f"acc_net{key}"]
-                for key in range(num_networks)
-            ]
-        )
-        dict_results["acc_netmax"] = max(
-            [
-                dict_results[f"acc_net{key}"]
-                for key in range(num_networks)
-            ]
-        )
+        if "acc_net0" in dict_results:
+            dict_results["acc_netm"] = np.mean(
+                [
+                    dict_results[f"acc_net{key}"]
+                    for key in range(num_networks)
+                ]
+            )
+        # dict_results["acc_netmax"] = max(
+        #     [
+        #         dict_results[f"acc_net{key}"]
+        #         for key in range(num_networks)
+        #     ]
+        # )
         if os.environ.get("SUBWA", "0") != "0":
             for subwa in [("0", "1"), ("1", "2"), ("2", "3")]:
                 dict_results[f"acc_net{''.join(subwa)}"] = np.mean(

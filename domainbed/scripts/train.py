@@ -45,8 +45,6 @@ if __name__ == "__main__":
     parser.add_argument('--test_envs', type=int, nargs='+', default=[0])
     parser.add_argument('--output_dir', type=str, default="default+name")
     parser.add_argument('--holdout_fraction', type=float, default=0.2)
-    parser.add_argument('--uda_holdout_fraction', type=float, default=0,
-        help="For domain adaptation, % of test to use unlabeled for training.")
     parser.add_argument('--skip_model_save', action='store_true')
     parser.add_argument('--save_model_every_checkpoint', type=str, default="0")
     ## DiWA ##
@@ -222,7 +220,7 @@ if __name__ == "__main__":
 
     n_steps = args.steps if args.steps is not None else dataset.N_STEPS
     if args.save_model_every_checkpoint!= "0" and args.save_model_every_checkpoint.isdigit():
-        checkpoint_freq = int(args.save_model_every_checkpoint)
+        checkpoint_freq = args.checkpoint_freq or int(args.save_model_every_checkpoint)
     else:
         checkpoint_freq = args.checkpoint_freq or dataset.CHECKPOINT_FREQ
 

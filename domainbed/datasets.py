@@ -435,39 +435,57 @@ class OfficeHome(MultipleEnvironmentImageFolder):
         super().__init__(self.dir, test_envs, hparams['data_augmentation'], hparams)
 
 import random
-def _corrupt_samples(env_dataset, corrupt_prop):
+
+def _corrupt_samples(env_dataset, corrupt_prop, apply_gaussian=False):
     random.seed(0)
-    corrupted_indexes = random.sample(range(len(env_dataset.samples)), int(corrupt_prop * len(env_dataset.samples)))
+    corrupted_indexes = random.sample(range(len(env_dataset.samples)), int(abs(corrupt_prop) * len(env_dataset.samples)))
     print("Corrupt indexes:", len(corrupted_indexes), "out of:", len(env_dataset.samples))
+    if corrupt_prop >= 0:
+        for i in corrupted_indexes:
+            new_image = env_dataset.samples[i][0]
+            if apply_gaussian:
+                new_image = new_image.replace("office_home_corrupt/RealCorrupt", "office_home_gaussian/RealGaussian")
+                assert os.path.exists(new_image)
+                # print(new_image)
+            env_dataset.samples[i] = (
+                new_image,
+                (env_dataset.samples[i][1] + 1) % len(env_dataset.classes))
+    else:
+        print(f"Ignore corrupted indexes for {corrupt_prop}")
+        new_samples = []
+        corrupted_indexes = set(corrupted_indexes)
+        for i in range(len(env_dataset.samples)):
+            if i not in corrupted_indexes:
+                new_samples.append(env_dataset.samples[i])
+        env_dataset.samples = new_samples
 
-    for i in corrupted_indexes:
-        env_dataset.samples[i] = (
-            env_dataset.samples[i][0],
-            (env_dataset.samples[i][1] + 1) % len(env_dataset.classes))
+    env_dataset.targets = [s[1] for s in env_dataset.samples]
 
-
-def _corrupt_samples_filter(env_dataset, corrupt_prop, which="in"):
+def _corrupt_samples_filter(env_dataset, corrupt_prop, which="in", apply_gaussian=False):
     random.seed(0)
     corrupted_indexes = random.sample(range(len(env_dataset.samples)), int(corrupt_prop * len(env_dataset.samples)))
     new_samples = []
+    count = 0
     for i in range(len(env_dataset.samples)):
+        new_image = env_dataset.samples[i][0]
         if i in corrupted_indexes:
             add = (which == "in")
             new_target = (env_dataset.samples[i][1] + 1) % len(env_dataset.classes)
+            if apply_gaussian:
+                new_image = new_image.replace("office_home_corrupt/RealCorrupt", "office_home_gaussian/RealGaussian")
+                assert os.path.exists(new_image)
+                count += 1
         else:
             add = (which == "out")
             new_target = env_dataset.samples[i][1]
         if add:
-            new_tuple = (
-                env_dataset.samples[i][0],
-                new_target
-                )
-            new_samples.append(new_tuple)
-
+            new_tuple = (new_image, new_target)
+        else:
+            new_tuple = (None, None)
+        new_samples.append(new_tuple)
+    print("count", count)
     env_dataset.samples = new_samples
-    env_dataset.imgs = new_samples
-    env_dataset.targets = [s[1] for s in new_samples]
-    print("Len index:", len(env_dataset.samples), "which:", which)
+    env_dataset.need_none_filtering = (corrupt_prop, which)
 
 class OfficeHomeCorrupt(MultipleDomainDataset):
     CHECKPOINT_FREQ = 100  ## DiWA ##
@@ -496,13 +514,14 @@ class OfficeHomeCorrupt(MultipleDomainDataset):
             env_dataset = ImageFolder(path, transform=transform)
 
             prop = float(os.environ.get("PROP", 0.1))
+            apply_gaussian = os.environ.get("CORRUPTEDGAUSSIAN", "0") == "1"
             if "Corrupt" in environment:
                 if 'corrupt_prop' in hparams:
-                    _corrupt_samples(env_dataset, hparams['corrupt_prop'])
+                    _corrupt_samples(env_dataset, hparams['corrupt_prop'], apply_gaussian=apply_gaussian)
                 else:
-                    _corrupt_samples_filter(env_dataset, prop, which="in")
-            elif environment + "Corrupt" in environments:
-                _corrupt_samples_filter(env_dataset, prop, which="out")
+                    _corrupt_samples_filter(env_dataset, prop, which="in", apply_gaussian=apply_gaussian)
+            elif environment + "Corrupt" in environments and 'corrupt_prop' not in hparams:
+                _corrupt_samples_filter(env_dataset, prop, which="out", apply_gaussian=False)
 
             self.datasets.append(env_dataset)
 
