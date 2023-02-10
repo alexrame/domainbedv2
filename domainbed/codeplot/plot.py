@@ -65,7 +65,6 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 from matplotlib.ticker import StrMethodFormatter
 
-<<<<<<< HEAD
 def concat_lists(l):
     new_l = []
     for ll in l:

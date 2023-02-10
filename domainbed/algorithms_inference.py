@@ -270,19 +270,19 @@ class DiWA(algorithms.ERM):
         if self.featurizer is not None:
             logits_enscla = []
             features = self.featurizer(x)
-            dict_predictions["feats"] = features
+            # dict_predictions["feats"] = features
             if self.classifier is not None:
-                dict_predictions["cla"] = self.classifier(features)
+                dict_predictions["featscla"] = self.classifier(features)
 
             if self.classifier_product is not None:
-                dict_predictions["clameanprod"] = self.classifier_product(features)
+                dict_predictions["featsclameanprod"] = self.classifier_product(features)
 
             if len(self.classifiers) != 0:
                 for i, classifier in enumerate(self.classifiers):
                     _logits_i = classifier(features)
                     logits_enscla.append(_logits_i * self.classifiers_weights[i])
                     if i < 2:
-                        dict_predictions["cla" + str(i)] = _logits_i
+                        dict_predictions["featscla" + str(i)] = _logits_i
                 # sum_weights = np.sum(self.classifiers_weights)
                 # dict_predictions["enscla"
                 #                 ] = torch.sum(torch.stack(logits_enscla, dim=0), 0) / sum_weights
@@ -295,14 +295,15 @@ class DiWA(algorithms.ERM):
                 features_f = featurizer(x)
                 logits_i_at_f = []
                 for i, classifier in enumerate(self.classifiers):
-                    dict_predictions[f"cla{f}{i}"] = classifier(features_f)
-                    logits_i_at_f.append(dict_predictions[f"cla{f}{i}"])
+                    key = f"feats{f}cla{i}"
+                    dict_predictions[key] = classifier(features_f)
+                    logits_i_at_f.append(dict_predictions[key])
                     if i == f:
-                        logits_f_at_f.append(dict_predictions[f"cla{f}{i}"])
-                dict_predictions[f"cla{f}"] = torch.mean(torch.stack(logits_i_at_f, dim=0), 0)
+                        logits_f_at_f.append(dict_predictions[key])
+                dict_predictions[f"feats{f}cla"] = torch.mean(torch.stack(logits_i_at_f, dim=0), 0)
                 logits_f.extend(logits_i_at_f)
-            dict_predictions[f"ens"] = torch.mean(torch.stack(logits_f_at_f, dim=0), 0)
-            dict_predictions[f"ensc"] = torch.mean(torch.stack(logits_f, dim=0), 0)
+            dict_predictions[f"featsens"] = torch.mean(torch.stack(logits_f_at_f, dim=0), 0)
+            dict_predictions[f"featsensc"] = torch.mean(torch.stack(logits_f, dim=0), 0)
 
         if self.featurizer_product is not None:
             features_product = self.featurizer_product(x)
@@ -470,6 +471,7 @@ class DiWA(algorithms.ERM):
         return dict_stats, aux_dict_stats
 
     def get_dict_diversity(self, dict_stats, targets, device, divregex="net"):
+        return {}
         dict_diversity = collections.defaultdict(list)
         # num_classifiers = int(min(len(self.classifiers), float(os.environ.get("MAXM", math.inf))))
         num_members = int(min(len(self.networks), float(os.environ.get("MAXM", math.inf))))

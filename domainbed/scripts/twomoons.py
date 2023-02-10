@@ -2,18 +2,18 @@ import torch
 # import pezdata
 from sklearn.datasets import make_moons
 
-def problem_1(train=True):
-    num_samples = 1000
-    num_dimensions = 1200
-    maj_perc = 0.9 if train else 0.1
-    y = torch.zeros(num_samples, 1).bernoulli_(0.5)
-    x1 = (torch.randn(num_samples, 1) * 0.1 - 1) * (2 * y - 1)
-    x2 = (torch.randn(num_samples, 1) * 0.1 - 1) * (2 * y - 1)
-    x2[torch.randperm(len(x2))[:int((1 - maj_perc) * len(x2))]] *= -1
-    noise = torch.randn(num_samples, num_dimensions - 2)
-    x = torch.cat((x1 * 1, x2 * 5, noise), -1)
-    is_maj = x[:, 0] * x[:, 1] > 0
-    return x, y.view(-1).long(), is_maj
+# def problem_1(train=True):
+#     num_samples = 1000
+#     num_dimensions = 1200
+#     maj_perc = 0.9 if train else 0.1
+#     y = torch.zeros(num_samples, 1).bernoulli_(0.5)
+#     x1 = (torch.randn(num_samples, 1) * 0.1 - 1) * (2 * y - 1)
+#     x2 = (torch.randn(num_samples, 1) * 0.1 - 1) * (2 * y - 1)
+#     x2[torch.randperm(len(x2))[:int((1 - maj_perc) * len(x2))]] *= -1
+#     noise = torch.randn(num_samples, num_dimensions - 2)
+#     x = torch.cat((x1 * 1, x2 * 5, noise), -1)
+#     is_maj = x[:, 0] * x[:, 1] > 0
+#     return x, y.view(-1).long(), is_maj
 
 
 def problem_moons(train=True):
@@ -41,18 +41,17 @@ def problem_moons(train=True):
     x = torch.cat((x, noise), 1)
     return x, y.view(-1).long(), is_maj.view(-1)
 
-
-def accuracy(network, x, y):
-    return network(x).gt(0).eq(y).float().mean().item()
-
-
-def train_network(x_tr, y_tr, n_iterations=1000):
-    network = torch.nn.Sequential(
+def build_network(x_tr, y_tr):
+    return torch.nn.Sequential(
         torch.nn.Linear(x_tr.size(1), 200),
         torch.nn.ReLU(),
         torch.nn.Linear(200, 200),
         torch.nn.ReLU(),
         torch.nn.Linear(200, y_tr.size(1)))
+
+
+
+def train_network(network, x_tr, y_tr, n_iterations=1000):
     optimizer = torch.optim.SGD(network.parameters(), lr=1e-1)
     loss = torch.nn.BCEWithLogitsLoss()
     for iteration in range(n_iterations):
@@ -60,6 +59,11 @@ def train_network(x_tr, y_tr, n_iterations=1000):
         loss(network(x_tr), y_tr).backward()
         optimizer.step()
     return network
+
+def accuracy(network, x, y):
+    return network(x).gt(0).eq(y).float().mean().item()
+
+
 
 
 if __name__ == "__main__":
@@ -69,5 +73,6 @@ if __name__ == "__main__":
     y_tr = y_tr.view(-1, 1).float()
     x_te, y_te, m_te = problem(train=False)
     y_te = y_te.view(-1, 1).float()
-    net = train_network(x_tr, y_tr)
-    print(accuracy(net, x_tr, y_tr), accuracy(net, x_te, y_te))
+    network = build_network(x_tr, y_tr)
+    train_network(network, x_tr, y_tr)
+    print(accuracy(network, x_tr, y_tr), accuracy(network, x_te, y_te))
