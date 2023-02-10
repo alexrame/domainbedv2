@@ -98,8 +98,8 @@ def plot_histogram(l, labels, key, limits={}, lambda_filtering=None, list_indexe
     plt.gca().set_xlabel(
         dict_key_to_label.get(key, key), fontsize=SIZE_AXIS)
         # "Prediction diversity",
-        dict_key_to_label.get(key, key),
-        fontsize=SIZE_AXIS)
+        # dict_key_to_label.get(key, key),
+        # fontsize=SIZE_AXIS)
     plt.gca().set_ylabel('Frequency (%)', fontsize=SIZE_AXIS)
     if key in limits:
         plt.xlim(limits[key][0], limits[key][1])
@@ -465,6 +465,7 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, _dict_key_to_label="def"
                 **kwargs)
 
         if keycolor is not None:
+
             ax1.scatter(
                 get_x(list_dict_values, key_x),
                 get_x(list_dict_values, key_y),
@@ -540,7 +541,7 @@ def lambda_clustering(l, keyclustering):
                 # if "divd" in key or "divp" in key or "divf" in key or 'max' in key or "ens1h" in key or "length" in key or key in ["dirs", "count"]:
                 continue
             list_values = [line[key] for line in list_dict_values]
-            new_l[-1][key + "_stdc"] = np.std(list_values)
+            new_l[-1][key + "_std"] = np.std(list_values)
             new_l[-1][key] = np.mean(list_values)
             if key == "step":
                 new_l[-1][key] = int(new_l[-1][key])
@@ -639,13 +640,13 @@ def plot_key(
                 marker=marker,
                 **kwargs
             )
-            plt.fill_between(get_x(ll, key1),
-                get_x(ll, key2 + "-" + keyerror),
-                get_x(ll, key2 + "+" + keyerror),
+            plt.fill_between(get_x(ll, key_x),
+                get_x(ll, key_y + "-" + keyerror),
+                get_x(ll, key_y + "+" + keyerror),
                 alpha=0.5,
                 )
             # plt.errorbar(
-            #     get_x(ll, key1),
+            #     get_x(ll, key_x),
             #     get_x(ll, key2),
             #     get_x(ll, keyerror),
             #     color=color,
