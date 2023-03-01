@@ -1,4 +1,4 @@
-
+srun -N1 --gpus-per-node=1 -t 120 --pty bash
 
 
 ssh utr15kn@jean-zay.idris.fr
