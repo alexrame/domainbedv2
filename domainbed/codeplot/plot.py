@@ -332,7 +332,8 @@ def fit_and_plot_with_value(val1, val2, order, label, color, ax=None, linestyle=
         preds = m2 * np.array(get_x1_sorted)**2 + m1 * np.array(get_x1_sorted) + b
 
         ax.plot(
-            get_x1_sorted, preds, linestyle=linestyle, color=color, linewidth=3
+            get_x1_sorted, preds, linestyle=linestyle, color=color, linewidth=3,
+            label=label
         )  # label="int."+label)
         # if label == "dnf_0":
         #     import pdb; pdb.set_trace()
@@ -344,7 +345,7 @@ def fit_and_plot_with_value(val1, val2, order, label, color, ax=None, linestyle=
         ) + b
         ax.plot(
             get_x1_sorted, preds, color=color, linestyle=linestyle, linewidth=3,
-            # label=label
+            label=label
         )  # label="int."+label)
     elif order in [4, "4"]:
         m4, m3, m2, m1, b = np.polyfit(val1, val2, 4)
@@ -657,7 +658,7 @@ def plot_key(
             ax.scatter(
                 get_x(ll, key_x),
                 get_x(ll, key_y),
-                c=[x for x in get_x(ll, keycolor)],
+                c=[-x for x in get_x(ll, keycolor)],
                 cmap=color,
                 label=newlabel,
                 marker=marker,
@@ -673,6 +674,7 @@ def plot_key(
                 marker=marker,
                 **kwargs
             )
+
         fit_and_plot(
             key_x,
             key_y,
