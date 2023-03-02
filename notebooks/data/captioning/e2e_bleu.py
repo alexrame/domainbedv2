@@ -1,6 +1,7 @@
 def todict(l):
     return {k: v for k, v in l}
 
+
 l_step = []
 l_step.append(
     [
@@ -104,6 +105,15 @@ l_wa.append(
         ("lambda", 0.5)
     ]
 )
+
+l_wa.append(
+    [
+        ('CIDEr', 1.3756), ('Bleu_1', 0.8532), ('Bleu_2', 0.697), ('Bleu_3', 0.5421),
+        ('Bleu_4', 0.4122), ('ROUGE_L', 0.604), ('SPICE', 0.2407),
+        ('METEOR', 0.2987), ("lambda", 0.3)
+    ]
+)
+
 l_wa.append(
     [
         ('CIDEr', 1.3656), ('Bleu_1', 0.8551), ('Bleu_2', 0.6961), ('Bleu_3', 0.5393),
