@@ -139,19 +139,8 @@ if __name__ == "__main__":
             int(len(env)*args.holdout_fraction),
             misc.seed_hash(args.trial_seed, env_i))
 
-        if env_i in args.test_envs:
-            if args.uda_holdout_fraction != 0:
-                uda, in_ = misc.split_dataset(in_,
-                    int(len(in_)*args.uda_holdout_fraction),
-                    misc.seed_hash(args.trial_seed, env_i))
-
         if hparams['class_balanced']:
-            in_weights = misc.make_weights_for_balanced_classes(in_)
-            out_weights = misc.make_weights_for_balanced_classes(out)
-            if args.uda_holdout_fraction != 0:
-                uda_weights = misc.make_weights_for_balanced_classes(uda)
-            else:
-                uda_weights = None
+            raise ValueError("Class balanced not supported for domainbed")
         else:
             in_weights, out_weights, uda_weights = None, None, None
         in_splits.append((in_, in_weights))
