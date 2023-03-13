@@ -97,9 +97,9 @@ def plot_histogram(l, labels, key, limits={}, lambda_filtering=None, list_indexe
 
     plt.gca().set_xlabel(
         dict_key_to_label.get(key, key), fontsize=SIZE_AXIS)
-        # "Prediction diversity",
-        # dict_key_to_label.get(key, key),
-        # fontsize=SIZE_AXIS)
+    # "Prediction diversity",
+    # dict_key_to_label.get(key, key),
+    # fontsize=SIZE_AXIS)
     plt.gca().set_ylabel('Frequency (%)', fontsize=SIZE_AXIS)
     if key in limits:
         plt.xlim(limits[key][0], limits[key][1])
@@ -550,6 +550,61 @@ def lambda_clustering(l, keyclustering):
 
 FORMAT_X=0
 FORMAT_Y=0
+
+from matplotlib.colors import ListedColormap,LinearSegmentedColormap
+
+def create_colormaps():
+    N = 256
+    dict_colormaps = {}
+    def create_cmp(r,g,b):
+        np_array = np.ones((N, 4))
+        np_array[:, 0] = np.linspace(r/256, 1, N)
+        np_array[:, 1] = np.linspace(g/256, 1, N)
+        np_array[:, 2] = np.linspace(b/256, 1, N)
+        return ListedColormap(np_array)
+
+    dict_colormaps["Yellows"] = create_cmp(255, 232, 11)
+    dict_colormaps["Light_Yellows"] = create_cmp(255, 232, 200)
+    dict_colormaps["Dark_Blues"] = create_cmp(2, 2, 200)
+    dict_colormaps["Blues_Greys"] = create_cmp(40, 60, 80)
+    dict_colormaps["Dark_Greys"] = create_cmp(40, 60, 200)
+
+    return dict_colormaps
+
+def add_arrow(line, position=None, direction='right', size=15, color=None):
+
+    """
+    add an arrow to a line.
+
+    line:       Line2D object
+    position:   x-position of the arrow. If None, mean of xdata is taken
+    direction:  'left' or 'right'
+    size:       size of the arrow in fontsize points
+    color:      if None, line color is taken.
+    """
+    if color is None:
+        color = line.get_color()
+
+    xdata = line.get_xdata()
+    ydata = line.get_ydata()
+
+    if position is None:
+        position = xdata.mean()
+    # find closest index
+    start_ind = np.argmin(np.absolute(xdata - position))
+    if direction == 'right':
+        end_ind = start_ind + 1
+    else:
+        end_ind = start_ind - 1
+
+    line.axes.annotate('',
+        xytext=(xdata[start_ind], ydata[start_ind]),
+        xy=(xdata[end_ind], ydata[end_ind]),
+        arrowprops=dict(arrowstyle="->", color=color),
+        size=size
+    )
+
+
 def plot_key(
     l,
     key_x,
@@ -563,6 +618,7 @@ def plot_key(
     diag=False,
     markers=None,
     colors=None,
+    colormaps=None,
     linestyles=None,
     _dict_key_to_limit={},
     _dict_key_to_label="def",
@@ -573,6 +629,7 @@ def plot_key(
     list_indexes=None,
     keyerror=None,
     title=None,
+    connect_points=False,
     kwargs={}
 ):
     if list_indexes is not None:
@@ -601,9 +658,23 @@ def plot_key(
         if labels == "fromsplit":
             labels = [label.format(ll[0][keysplit]) for ll in l]
 
+    if keycolor is not None:
+        if colormaps is None:
+            colormaps = [
+                "Reds", "Blues", "Greens", "Oranges", "Greys", "Purples", "Reds", "Blues", "Greens",
+                "Oranges", "Greys", "Purples"
+            ][:len(l)]
+        else:
+            dict_colormaps = create_colormaps()
+            colormaps = [dict_colormaps.get(cmp, cmp) for cmp in colormaps]
+
     if colors is None:
         if keycolor is not None:
-            colors = ["Blues", "Reds", "Greens", "Oranges", "Greys", "Purples","Blues", "Reds", "Greens", "Oranges", "Greys", "Purples" ][:len(l)]
+            # dict_cmp_to_color = {
+            #     "Reds": "red", "Blues": "blue", "Greens": "green", "Oranges": "orange", "Greys": "grey", "Purples": "purple", "Yellows": "yellow"
+            # }
+            # colors=[dict_cmp_to_color[cmp.split("_")[-1]] for cmp in colormaps]
+            colors = [cm.get_cmap(cmp)(0.5) for cmp in colormaps]
         else:
             colors = cm.rainbow(np.linspace(0, 1, len(l)))
 
@@ -621,7 +692,8 @@ def plot_key(
         ax2 = ax1.twinx()
         ax2.set_ylabel(_dict_key_to_label.get(key_y_2, key_y_2), fontsize=SIZE_AXIS)
 
-    def plot_with_int(ll, color, label, marker, linestyle, key_y, ax):
+
+    def plot_with_int(ll, color, colormap, label, marker, linestyle, key_y, ax, kwargs):
         ll = [lll for lll in ll if lambda_filtering is None or lambda_filtering(lll)]
         t = get_x(ll, key_x)
         if t == []:
@@ -629,7 +701,7 @@ def plot_key(
         if keyclustering is not None:
             ll = lambda_clustering(ll, keyclustering)
 
-        newlabel = label if (linestyle is None and label !="no") else None
+        newlabel = label if (linestyle is None and not connect_points and label != "no") else None
         # if label !="no" else None#
         if keyerror is not None:
             ax.errorbar(
@@ -654,52 +726,62 @@ def plot_key(
             #     label=newlabel,
             #     marker=marker,
             #     **kwargs)
-        elif keycolor is not None:
-            ax.scatter(
-                get_x(ll, key_x),
-                get_x(ll, key_y),
-                c=[-x for x in get_x(ll, keycolor)],
-                cmap=color,
-                label=newlabel,
-                marker=marker,
-                **kwargs
-            )
-            color = cm.get_cmap(color)(0.5)
         else:
+            if connect_points and linestyle is not None:
+                line_plot = ax.plot(
+                    get_x(ll, key_x),
+                    get_x(ll, key_y),
+                    label=label,
+                    color=color,
+                    linestyle=linestyle,
+                )
+                if len(ll) > 1:
+                    add_arrow(line_plot[0], color=color, size=30)
+
+            if keycolor is not None:
+                kwargs["c"] = [-x for x in get_x(ll, keycolor)]
+                kwargs["cmap"] = colormap
+            else:
+                kwargs["color"] = color
+
             ax.scatter(
                 get_x(ll, key_x),
                 get_x(ll, key_y),
-                color=color,
                 label=newlabel,
                 marker=marker,
                 **kwargs
             )
 
-        fit_and_plot(
-            key_x,
-            key_y,
-            ll,
-            order,
-            label if linestyle is not None else None,
-            color,
-            linestyle=linestyle
-        )
+        if not connect_points:
+            fit_and_plot(
+                key_x,
+                key_y,
+                ll,
+                order,
+                label if linestyle is not None else None,
+                color,
+                linestyle=linestyle
+            )
 
     for index in range(len(l)):
         label = labels[index]
         if markers is not None:
             marker = markers[index]
         else:
-            marker = None
+            marker = "o"
         label = labels[index]
         if linestyles is not None:
-            linestyle = linestyles[index]
+            linestyle = linestyles[index%len(linestyles)]
         else:
             linestyle = None
-
-        plot_with_int(l[index], color=colors[index], label=label, marker=marker, linestyle=linestyle, key_y=key_y, ax=ax1)
+        if colormaps is not None:
+            colormap = colormaps[index]
+        else:
+            colormap = None
+        kwargs_copy = {k:v for k, v in kwargs.items()}
+        plot_with_int(l[index], color=colors[index], colormap=colormap, label=label, marker=marker, linestyle=linestyle, key_y=key_y, ax=ax1, kwargs=kwargs_copy)
         if key_y_2:
-            plot_with_int(l[index], color=colors[index], label=label, marker="*", linestyle="--", key_y=key_y_2, ax=ax2)
+            plot_with_int(l[index], color=colors[index], colormap=colormap, label=label, marker="*", linestyle="--", key_y=key_y_2, ax=ax2, kwargs=kwargs_copy)
 
     if diag:
         xpoints = ypoints = plt.xlim()
@@ -722,13 +804,11 @@ def plot_key(
         ax2.set_ylim(_dict_key_to_limit[key_y_2])
     if loc != "no":
         ax1.legend(title=legendtitle, loc=loc, fontsize=SIZE)
-        # if key_y_2 is not None:
-        #     ax2.legend(title=legendtitle, loc="upper right", fontsize=SIZE)
-        if keycolor is not None:
-            legend = ax1.get_legend()
-            for i, cmap_name in enumerate(colors):
-                cmap = cm.get_cmap(cmap_name)
-                legend.legendHandles[i].set_color(cmap(0.5))
+        # if keycolor is not None:
+        #     legend = ax1.get_legend()
+        #     for i, cmap_name in enumerate(colormaps[:len(l)]):
+        #         cmap = cm.get_cmap(cmap_name)
+        #         legend.legendHandles[i].set_color(cmap(0.5))
     if title:
         ax1.title(title, fontsize=SIZE)
     return fig
