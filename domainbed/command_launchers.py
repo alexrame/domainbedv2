@@ -27,18 +27,19 @@ def multi_gpu_launcher(commands):
     """
     Launch commands on the local machine, using all GPUs in parallel.
     """
-    print('WARNING: using experimental multi_gpu_launcher.')
     n_gpus = torch.cuda.device_count()
     procs_by_gpu = [None]*n_gpus
-
+    print('WARNING: using experimental multi_gpu_launcher with gpus', n_gpus)
     while len(commands) > 0:
         for gpu_idx in range(n_gpus):
             proc = procs_by_gpu[gpu_idx]
             if (proc is None) or (proc.poll() is not None):
                 # Nothing is running on this GPU; launch a command.
                 cmd = commands.pop(0)
+                cmd_to_launch = f'FROMSWEEP=1 CUDA_VISIBLE_DEVICES={gpu_idx} {cmd}'
+                print(f'Launching command: {cmd_to_launch}')
                 new_proc = subprocess.Popen(
-                    f'FROMSWEEP=1 CUDA_VISIBLE_DEVICES={gpu_idx} {cmd}', shell=True)
+                    cmd_to_launch, shell=True)
                 procs_by_gpu[gpu_idx] = new_proc
                 break
         time.sleep(1)

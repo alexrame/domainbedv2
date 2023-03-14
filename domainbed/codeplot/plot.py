@@ -658,18 +658,19 @@ def plot_key(
         if labels == "fromsplit":
             labels = [label.format(ll[0][keysplit]) for ll in l]
 
-    if keycolor is not None:
-        if colormaps is None:
+
+    if colormaps is None:
+        if keycolor is not None:
             colormaps = [
                 "Reds", "Blues", "Greens", "Oranges", "Greys", "Purples", "Reds", "Blues", "Greens",
                 "Oranges", "Greys", "Purples"
             ][:len(l)]
-        else:
-            dict_colormaps = create_colormaps()
-            colormaps = [dict_colormaps.get(cmp, cmp) for cmp in colormaps]
+    else:
+        dict_colormaps = create_colormaps()
+        colormaps = [dict_colormaps.get(cmp, cmp) for cmp in colormaps]
 
     if colors is None:
-        if keycolor is not None:
+        if colormaps is not None:
             # dict_cmp_to_color = {
             #     "Reds": "red", "Blues": "blue", "Greens": "green", "Oranges": "orange", "Greys": "grey", "Purples": "purple", "Yellows": "yellow"
             # }

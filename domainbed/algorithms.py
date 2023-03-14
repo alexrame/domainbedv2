@@ -233,8 +233,9 @@ class TWA(ERM):
             for aux_path in _featurizers_aux_paths
             if aux_path != ""
         ]
-
-        if self.hparams["featurizers_lambdas"].split("_")[0] == "rand":
+        if self.hparams["featurizers_lambdas"] == 0:
+            self.featurizers_lambdas = [0. for _ in range(len(self.featurizers_aux) + 1)]
+        elif self.hparams["featurizers_lambdas"].split("_")[0] == "rand":
             mutiplier = float(self.hparams["featurizers_lambdas"].split("_")[1])
             self.featurizers_lambdas = [
                 (mutiplier * (random.random() - 0.5))

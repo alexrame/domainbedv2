@@ -1,0 +1,50 @@
+from collections import defaultdict
+l_vlcs_1 = defaultdict(list)
+key = "18"
+
+l_vlcs_1[key].append({"acc": 0.6208584337349398, "dirs": "c7ffd0db591bd0fec66c0dce44255bf4,35d0b7b95d4e8cce6d46a779a66194af", "dirslen": 2, "length": 2, "lengthf": 1, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8506815365551424, "trialseed": 0, "weighting": 0.0, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6197289156626506, "dirs": "c7ffd0db591bd0fec66c0dce44255bf4,35d0b7b95d4e8cce6d46a779a66194af", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.855638166047088, "trialseed": 0, "weighting": 0.09999999999999998, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6174698795180723, "dirs": "c7ffd0db591bd0fec66c0dce44255bf4,35d0b7b95d4e8cce6d46a779a66194af", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8593556381660471, "trialseed": 0, "weighting": 0.2, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6185993975903614, "dirs": "c7ffd0db591bd0fec66c0dce44255bf4,35d0b7b95d4e8cce6d46a779a66194af", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8543990086741016, "trialseed": 0, "weighting": 0.3, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6182228915662651, "dirs": "c7ffd0db591bd0fec66c0dce44255bf4,35d0b7b95d4e8cce6d46a779a66194af", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.855638166047088, "trialseed": 0, "weighting": 0.4, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.620105421686747, "dirs": "c7ffd0db591bd0fec66c0dce44255bf4,35d0b7b95d4e8cce6d46a779a66194af", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8605947955390335, "trialseed": 0, "weighting": 0.5, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6208584337349398, "dirs": "c7ffd0db591bd0fec66c0dce44255bf4,35d0b7b95d4e8cce6d46a779a66194af", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.862453531598513, "trialseed": 0, "weighting": 0.6, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6212349397590361, "dirs": "c7ffd0db591bd0fec66c0dce44255bf4,35d0b7b95d4e8cce6d46a779a66194af", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8587360594795539, "trialseed": 0, "weighting": 0.7, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6261295180722891, "dirs": "c7ffd0db591bd0fec66c0dce44255bf4,35d0b7b95d4e8cce6d46a779a66194af", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.855638166047088, "trialseed": 0, "weighting": 0.8, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6310240963855421, "dirs": "c7ffd0db591bd0fec66c0dce44255bf4,35d0b7b95d4e8cce6d46a779a66194af", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8519206939281289, "trialseed": 0, "weighting": 0.9, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6370481927710844, "dirs": "c7ffd0db591bd0fec66c0dce44255bf4,35d0b7b95d4e8cce6d46a779a66194af", "dirslen": 2, "length": 2, "lengthf": 1, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8525402726146221, "trialseed": 0, "weighting": 1.0, "printres": "&&"})
+
+key = "50"
+l_vlcs_1[key].append({"acc": 0.6517319277108434, "dirs": "ae6df351ab071636e2ffcce05fe925c1,113e43969c4188c41f471b224efa2e27", "dirslen": 2, "length": 2, "lengthf": 1, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8667905824039653, "trialseed": 0, "weighting": 0.0, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6411897590361446, "dirs": "ae6df351ab071636e2ffcce05fe925c1,113e43969c4188c41f471b224efa2e27", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8698884758364313, "trialseed": 0, "weighting": 0.09999999999999998, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6385542168674698, "dirs": "ae6df351ab071636e2ffcce05fe925c1,113e43969c4188c41f471b224efa2e27", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8717472118959108, "trialseed": 0, "weighting": 0.2, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6362951807228916, "dirs": "ae6df351ab071636e2ffcce05fe925c1,113e43969c4188c41f471b224efa2e27", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8717472118959108, "trialseed": 0, "weighting": 0.3, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6355421686746988, "dirs": "ae6df351ab071636e2ffcce05fe925c1,113e43969c4188c41f471b224efa2e27", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8754646840148699, "trialseed": 0, "weighting": 0.4, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.634789156626506, "dirs": "ae6df351ab071636e2ffcce05fe925c1,113e43969c4188c41f471b224efa2e27", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8736059479553904, "trialseed": 0, "weighting": 0.5, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6370481927710844, "dirs": "ae6df351ab071636e2ffcce05fe925c1,113e43969c4188c41f471b224efa2e27", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8717472118959108, "trialseed": 0, "weighting": 0.6, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.639683734939759, "dirs": "ae6df351ab071636e2ffcce05fe925c1,113e43969c4188c41f471b224efa2e27", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8736059479553904, "trialseed": 0, "weighting": 0.7, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6426957831325302, "dirs": "ae6df351ab071636e2ffcce05fe925c1,113e43969c4188c41f471b224efa2e27", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8711276332094176, "trialseed": 0, "weighting": 0.8, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6554969879518072, "dirs": "ae6df351ab071636e2ffcce05fe925c1,113e43969c4188c41f471b224efa2e27", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8667905824039653, "trialseed": 0, "weighting": 0.9, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6600150602409639, "dirs": "ae6df351ab071636e2ffcce05fe925c1,113e43969c4188c41f471b224efa2e27", "dirslen": 2, "length": 2, "lengthf": 1, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8562577447335812, "trialseed": 0, "weighting": 1.0, "printres": "&&"})
+
+key = "101"
+
+l_vlcs_1[key].append({"acc": 0.6355421686746988, "dirs": "0873cac37c873307f3cdef4ce07fda71,377fe5223d318df1d5749435aa894cae", "dirslen": 2, "length": 2, "lengthf": 1, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8562577447335812, "trialseed": 0, "weighting": 0.0, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.634789156626506, "dirs": "0873cac37c873307f3cdef4ce07fda71,377fe5223d318df1d5749435aa894cae", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8698884758364313, "trialseed": 0, "weighting": 0.09999999999999998, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6344126506024096, "dirs": "0873cac37c873307f3cdef4ce07fda71,377fe5223d318df1d5749435aa894cae", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8711276332094176, "trialseed": 0, "weighting": 0.2, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6295180722891566, "dirs": "0873cac37c873307f3cdef4ce07fda71,377fe5223d318df1d5749435aa894cae", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8773234200743495, "trialseed": 0, "weighting": 0.3, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6246234939759037, "dirs": "0873cac37c873307f3cdef4ce07fda71,377fe5223d318df1d5749435aa894cae", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8785625774473358, "trialseed": 0, "weighting": 0.4, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6178463855421686, "dirs": "0873cac37c873307f3cdef4ce07fda71,377fe5223d318df1d5749435aa894cae", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8847583643122676, "trialseed": 0, "weighting": 0.5, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.610316265060241, "dirs": "0873cac37c873307f3cdef4ce07fda71,377fe5223d318df1d5749435aa894cae", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.88909541511772, "trialseed": 0, "weighting": 0.6, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6024096385542169, "dirs": "0873cac37c873307f3cdef4ce07fda71,377fe5223d318df1d5749435aa894cae", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8878562577447335, "trialseed": 0, "weighting": 0.7, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.5997740963855421, "dirs": "0873cac37c873307f3cdef4ce07fda71,377fe5223d318df1d5749435aa894cae", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8804213135068154, "trialseed": 0, "weighting": 0.8, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6005271084337349, "dirs": "0873cac37c873307f3cdef4ce07fda71,377fe5223d318df1d5749435aa894cae", "dirslen": 2, "length": 2, "lengthf": 2, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8767038413878563, "trialseed": 0, "weighting": 0.9, "printres": "&&"})
+l_vlcs_1[key].append({"acc": 0.6137048192771084, "dirs": "0873cac37c873307f3cdef4ce07fda71,377fe5223d318df1d5749435aa894cae", "dirslen": 2, "length": 2, "lengthf": 1, "step": "best", "testenv": 1, "topk": "-1", "train_acc": 0.8729863692688972, "trialseed": 0, "weighting": 1.0, "printres": "&&"})
+
+
+key = "152"
+
+
+
+labels = ['18', "50", "101", "152"]
+l_vlcs_1 = [l_vlcs_1[key] for key in labels]

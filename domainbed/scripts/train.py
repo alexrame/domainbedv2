@@ -80,10 +80,6 @@ if __name__ == "__main__":
             )
         else:
             args.output_dir = os.path.join(f"logs/singleruns/{args.dataset}", run_name)
-    # if os.environ.get("FROMSWEEP", "1") != "0" and os.path.exists(os.path.join(args.output_dir, 'out.txt')) and args.dataset != "TerraIncognita":
-    #     time.sleep(1)
-    #     print(f"Output {args.output_dir} directory already exists, exiting")
-    #     sys.exit(0)
 
     print('Args:')
     for k, v in sorted(vars(args).items()):
@@ -207,7 +203,7 @@ if __name__ == "__main__":
 
     steps_per_epoch = min([len(env)/hparams['batch_size'] for env,_ in in_splits])
 
-    n_steps = args.steps if args.steps is not None else dataset.N_STEPS
+    n_steps = args.steps if args.steps not in [None, 0] else dataset.N_STEPS
     if args.save_model_every_checkpoint!= "0" and args.save_model_every_checkpoint.isdigit():
         checkpoint_freq = args.checkpoint_freq or int(args.save_model_every_checkpoint)
     else:
@@ -237,7 +233,7 @@ if __name__ == "__main__":
         torch.save(save_dict, save_path)
 
     best_score = 0
-    dict_metric_to_best_score = {"out_acc": 0, "out_acc_ma": 0}
+    dict_metric_to_best_score = {"out_acc": 0} #, "out_acc_ma": 0
     last_results_keys = None
     results = {}
 

@@ -146,23 +146,28 @@ def get_save_path(save_path, hparams_seed=None, model_path="model_best.pkl"):
             "/private/home/alexandrerame/dataplace/data/domainbed/inits/rxrx/transfer/rxrx_erm_lp_r0_t0_0926.pkl"
     }
     if save_path in dict_pkls:
+        raise ValueError("save_path should be a folder")
         return dict_pkls[save_path]
 
+    expe_dir = os.path.join(os.environ["DATA"], "experiments/domainbed_fb/")
+    if not os.path.exists(expe_dir):
+        expe_dir = os.path.join(os.environ["DATA"], "experiments/domainbed/")
+        assert os.path.exists(expe_dir)
     dict_folders = {
-        "fdn": "/private/home/alexandrerame/dataplace/experiments/domainbed/dn/dn_erm012345_lp_0926",
-        "fdnma": "/private/home/alexandrerame/dataplace/experiments/domainbed/dn/dn_ma012345_lp_0926",
-        "fhome": "/private/home/alexandrerame/dataplace/experiments/domainbed/home/home_erm0123_lp_0926",
-        "fhomema": "/private/home/alexandrerame/dataplace/experiments/domainbed/home/home_ma0123_lp_0926",
-        "fpacs": "/private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs_erm0123_lp_0926",
-        "fpacsma": "/private/home/alexandrerame/dataplace/experiments/domainbed/pacs/pacs_ma0123_lp_0926",
-        "fvlcs": "/private/home/alexandrerame/dataplace/experiments/domainbed/vlcs/vlcs_ma0123_lp_0926",
-        "fvlcsma": "/private/home/alexandrerame/dataplace/experiments/domainbed/vlcs/vlcs_ma0123_lp_0926",
-        "fterra": "/private/home/alexandrerame/dataplace/experiments/domainbed/terra/terra_ma0123_lp_0926",
-        "fterrama": "/private/home/alexandrerame/dataplace/experiments/domainbed/terra/terra_ma0123_lp_0926",
+        "fdn": os.path.join(expe_dir, "dn/dn_erm012345_lp_0926"),
+        "fdnma": os.path.join(expe_dir, "dn/dn_ma012345_lp_0926"),
+        "fhome": os.path.join(expe_dir, "home/home_erm0123_lp_0926"),
+        "fhomema": os.path.join(expe_dir, "home/home_ma0123_lp_0926"),
+        "fpacs": os.path.join(expe_dir, "pacs/pacs_erm0123_lp_0926"),
+        "fpacsma": os.path.join(expe_dir, "pacs/pacs_ma0123_lp_0926"),
+        "fvlcs": os.path.join(expe_dir, "vlcs/vlcs_ma0123_lp_0926"),
+        "fvlcsma": os.path.join(expe_dir, "vlcs/vlcs_ma0123_lp_0926"),
+        "fterra": os.path.join(expe_dir, "terra/terra_ma0123_lp_0926"),
+        "fterrama": os.path.join(expe_dir, "terra/terra_ma0123_lp_0926"),
 
-        "fiwild": "/private/home/alexandrerame/dataplace/experiments/domainbed/iwild/iwild_erm_lp_0926",
-        "fiwildma": "/private/home/alexandrerame/dataplace/experiments/domainbed/iwild/iwild_ma_lp_0926",
-        "fnatu": "/private/home/alexandrerame/dataplace/experiments/domainbed/natu/natu_erm_lp_0926",
+        "fiwild": os.path.join(expe_dir, "iwild/iwild_erm_lp_0926"),
+        "fiwildma": os.path.join(expe_dir, "iwild/iwild_ma_lp_0926"),
+        "fnatu": os.path.join(expe_dir, "natu/natu_erm_lp_0926"),
         "fnatuma": "notdoneyet"
     }
     if save_path in dict_folders:
