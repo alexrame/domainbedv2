@@ -137,7 +137,7 @@ if __name__ == "__main__":
         lambda r:
             r['dataset'] == args.dataset and
             r['algorithm'] in args.algorithms and
-            r['test_env'] == args.test_env
+            (r['test_env'] == args.test_env or args.test_env == -1)
     )
 
     SELECTION_METHODS = [

@@ -87,7 +87,10 @@ def print_results_tables(records, selection_method, latex):
         if latex:
             print()
             print("\\subsubsection{{{}}}".format(dataset))
-        test_envs = range(datasets.num_environments(dataset))
+        if os.environ.get("TESTENV", "0") == "0":
+            test_envs = range(datasets.num_environments(dataset))
+        else:
+            test_envs = [-1]
 
         table = [[None for _ in [*test_envs, "Avg"]] for _ in alg_names]
         for i, algorithmid in enumerate(alg_names):
@@ -135,6 +138,7 @@ if __name__ == "__main__":
     # parser.add_argument("--input_dirs", type=str, required=True)
     parser.add_argument("--input_dirs", nargs="+", type=str, default=[])
     parser.add_argument("--latex", action="store_true")
+
     args = parser.parse_args()
 
     results_file = "results.tex" if args.latex else "results.txt"
