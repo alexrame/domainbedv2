@@ -24,8 +24,14 @@ def average(l):
 def get_x(l, key):
     if key in l[0]:
         return [(i[key] if key in i else -1000) for i in l if check_condition(i)]
-    if key.isnumeric():
+    if key.replace('.', '', 1).isnumeric():
         return [float(key) for i in l]
+    if key == "":
+        return [0 for i in l]
+    if "|" in key:
+        if key.split("|")[0] == "abs":
+            return [abs(i) for i in get_x(l, key.split("|")[1])]
+        raise ValueError("Unknown operator")
     if "%" in key:
         return [(i - j)/j for i, j in zip(get_x(l, key.split("%")[0]), get_x(l, "%".join(key.split("%")[1:])))]
     if "/" in key:
@@ -34,6 +40,7 @@ def get_x(l, key):
         return [i - j for i, j in zip(get_x(l, key.split("-")[0]), get_x(l, "-".join(key.split("-")[1:])))]
     if "+" in key:
         return [i + j for i, j in zip(get_x(l, key.split("+")[0]), get_x(l, "+".join(key.split("+")[1:])))]
+    print(key, "absent")
     return [(i[key] if key in i else -10) for i in l if check_condition(i)]
 
 
@@ -612,6 +619,7 @@ def plot_key(
     key_y_2=None,
     keysplit=None,
     keycolor=None,
+    keysize=None,
     order=1,
     label="",
     labels=None,
@@ -636,6 +644,10 @@ def plot_key(
         l = [l[i] for i in list_indexes]
         if labels is not None:
             labels = [labels[i] for i in list_indexes]
+        if colormaps is not None:
+            colormaps = [colormaps[i] for i in list_indexes]
+        if linestyles is not None:
+            linestyles = [linestyles[i] for i in list_indexes]
 
     fig, ax1 = plt.subplots()
 
@@ -671,10 +683,6 @@ def plot_key(
 
     if colors is None:
         if colormaps is not None:
-            # dict_cmp_to_color = {
-            #     "Reds": "red", "Blues": "blue", "Greens": "green", "Oranges": "orange", "Greys": "grey", "Purples": "purple", "Yellows": "yellow"
-            # }
-            # colors=[dict_cmp_to_color[cmp.split("_")[-1]] for cmp in colormaps]
             colors = [cm.get_cmap(cmp)(0.5) for cmp in colormaps]
         else:
             colors = cm.rainbow(np.linspace(0, 1, len(l)))
@@ -736,14 +744,19 @@ def plot_key(
                     color=color,
                     linestyle=linestyle,
                 )
-                if len(ll) > 1:
-                    add_arrow(line_plot[0], color=color, size=30)
+                # if len(ll) > 1:
+                #     add_arrow(line_plot[0], color=color, size=30)
 
             if keycolor is not None:
                 kwargs["c"] = [-x for x in get_x(ll, keycolor)]
                 kwargs["cmap"] = colormap
             else:
                 kwargs["color"] = color
+            if keysize is not None:
+                kwargs["s"] = [x for x in get_x(ll, keysize)]
+                min_s = min(kwargs["s"])
+                max_s = max(kwargs["s"])
+                kwargs["s"] = [200 * (x-min_s) / (max_s-min_s) + 5 for x in kwargs["s"]]
 
             ax.scatter(
                 get_x(ll, key_x),
