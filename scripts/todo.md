@@ -47,6 +47,14 @@ python3 llama_ppo_review.py --sentiment_model martin-ha/toxic-comment-model --sc
 python3 llama_ppo_summary.py --sentiment_model Tristan/gpt2_reward_summarization --score_goal 0 --dataset_name news
 
 
+
+## captioning
+    546964   gpu_p13    jz_inf_fts_bleu4cider.slurm  utr15kn  R      12:06      1 r8i5n1
+    546977   gpu_p13     jz_inf_fts_bleu4bleu.slurm  utr15kn  R       4:05      1 r8i4n5
+    546987   gpu_p13   jz_inf_fts_meteorcider.slurm  utr15kn  R       4:05      1 r8i4n5
+    546225    gpu_p4            fts_bleubleu4.slurm  utr15kn  R      52:41      1 jean-zay-a101
+
+
 # summary
 
 # tocode

@@ -1,5 +1,8 @@
 # TODO Program
 
+The weights should be from epoch5
+
+
 * Launch eval from jz
 PermissionError: [Errno 13] Permission denied: 'java'
 https://gist.github.com/AbeHandler/54b32b77d63bd6629d4bcf4e718fd201

@@ -84,7 +84,7 @@ class Spice:
                      '-cache', cache_dir,
                      '-out', out_file_path,
                      '-subset',
-                     '-silent'
+                    #  '-silent'
                      ]
         subprocess.check_call(spice_cmd, cwd=os.path.dirname(os.path.abspath(__file__)),
                               stdout=subprocess.DEVNULL,
