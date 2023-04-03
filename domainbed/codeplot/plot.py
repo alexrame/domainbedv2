@@ -638,6 +638,7 @@ def plot_key(
     keyerror=None,
     title=None,
     connect_points=False,
+    connect_endpoints=False,
     kwargs={}
 ):
     if list_indexes is not None:
@@ -776,6 +777,14 @@ def plot_key(
                 color,
                 linestyle=linestyle
             )
+        if connect_endpoints:
+            ax.plot(
+                    get_x([ll[0], ll[-1]], key_x),
+                    get_x([ll[0], ll[-1]], key_y),
+                    label=None,
+                    color=color,
+                    linestyle="--",
+                )
 
     for index in range(len(l)):
         label = labels[index]

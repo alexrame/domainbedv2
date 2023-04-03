@@ -67,3 +67,8 @@ export https_proxy=http://"192.168.0.100":"3128"
 jupyter-notebook --ip="*" --no-browser --allow-root --port 2222
 ssh -L 2222:192.168.0.100:2222 rame@scai
 ssh -L 2222:127.0.0.1:2222 rame@zz
+
+# connect notebook from distance
+
+ssh -t -t rame@scai -L 2223:localhost:2223 ssh daft -L 2223:localhost:2223
+jupyter notebook  --NotebookApp.allow_origin='*' --port 2223 --ip="*"  --allow-root  --NotebookApp.password=''  --allow_remote_access=true
