@@ -518,7 +518,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--reinforce', default="")  # any metric
     parser.add_argument('--scst_max_len', type=int, default=20)
-    parser.add_argument('--num_epochs', type=int, default=5)
+    parser.add_argument('--num_epochs', type=int, default=6)
 
     parser.add_argument('--image_path', type=str, default=None)
     parser.add_argument('--captions_path', type=str, default=os.path.join(DATA_DIR, 'raw_data/'))

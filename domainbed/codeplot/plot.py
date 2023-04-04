@@ -743,6 +743,7 @@ def plot_key(
                     get_x(ll, key_y),
                     label=label,
                     color=color,
+                    marker=marker,
                     linestyle=linestyle,
                 )
                 # if len(ll) > 1:
@@ -788,10 +789,6 @@ def plot_key(
 
     for index in range(len(l)):
         label = labels[index]
-        if markers is not None:
-            marker = markers[index]
-        else:
-            marker = "o"
         label = labels[index]
         if linestyles is not None:
             linestyle = linestyles[index%len(linestyles)]
@@ -801,6 +798,17 @@ def plot_key(
             colormap = colormaps[index]
         else:
             colormap = None
+        if markers is not None:
+            marker = markers[index]
+        else:
+            dictlinestyle_to_marker = {
+                None: "o",
+                "solid": "o",
+                "dashed": "+",
+                "dotted": "*",
+                "dashdot": "x",
+            }
+            marker = dictlinestyle_to_marker[linestyle]
         kwargs_copy = {k:v for k, v in kwargs.items()}
         plot_with_int(l[index], color=colors[index], colormap=colormap, label=label, marker=marker, linestyle=linestyle, key_y=key_y, ax=ax1, kwargs=kwargs_copy)
         if key_y_2:

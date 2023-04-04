@@ -9,19 +9,21 @@ def load_most_recent_checkpoint(model,
                                 scheduler=None,
                                 data_loader=None,
                                 rank=0,
-                                save_model_path='./', datetime_format='%Y-%m-%d-%H:%M:%S',
+                                save_model_path='./',
+                                datetime_format='%Y-%m-%d-%H:%M:%S',
                                 verbose=True):
     ls_files = os.listdir(save_model_path)
+    print("ls_files", ls_files)
     most_recent_checkpoint_datetime = None
     most_recent_checkpoint_filename = None
     most_recent_checkpoint_info = 'no_additional_info'
     for file_name in ls_files:
         if file_name.startswith('checkpoint_'):
-            _, datetime_str, _, info, _ = file_name.split('_')
+            datetime_str = file_name.split('_')[1]
+            info = file_name.split('_')[3]
             file_datetime = datetime.strptime(datetime_str, datetime_format)
-            if (most_recent_checkpoint_datetime is None) or \
-                    (most_recent_checkpoint_datetime is not None and
-                     file_datetime > most_recent_checkpoint_datetime):
+            print(file_name, file_datetime, info)
+            if (most_recent_checkpoint_datetime is None or file_datetime > most_recent_checkpoint_datetime):
                 most_recent_checkpoint_datetime = file_datetime
                 most_recent_checkpoint_filename = file_name
                 most_recent_checkpoint_info = info
@@ -43,6 +45,7 @@ def load_most_recent_checkpoint(model,
     else:
         if verbose:
             print("Loading: no checkpoint found in " + str(save_model_path))
+        raise ValueError(save_model_path)
         return False, most_recent_checkpoint_info
 
 
