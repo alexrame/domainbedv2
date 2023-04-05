@@ -400,7 +400,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import matplotlib.pyplot as plt
-plt.rcParams["figure.figsize"] = (5, 5)
+
+plt.rcParams["figure.figsize"] = (6, 6)
+# plt.rcParams['text.usetex'] = True
+# plt.rcParams['font.family'] = 'serif'
+plt.rcParams['font.serif'] = 'Times Roman'
 
 MUL = 0
 
@@ -1072,13 +1076,15 @@ def plot_soup_soupswa(key_x, keys2, order=1, dict_key_to_limit={}):
     return fig
 
 import os
-def save_fig(fig, name, folder="/private/home/alexandrerame/slurmconfig/notebook/filesdevfair/"):
-    fig.savefig(
-        os.path.join(folder, name),
-        format='pdf',
-        dpi=600,
-        bbox_inches='tight'
-    )
+def save_fig(fig, name, folder="/home/rame/figures/rlwa/", do_save=True, format="png"):
+    name = os.path.splitext(name)[0] + "." + format
+    if do_save:
+        fig.savefig(
+            os.path.join(folder, name),
+            format='pdf',
+            dpi=600,
+            bbox_inches='tight'
+        )
 # def save_fig(fig, name, folder="/private/home/alexandrerame/slurmconfig/notebook/filesdevfair/"):
 # def save_fig(fig, name, folder="/Users/alexandrerame/code_repository/tex/model_recycling/images/filesdevfair"):
 
