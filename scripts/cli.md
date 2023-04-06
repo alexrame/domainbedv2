@@ -53,6 +53,8 @@ conda activate bias  # ou source env/bin/activate
         rebase = false
 
 
+rsync -avz trl utr15kn@jean-zay.idris.fr:/gpfswork/rech/edr/utr15kn/
+
 # command poure notebook sur sorbonne
 
 ssh -v -L localhost:5000:pas:9000 rame@gpu.scai.sorbonne-universite.fr

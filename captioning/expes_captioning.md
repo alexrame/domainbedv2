@@ -57,11 +57,17 @@ Remarks:
 - 1e-5 good
 
 ## e2e
->> python train.py --optim_type radam --seed 775533 --sched_type custom_warmup_anneal  \
-    --warmup 1 --anneal_coeff 1.0 --lr 5e-6 --batch_size 18 --num_accum 2\
-    --is_end_to_end True --images_path ${DATA_DIR}/raw_data/MS_COCO_2014/\
-    --body_save_path ${DATA_DIR}/saves/rf_model-002.pth --num_epochs 5\
-    --save_path ${DATA_DIR}/saves/e2ebleubs18lr5e-6/ --reinforce bleu
+python train.py --optim_type radam --seed 775533 --sched_type custom_warmup_anneal --warmup 1 --anneal_coeff 1.0 --lr 5e-6 --batch_size 18 --num_accum 2    --is_end_to_end True --images_path ${DATA_DIR}/raw_data/MS_COCO_2014/    --body_save_path ${DATA_DIR}/saves/rf_model-002.pth --num_epochs 6    --save_path ${DATA_DIR}/saves/e2eciderbs18lr5e-6/ --reinforce cider
+
+
+/gpfswork/rech/edr/utr15kn/conda/envs/pytorch/bin/python3 /gpfsdswork/projects/rech/edr/utr15kn/domainbedv2/captioning/train.py\
+        --optim_type radam --seed 775533 --sched_type custom_warmup_anneal  \
+        --warmup 1 --anneal_coeff 1.0 --lr 5e-6 --batch_size 18 --num_accum 2\
+        --is_end_to_end True --images_path ${DATA_DIR}/raw_data/MS_COCO_2014/\
+        --body_save_path ${DATA_DIR}/saves/rf_model-002.pth --num_epochs 6\
+        --body_save_path ${DATA_DIR}/saves/wa/model_cider.pth\
+        --num_epochs 6\
+        --save_path ${DATA_DIR}/saves/e2eciderbs18lr5e-6/ --reinforce cider
 
 
 Remarks
