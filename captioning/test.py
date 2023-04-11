@@ -437,7 +437,7 @@ def test(
         beam_sizes=eval_beam_sizes,
         get_scores=True
     )
-    if ensemble_args.ensemble == "wa":
+    if ensemble_args.ensemble:
         score_results.append(("lambda", coeffs))
         print(score_results)
 
