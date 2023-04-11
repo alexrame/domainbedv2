@@ -417,7 +417,6 @@ def test(
             state_dict = get_wa_model(checkpoints_list, map_location=map_location, coeffs=coeffs)
             model.load_state_dict(state_dict, strict=True)
         else:
-            assert len(ensemble_args.coeffs) == 0
             assert ensemble_args.ensemble == "ens"
             ddp_model = get_ensemble_model(model, checkpoints_list, coeffs=coeffs, rank=rank)
 
