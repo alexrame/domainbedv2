@@ -142,6 +142,7 @@ def train(
             current_rl = sched.get_last_lr()[0]
 
             running_time += time() - iter_timer_start
+
             if (it + 1) % train_args.print_every_iter == 0:
                 if not train_args.reinforce:
                     avg_loss = running_loss / (it + 1 - prev_print_iter)
@@ -464,6 +465,7 @@ def spawn_train_processes(model_args, optim_args, coco_dataset, train_args, path
     print("Requested num GPUs: " + str(train_args.num_gpus))
 
     array_of_init_seeds = [random.random() for _ in range(train_args.num_epochs * 2)]
+    print("Begin train")
     mp.spawn(
         distributed_train,
         args=(

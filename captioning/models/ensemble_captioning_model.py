@@ -5,11 +5,12 @@ from models.captioning_model import CaptioningModel
 
 
 class EnsembleCaptioningModel(CaptioningModel):
-    def __init__(self, models_list, rank):
+    def __init__(self, models_list, rank, coeffs=None):
         super().__init__()
         self.num_models = len(models_list)
         self.models_list = models_list
         self.rank = rank
+        self.coeffs = coeffs
 
         self.dummy_linear = nn.Linear(1, 1)
 
@@ -49,11 +50,13 @@ class EnsembleCaptioningModel(CaptioningModel):
         import torch.nn.functional as F
         y_outputs = []
         for i in range(self.num_models):
-            y_outputs.append(
-                F.softmax(self.models_list[i].forward_dec(
+            y_output_i = F.softmax(self.models_list[i].forward_dec(
                     cross_input_list[i], enc_input_num_pads,
-                    dec_input, dec_input_num_pads, False).unsqueeze(0), dim=-1))
-        avg = torch.cat(y_outputs, dim=0).mean(dim=0).log()
+                    dec_input, dec_input_num_pads, False).unsqueeze(0), dim=-1)
+            if self.coeffs is not None:
+                y_output_i = self.coeffs[i] * y_output_i
+            y_outputs.append(y_output_i)
+        avg = torch.cat(y_outputs, dim=0).sum(dim=0).log()
 
         return avg
 

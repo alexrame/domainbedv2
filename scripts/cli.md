@@ -62,6 +62,10 @@ srun -N1 --gpus-per-node=1 -t 120 --pty bash
 (bias) rame@pas:~$ jupyter-notebook --no-browser --port 9000 --ip 0.0.0.0
 
 
+# pty on jean zay
+
+srun -A edr@v100 --pty --nodes=1 --ntasks-per-node=1 -C v100-16g --cpus-per-task=10 --gres=gpu:1 --time=2:00:00 --hint=nomultithread bash
+
 # command scai
 
 export http_proxy=http://"192.168.0.100":"3128"
@@ -74,3 +78,8 @@ ssh -L 2222:127.0.0.1:2222 rame@zz
 
 ssh -t -t rame@scai -L 2223:localhost:2223 ssh daft -L 2223:localhost:2223
 jupyter notebook  --NotebookApp.allow_origin='*' --port 2223 --ip="*"  --allow-root  --NotebookApp.password=''  --allow_remote_access=true
+
+
+# wandb
+
+wandb sync /gpfswork/rech/edr/utr15kn/dataplace/experiments/wandb/wandb/offline-run-20230407_114547-fpaxtlh8
