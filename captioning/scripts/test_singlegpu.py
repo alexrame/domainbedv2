@@ -278,7 +278,7 @@ def get_wa_model(checkpoints_paths, map_location, coeffs):
     return wa_state_dict
 
 
-def get_ensemble_model(reference_model, checkpoints_paths, rank=0):
+def get_ensemble_model(reference_model, checkpoints_paths, rank=0, coeffs=None):
     model_list = []
     for i in range(len(checkpoints_paths)):
         model = copy.deepcopy(reference_model)
@@ -288,9 +288,9 @@ def get_ensemble_model(reference_model, checkpoints_paths, rank=0):
         model.load_state_dict(checkpoint['model_state_dict'])
         model_list.append(model)
 
-    model = EnsembleCaptioningModel(model_list, rank).to(rank)
+    model = EnsembleCaptioningModel(model_list, rank, coeffs=coeffs).to(rank)
     ddp_model = model
-    # ddp_model = DDP(model, device_ids=[rank])
+    # DDP(model, device_ids=[rank])
     return ddp_model
 
 
@@ -398,23 +398,22 @@ def test(
         if len(checkpoints_list) == 0:
             print("No checkpoints found")
             exit(-1)
-        if ensemble_args.ensemble == "wa":
-            num_models = len(checkpoints_list)
-            if len(ensemble_args.coeffs) == 0:
-                coeffs = [1./num_models for _ in range(num_models)]
-            elif len(ensemble_args.coeffs) == 1:
-                if num_models == 2:
-                    coeff = ensemble_args.coeffs[0]
-                    coeffs = [1. - coeff, coeff]
-                else:
-                    coeffs = ensemble_args.coeffs
+        num_models = len(checkpoints_list)
+        if len(ensemble_args.coeffs) == 0:
+            coeffs = [1./num_models for _ in range(num_models)]
+        elif len(ensemble_args.coeffs) == 1:
+            if num_models == 2:
+                coeff = ensemble_args.coeffs[0]
+                coeffs = [1. - coeff, coeff]
             else:
-                coeffs = [float(c) for c in ensemble_args.coeffs]
-                assert len(coeffs) == num_models
+                coeffs = ensemble_args.coeffs
+        else:
+            coeffs = [float(c) for c in ensemble_args.coeffs]
+            assert len(coeffs) == num_models
+        if ensemble_args.ensemble == "wa":
             state_dict = get_wa_model(checkpoints_list, map_location=map_location, coeffs=coeffs)
             model.load_state_dict(state_dict, strict=True)
         else:
-            assert len(ensemble_args.coeffs) == 0
             assert ensemble_args.ensemble == "ens"
             ddp_model = get_ensemble_model(model, checkpoints_list, rank=rank)
 

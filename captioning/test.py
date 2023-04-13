@@ -556,13 +556,13 @@ if __name__ == "__main__":
     print("ddp_sync_port: " + str(args.ddp_sync_port))
     print("save_model_path: " + str(args.save_model_path))
 
-    drop_args = Namespace(enc=0.1, dec=0.1, enc_input=0.1, dec_input=0.1, other=0.1)
+    drop_args = Namespace(enc=0., dec=0., enc_input=0., dec_input=0., other=0.)
 
     model_args = Namespace(
         model_dim=args.model_dim,
         N_enc=args.N_enc,
         N_dec=args.N_dec,
-        dropout=0.1,
+        dropout=0.,
         drop_args=drop_args
     )
 
