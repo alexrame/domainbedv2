@@ -607,6 +607,7 @@ def lambda_clustering(l, keyclustering):
 FORMAT_X=0
 FORMAT_Y=0
 
+import matplotlib
 from matplotlib.colors import ListedColormap,LinearSegmentedColormap
 
 def get_color_from_cmap(cmp, dict_colormaps):

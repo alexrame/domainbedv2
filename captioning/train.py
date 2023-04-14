@@ -315,7 +315,10 @@ def distributed_train(
         )
 
     model.to(rank)
-    ddp_model = DDP(model, device_ids=[rank])
+    if world_size > 1:
+        ddp_model = DDP(model, device_ids=[rank])
+    else:
+        ddp_model = model
 
     if train_args.reinforce:
         print("Reinforcement learning Mode")
