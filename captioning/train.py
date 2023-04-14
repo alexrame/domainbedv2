@@ -225,8 +225,9 @@ def train(
             # or elapsed_minutes > train_args.save_every_minutes or ((it + 1) == num_iter):
             saving_timer_start = time()
             if rank == 0:
+                module = ddp_model if not hasattr(ddp_model, "module") else ddp_model.module
                 new_checkpoint_filename = save_last_checkpoint(
-                    ddp_model.module,
+                    module,
                     optimizer,
                     sched,
                     data_loader,
