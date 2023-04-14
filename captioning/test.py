@@ -225,7 +225,7 @@ def evaluate_model_on_set(
     dataset_split,
     eval_max_len,
     rank,
-    ddp_sync_port,
+    ddp_sync_port=None,
     parallel_batches=16,
     beam_sizes=[1],
     stanford_model_path='./eval/get_stanford_models.sh',

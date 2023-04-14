@@ -37,8 +37,7 @@ ONLY_TEST = False
 
 
 def train(
-    rank, train_args, path_args, ddp_model, coco_dataset, data_loader, optimizer, sched, max_len,
-    ddp_sync_port
+    rank, train_args, path_args, ddp_model, coco_dataset, data_loader, optimizer, sched, max_len
 ):
 
     if not train_args.reinforce:
@@ -211,7 +210,6 @@ def train(
                 CocoDatasetKarpathy.ValidationSet_ID,
                 eval_max_len=max_len,
                 rank=rank,
-                ddp_sync_port=ddp_sync_port,
                 parallel_batches=train_args.eval_parallel_batch_size,
                 use_images_instead_of_features=train_args.is_end_to_end,
                 get_scores=True,
@@ -258,11 +256,10 @@ def distributed_train(
 ):
 
     print("GPU: " + str(rank) + "] Process " + str(rank) + " working...")
-
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = train_args.ddp_sync_port
-
-    dist.init_process_group("nccl", rank=rank, world_size=world_size)
+    if world_size > 1:
+        os.environ['MASTER_ADDR'] = 'localhost'
+        os.environ['MASTER_PORT'] = train_args.ddp_sync_port
+        dist.init_process_group("nccl", rank=rank, world_size=world_size)
 
     img_size = 384
     if train_args.is_end_to_end:
@@ -444,11 +441,11 @@ def distributed_train(
         sched,
         model_max_len,
         # if (not train_args.reinforce or ONLY_TEST) else train_args.scst_max_len,
-        train_args.ddp_sync_port
     )
 
     print("[GPU: " + str(rank) + " ] Closing...")
-    dist.destroy_process_group()
+    if world_size > 1:
+        dist.destroy_process_group()
 
 
 def spawn_train_processes(model_args, optim_args, coco_dataset, train_args, path_args):
@@ -466,22 +463,36 @@ def spawn_train_processes(model_args, optim_args, coco_dataset, train_args, path
 
     array_of_init_seeds = [random.random() for _ in range(train_args.num_epochs * 2)]
     print("Begin train")
-    mp.spawn(
-        distributed_train,
-        args=(
-            train_args.num_gpus,
-            model_args,
-            optim_args,
-            coco_dataset,
-            array_of_init_seeds,
-            max_sequence_length,
-            train_args,
-            path_args,
-        ),
-        nprocs=train_args.num_gpus,
-        join=True
-    )
 
+    if train_args.num_gpus == 1:
+        distributed_train(
+            rank=0,
+            world_size=train_args.num_gpus,
+            model_args=model_args,
+            optim_args=optim_args,
+            coco_dataset=coco_dataset,
+            array_of_init_seeds=array_of_init_seeds,
+            model_max_len=max_sequence_length,
+            train_args=train_args,
+            path_args=path_args
+        )
+    else:
+        raise ValueError()
+    # mp.spawn(
+    #     distributed_train,
+    #     args=(
+    #         train_args.num_gpus,
+    #         model_args,
+    #         optim_args,
+    #         coco_dataset,
+    #         array_of_init_seeds,
+    #         max_sequence_length,
+    #         train_args,
+    #         path_args,
+    #     ),
+    #     nprocs=train_args.num_gpus,
+    #     join=True
+    # )
 
 if __name__ == "__main__":
     DATA_DIR = os.environ.get("DATA_DIR", "")

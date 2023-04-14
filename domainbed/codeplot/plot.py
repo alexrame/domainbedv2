@@ -609,6 +609,11 @@ FORMAT_Y=0
 
 from matplotlib.colors import ListedColormap,LinearSegmentedColormap
 
+def get_color_from_cmap(cmp, dict_colormaps):
+    cmp = dict_colormaps.get(cmp, cmp)
+    return cm.get_cmap(cmp)(0.5)
+
+
 def create_colormaps():
     N = 256
     dict_colormaps = {}
@@ -623,6 +628,8 @@ def create_colormaps():
     dict_colormaps["Light_Yellows"] = create_cmp(255, 232, 200)
     dict_colormaps["Dark_Blues"] = create_cmp(2, 2, 200)
     dict_colormaps["Blues_Greys"] = create_cmp(40, 60, 80)
+    dict_colormaps["Blues_Greens"] = create_cmp(125, 150, 250)
+    dict_colormaps["Reds_Greens"] = create_cmp(250, 150, 125)
     dict_colormaps["Dark_Greys"] = create_cmp(40, 60, 200)
 
     return dict_colormaps
@@ -687,6 +694,7 @@ def plot_key(
     keyerror=None,
     title=None,
     connect_endpoints=False,
+    fontsize=None,
     kwargs={}
 ):
     if list_indexes is not None:
@@ -695,8 +703,12 @@ def plot_key(
             labels = [labels[i] for i in list_indexes]
         if colormaps is not None:
             colormaps = [colormaps[i] for i in list_indexes]
+        if colors is not None:
+            colors = [colors[i] for i in list_indexes]
         if linestyles is not None:
             linestyles = [linestyles[i] for i in list_indexes]
+        if markers is not None:
+            markers = [markers[i] for i in list_indexes]
 
     fig, ax1 = plt.subplots()
 
@@ -860,10 +872,11 @@ def plot_key(
     if key_y_2 is not None and key_y_2 in _dict_key_to_limit:
         ax2.set_ylim(_dict_key_to_limit[key_y_2])
     if loc != "no":
+        fontsize = fontsize or SIZE
         if isinstance(loc, tuple):
-            legend = ax1.legend(title=legendtitle, bbox_to_anchor=loc, fontsize=SIZE)
+            legend = ax1.legend(title=legendtitle, bbox_to_anchor=loc, fontsize=fontsize)
         else:
-            legend = ax1.legend(title=legendtitle, loc=loc, fontsize=SIZE)
+            legend = ax1.legend(title=legendtitle, loc=loc, fontsize=fontsize)
         for lgnd in legend.legendHandles:
             lgnd.set_markersize(6)
         # legend = ax1.get_legend()
@@ -889,5 +902,3 @@ def save_fig(fig, name, folder="/home/rame/figures/rlwa/", do_save=True, format=
         )
 # def save_fig(fig, name, folder="/private/home/alexandrerame/slurmconfig/notebook/filesdevfair/"):
 # def save_fig(fig, name, folder="/Users/alexandrerame/code_repository/tex/model_recycling/images/filesdevfair"):
-
-
