@@ -399,8 +399,9 @@ def distributed_train(
         print("No checkpoint path provided")
         change_from_xe_to_rf = False
         if path_args.save_path is not None:
+            module = ddp_model if not hasattr(ddp_model, "module") else ddp_model.module
             _, additional_info = load_most_recent_checkpoint(
-                ddp_model.module, optimizer, sched, data_loader, rank, path_args.save_path
+                module, optimizer, sched, data_loader, rank, path_args.save_path
             )
             if additional_info == 'xe' and train_args.reinforce:
                 change_from_xe_to_rf = True
