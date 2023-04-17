@@ -31,6 +31,11 @@ def get_x(l, key):
     if "|" in key:
         if key.split("|")[0] == "abs":
             return [abs(i) for i in get_x(l, key.split("|")[1])]
+        if key.split("|")[0] == "norm":
+            vals = [i for i in get_x(l, key.split("|")[1])]
+            min_vals = min(vals)
+            max_vals = max(vals)
+            return [(i-min_vals)/(max_vals-min_vals) for i in vals]
         raise ValueError("Unknown operator")
     if "%" in key:
         return [(i - j)/j for i, j in zip(get_x(l, key.split("%")[0]), get_x(l, "%".join(key.split("%")[1:])))]
@@ -267,6 +272,7 @@ dict_key_to_label = {
     "acc_ens": "$Acc(ENS)$",
     "weighting": '$\lambda$',
     "lambda": '$\lambda$',
+    "1-lambda": '$\lambda$',
 }
 
 import numpy as np
@@ -274,7 +280,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.signal import savgol_filter
 
-def interpolate_points(val1, val2, order, label, color, marker=None, ax=None, linestyle="-"):
+def interpolate_points(val1, val2, order, label, color, marker=None, ax=None, linestyle="-", linewidth=1):
     if ax is None:
         ax = plt
 
@@ -315,13 +321,15 @@ def interpolate_points(val1, val2, order, label, color, marker=None, ax=None, li
             curve = interpolator(alpha)
 
             # Graph:
-            ax.plot(*curve.T,
+            ax.plot(
+                *curve.T,
                 label=label,
                 color=color,
                 linestyle=linestyle,
                 marker=marker,
-                markersize=0
-                )
+                markersize=0,
+                linewidth=linewidth
+            )
 
             # ax.plot(*points.T, 'ok', label='original points')
             return
@@ -342,7 +350,8 @@ def interpolate_points(val1, val2, order, label, color, marker=None, ax=None, li
             label=label,
             color=color,
             linestyle=linestyle,
-            markersize=0
+            markersize=0,
+            linewidth=linewidth
         )
         return
 
@@ -354,7 +363,8 @@ def interpolate_points(val1, val2, order, label, color, marker=None, ax=None, li
             color=color,
             linestyle=linestyle,
             marker=marker,
-            markersize=0
+            markersize=0,
+            linewidth=linewidth
         )
         return
 
@@ -402,7 +412,7 @@ def interpolate_points(val1, val2, order, label, color, marker=None, ax=None, li
         get_x1_sorted, preds, color=color, linestyle=linestyle, label=label,
         marker=marker,
         markersize=0,
-        linewidth=1
+        linewidth=linewidth
     )
 
 
@@ -435,7 +445,7 @@ SIZE="large"
 SIZE_AXIS="xx-large"
 
 
-def plot_basic_scatter(list_dict_values, key_x, keys_y, _dict_key_to_label="def", colors=None, colormaps=None, keycolor=None, order=0, linestyles=None, keys_error=None, loc="best", title=None, keyclustering=None,  kwargs={}, _dict_key_to_limit={}, ax1=None, lambda_filtering=None, markers=None, legendtitle=None):
+def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_to_label="def", colors=None, colormaps=None, keycolor=None, order=0, linestyles=None, keys_error=None, loc="best", title=None, keyclustering=None,  kwargs={}, _dict_key_to_limit={}, ax1=None, lambda_filtering=None, markers=None, legendtitle=None):
     if ax1 is None:
         fig, ax1 = plt.subplots()
     else:
@@ -495,7 +505,11 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, _dict_key_to_label="def"
             marker = dictlinestyle_to_marker[linestyle]
 
         color = colors[index]
-        label = _dict_key_to_label.get(key_y, key_y)
+        if labels is None:
+            label = key_y
+        else:
+            label = labels[index]
+        label = _dict_key_to_label.get(label, label)
 
         if keys_error is not None:
             # plt.errorbar(
@@ -529,6 +543,7 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, _dict_key_to_label="def"
                 get_x(list_dict_values, key_y),
                 color=color,
                 marker=marker,
+                s=[8 for _ in get_x(list_dict_values, key_y)],
                 label=None if order != "nofit" else label,
             )
         interpolate_points(
@@ -539,18 +554,19 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, _dict_key_to_label="def"
             label=label,
             color=color,
             marker=marker,
-            linestyle=linestyle
+            linestyle=linestyle,
+            linewidth=2.5
         )
 
     ax1.set_xlabel(_dict_key_to_label.get(key_x, key_x), fontsize=SIZE)
-    ax1.set_ylabel("Rewards", fontsize=SIZE)
+    ax1.set_ylabel("Normalized rewards", fontsize=SIZE)
     if loc != "no":
         if isinstance(loc, tuple):
             legend = ax1.legend(title=legendtitle, bbox_to_anchor=loc, fontsize=SIZE)
         else:
             legend = ax1.legend(title=legendtitle, loc=loc, fontsize=SIZE)
         for lgnd in legend.legendHandles:
-            lgnd.set_markersize(6)
+            lgnd.set_markersize(8)
     if title:
         ax1.set_title(title, fontsize=SIZE)
     return fig
@@ -698,6 +714,10 @@ def plot_key(
     fontsize=None,
     kwargs={}
 ):
+    if list_indexes is None:
+        list_indexes = [i for i, ll in enumerate(l) if ll is not None]
+        if len(list_indexes) == len(l):
+            list_indexes = None
     if list_indexes is not None:
         l = [l[i] for i in list_indexes]
         if labels is not None:
