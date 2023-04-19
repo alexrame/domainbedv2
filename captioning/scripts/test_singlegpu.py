@@ -518,6 +518,8 @@ if __name__ == "__main__":
 
     print("ensemble: " + str(args.ensemble))
     print("eval parallel batch_size: " + str(args.eval_parallel_batch_size))
+
+    args.save_model_path = [s for s in args.save_model_path if s != "no"]
     print("save_model_path: " + str(args.save_model_path))
 
     drop_args = Namespace(enc=0.0, dec=0.0, enc_input=0.0, dec_input=0.0, other=0.0)

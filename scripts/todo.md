@@ -1,4 +1,4 @@
-# new
+# old
 
 * infstack
      69458      hard infstacku_wainitrmdvb311_0415.     rame  R       0:00      1 thin
@@ -14,6 +14,18 @@
      69577      hard     assistant_rmdvbv_kl2.slurm     rame  R      33:33      1 lizzy
      69575      hard      assistant_rmeld_kl2.slurm     rame  R      40:25      1 lizzy
 
+
+     69587      hard infassistant_bv2_steps_0417.sl     rame PD       0:00      1 (Priority)
+     69589      hard infassistant_dv2_steps_0417.sl     rame PD       0:00      1 (Priority)
+
+     69590      hard     assistant_rmdvlv_kl2.slurm     rame PD       0:00      1 (Priority)
+     69577      hard     assistant_rmdvbv_kl2.slurm     rame  R    2:32:27      1 lizzy
+     69575      hard      assistant_rmeld_kl2.slurm     rame  R    2:39:19      1 lizzy
+
+     69522      hard infstacku_warmdvb311rmeld391_0     rame  R    4:45:55      1 lizzy
+     69521      hard infstacku_multirmeldrmdvb_0415     rame  R    4:50:20      1 led
+
+
 * infassitant
      69587      hard infassistant_bv2_steps_0417.sl     rame PD       0:00      1 (Priority)
      69589      hard infassistant_dv2_steps_0417.sl     rame PD       0:00      1 (Priority)
@@ -26,3 +38,15 @@
 
 cat infstacku_wainitrmeld391_0415.slurm-69457.out | grep "d\[" >> /data/rame/logs_experiments_notebook/nlp/llamastacku/infstacku_wainitrmeld391_0415.py
 cat infstacku_wainitrmdvb311_0415.slurm-69458.out | grep "d\[" >> /data/rame/logs_experiments_notebook/nlp/llamastacku/infstacku_wainitrmdvb311_0415.py
+
+
+# assistant
+     69590      hard     assistant_rmdvlv_kl2.slurm     rame  R   21:01:47      1 top
+     69577      hard     assistant_rmdvbv_kl2.slurm     rame  R 1-02:31:06      1 lizzy
+     69575      hard      assistant_rmeld_kl2.slurm     rame  R 1-02:37:58      1 lizzy
+     70098      hard infassistant_rmeld_steps_0418.     rame  R       0:03      1 thin
+     70097      hard infassistant_rmdvbv_steps_0418     rame  R       0:09      1 lizzy
+     70099      hard infassistant_warmeldrmdvbv_ste     rame PD       0:00      1 (Resources)
+
+# assistant jz
+    954281   gpu_p13    assistant_dvxrpos_kl2.slurm  utr15kn PD       0:00      1 (Priority)

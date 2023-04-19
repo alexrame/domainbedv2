@@ -761,7 +761,9 @@ def plot_key(
             ][:len(l)]
     else:
         dict_colormaps = create_colormaps()
-        colormaps = [dict_colormaps.get(cmp, cmp) for cmp in colormaps]
+        colormaps = [
+            dict_colormaps.get(cmp, cmp) if isinstance(cmp, str) else cmp for cmp in colormaps
+        ]
 
     if colors is None:
         if colormaps is not None:
