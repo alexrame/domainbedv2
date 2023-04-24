@@ -90,9 +90,6 @@ def plot_histogram(l, labels, key, limits={}, lambda_filtering=None, list_indexe
 
     plt.gca().set_xlabel(
         dict_key_to_label.get(key, key), fontsize=SIZE_AXIS)
-    # "Prediction diversity",
-    # dict_key_to_label.get(key, key),
-    # fontsize=SIZE_AXIS)
     plt.gca().set_ylabel('Frequency (%)', fontsize=SIZE_AXIS)
     if key in limits:
         plt.xlim(limits[key][0], limits[key][1])
@@ -445,7 +442,7 @@ SIZE="large"
 SIZE_AXIS="xx-large"
 
 
-def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_to_label="def", colors=None, colormaps=None, keycolor=None, order=0, linestyles=None, keys_error=None, loc="best", title=None, keyclustering=None,  kwargs={}, _dict_key_to_limit={}, ax1=None, lambda_filtering=None, markers=None, legendtitle=None):
+def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_to_label="def", colors=None, colormaps=None, keycolor=None, order=0, linestyles=None, keys_error=None, loc="best", title=None, keyclustering=None,  kwargs={}, _dict_key_to_limit={}, ax1=None, lambda_filtering=None, markers=None, legendtitle=None, markersize=12):
     if ax1 is None:
         fig, ax1 = plt.subplots()
     else:
@@ -477,10 +474,10 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_t
     if keyclustering is not None:
         list_dict_values_means = lambda_clustering(list_dict_values, keyclustering)
 
-    if key_x in _dict_key_to_limit:
-        ax1.set_xlim(_dict_key_to_limit[key_x])
-    if keys_y[0] in _dict_key_to_limit:
-        ax1.set_ylim(_dict_key_to_limit[keys_y[0]])
+    if "x" in _dict_key_to_limit:
+        ax1.set_xlim(_dict_key_to_limit["x"])
+    if "y" in _dict_key_to_limit:
+        ax1.set_ylim(_dict_key_to_limit["y"])
 
     for index in range(len(keys_y)):
         key_y = keys_y[index]
@@ -543,7 +540,7 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_t
                 get_x(list_dict_values, key_y),
                 color=color,
                 marker=marker,
-                s=[8 for _ in get_x(list_dict_values, key_y)],
+                s=[markersize for _ in get_x(list_dict_values, key_y)],
                 label=None if order != "nofit" else label,
             )
         interpolate_points(
@@ -628,6 +625,8 @@ from matplotlib.colors import ListedColormap,LinearSegmentedColormap
 
 def get_color_from_cmap(cmp, dict_colormaps):
     cmp = dict_colormaps.get(cmp, cmp)
+    if isinstance(cmp, str) and cmp.startswith("fake_"):
+        return cmp.split("_")[1]
     return cm.get_cmap(cmp)(0.5)
 
 
@@ -701,6 +700,7 @@ def plot_key(
     colors=None,
     colormaps=None,
     linestyles=None,
+    linewidths=None,
     _dict_key_to_limit={},
     _dict_key_to_label="def",
     loc="upper right",
@@ -728,6 +728,8 @@ def plot_key(
             colors = [colors[i] for i in list_indexes]
         if linestyles is not None:
             linestyles = [linestyles[i] for i in list_indexes]
+        if linewidths is not None:
+            linewidths = [linewidths[i] for i in list_indexes]
         if markers is not None:
             markers = [markers[i] for i in list_indexes]
 
@@ -786,7 +788,7 @@ def plot_key(
         ax2.set_ylabel(_dict_key_to_label.get(key_y_2, key_y_2), fontsize=SIZE_AXIS)
 
 
-    def plot_with_int(ll, color, colormap, label, marker, linestyle, key_y, ax, kwargs):
+    def plot_with_int(ll, color, colormap, label, marker, linestyle, linewidth, key_y, ax, kwargs):
         ll = [lll for lll in ll if lambda_filtering is None or lambda_filtering(lll)]
         t = get_x(ll, key_x)
         if t == []:
@@ -830,6 +832,7 @@ def plot_key(
             label=label,
             color=color,
             marker=marker,
+            linewidth=linewidth,
             linestyle=linestyle
         )
         ax.scatter(
@@ -870,8 +873,12 @@ def plot_key(
                 "dashdot": "x",
             }
             marker = dictlinestyle_to_marker[linestyle]
+        if linewidths is not None:
+            linewidth = linewidths[index]
+        else:
+            linewidth = None
         kwargs_copy = {k:v for k, v in kwargs.items()}
-        plot_with_int(l[index], color=colors[index], colormap=colormap, label=label, marker=marker, linestyle=linestyle, key_y=key_y, ax=ax1, kwargs=kwargs_copy)
+        plot_with_int(l[index], color=colors[index], colormap=colormap, label=label, marker=marker, linewidth=linewidth, linestyle=linestyle, key_y=key_y, ax=ax1, kwargs=kwargs_copy)
         if key_y_2:
             plot_with_int(l[index], color=colors[index], colormap=colormap, label=label, marker="*", linestyle="--", key_y=key_y_2, ax=ax2, kwargs=kwargs_copy)
 
@@ -914,12 +921,12 @@ def plot_key(
 
 
 import os
-def save_fig(fig, name, folder="/home/rame/figures/rlwa/", do_save=True, format="png"):
+def save_fig(fig, name, folder="/home/rame/figures/rlwa/", do_save=True, format="pdf"):
     name = os.path.splitext(name)[0] + "." + format
     if do_save:
         fig.savefig(
             os.path.join(folder, name),
-            format='pdf',
+            format=format,
             dpi=600,
             bbox_inches='tight'
         )
