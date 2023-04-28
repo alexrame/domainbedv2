@@ -277,7 +277,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.signal import savgol_filter
 
-def interpolate_points(val1, val2, order, label, color, marker=None, ax=None, linestyle="-", linewidth=1):
+def interpolate_points(val1, val2, order, label, color, marker=None, ax=None, linestyle="-", linewidth=1, kwargs={}):
     if ax is None:
         ax = plt
 
@@ -352,7 +352,7 @@ def interpolate_points(val1, val2, order, label, color, marker=None, ax=None, li
         )
         return
 
-    if order == "connect":
+    if order in ["onlyconnect", "connect"]:
         ax.plot(
             val1,
             val2,
@@ -361,15 +361,17 @@ def interpolate_points(val1, val2, order, label, color, marker=None, ax=None, li
             linestyle=linestyle,
             marker=marker,
             markersize=0,
-            linewidth=linewidth
+            linewidth=linewidth,
+            **kwargs
         )
         return
 
     get_x1_sorted = np.linspace(min(val1), max(val1), 500000)
 
-    if order in [1, "1"]:
+    if order in [1, "1", "onlyfit1"]:
         m, b = np.polyfit(val1, val2, 1)
         preds = m * np.array(get_x1_sorted) + b
+
     elif order in [2, "2"]:
         m2, m1, b = np.polyfit(val1, val2, 2)
         preds = m2 * np.array(get_x1_sorted)**2 + m1 * np.array(get_x1_sorted) + b
@@ -442,11 +444,12 @@ SIZE="large"
 SIZE_AXIS="xx-large"
 
 
-def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_to_label="def", colors=None, colormaps=None, keycolor=None, order=0, linestyles=None, keys_error=None, loc="best", title=None, keyclustering=None,  kwargs={}, _dict_key_to_limit={}, ax1=None, lambda_filtering=None, markers=None, legendtitle=None, markersize=12):
+def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_to_label="def", colors=None, colormaps=None, keycolor=None, order=0, linestyles=None, keys_error=None, loc="best", title=None, keyclustering=None,  kwargs={}, _dict_key_to_limit={}, ax1=None, lambda_filtering=None, markers=None, legendtitle=None, markersize=12, fontsize=None):
     if ax1 is None:
         fig, ax1 = plt.subplots()
     else:
         fig = None
+        ax1 = plt.gca()
     if _dict_key_to_label == "def":
         _dict_key_to_label = dict_key_to_label
     else:
@@ -500,7 +503,8 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_t
                 "dashdot": "x",
             }
             marker = dictlinestyle_to_marker[linestyle]
-
+        if marker == "no":
+            marker = None
         color = colors[index]
         if labels is None:
             label = key_y
@@ -558,10 +562,11 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_t
     ax1.set_xlabel(_dict_key_to_label.get(key_x, key_x), fontsize=SIZE)
     ax1.set_ylabel("Normalized rewards", fontsize=SIZE)
     if loc != "no":
+        fontsize = fontsize or SIZE
         if isinstance(loc, tuple):
-            legend = ax1.legend(title=legendtitle, bbox_to_anchor=loc, fontsize=SIZE)
+            legend = ax1.legend(title=legendtitle, bbox_to_anchor=loc, fontsize=fontsize)
         else:
-            legend = ax1.legend(title=legendtitle, loc=loc, fontsize=SIZE)
+            legend = ax1.legend(title=legendtitle, loc=loc, fontsize=fontsize)
         for lgnd in legend.legendHandles:
             lgnd.set_markersize(8)
     if title:
@@ -684,6 +689,121 @@ def add_arrow(line, position=None, direction='right', size=15, color=None):
     )
 
 
+def plot_multiple_l(
+    ls,
+    key_x,
+    key_y,
+    order=1,
+    labels=None,
+    colors=None,
+    linestyles=None,
+    linewidths=None,
+    _dict_key_to_label="def",
+    loc="upper right",
+    legendtitles=None,
+    title=None,
+    fig=None,
+    fontsize=None,
+    kwargs={}
+):
+    if fig is None:
+        fig, ax1 = plt.subplots()
+    else:
+        ax1 = plt.gca()
+
+    if FORMAT_X:
+        if FORMAT_X == 1:
+            plt.gca().xaxis.set_major_formatter(StrMethodFormatter('{x:,.1f}')) # 2 decimal places
+        elif isinstance(FORMAT_X, list):
+            plt.gca().set_xticks(FORMAT_X)
+    if FORMAT_Y:
+        assert FORMAT_Y == 3
+        plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.3f}')) # 2 decimal places
+
+    plt.xlabel(_dict_key_to_label.get(key_x, key_x), fontsize=SIZE_AXIS)
+    plt.ylabel(_dict_key_to_label.get(key_y, key_y), fontsize=SIZE_AXIS)
+
+    def plot_with_int(ll, color, colormap, label, marker, linestyle, linewidth, key_y, ax, kwargs):
+        t = get_x(ll, key_x)
+        if t == []:
+            return
+        interpolate_points(
+            get_x(ll, key_x),
+            get_x(ll, key_y),
+            order=order,
+            ax=ax,
+            label=label,
+            color=color,
+            marker=marker,
+            linewidth=linewidth,
+            linestyle=linestyle,
+            kwargs=kwargs
+        )
+        kwargs["color"] = color
+
+        if order not in ["onlyfit1", "onlyconnect"]:
+            ax.scatter(
+                get_x(ll, key_x),
+                get_x(ll, key_y),
+                label=None if order != "nofit" else label,
+                marker=marker,
+                **kwargs
+            )
+    for i, l in enumerate(ls):
+        ilinestyle = linestyles[i]
+        ilinewidth = linewidths[i]
+        for index in range(len(l)):
+            label = labels[i][index]
+            kwargs_copy = {k:v for k, v in kwargs.items()}
+            if index == (len(l) - 2):
+                linewidth = 4
+                linestyle = "dashed"
+            elif index == (len(l) - 1):
+                linewidth = 4
+                linestyle = "solid"
+            else:
+                linewidth = ilinewidth
+                linestyle = ilinestyle
+            plot_with_int(l[index], color=colors[i][index], colormap=None, label=label, marker=None, linewidth=linewidth, linestyle=linestyle, key_y=key_y, ax=ax1, kwargs=kwargs_copy)
+
+    if loc != "no":
+        fontsize = fontsize or SIZE
+        # Get the handles and labels from the legend
+        ax1.legend(
+            loc='lower right',
+            # bbox_to_anchor=(0, 1.02, 1, 0.2),
+            ncol=2,
+            fontsize=fontsize,
+            handlelength=3,
+            title=legendtitles[0],
+            # prop={
+            #     'size': 8,
+            #     # 'va': 'center'
+            # }
+            # handletextpad=1,
+            # # labelspacing=2,
+            # handlelength=2
+        )
+        # handles, labels = ax1.get_legend_handles_labels()
+
+        # # Create two new legend objects with different handles and labels
+        # legend1 = plt.legend(handles[:len(ls[0])], labels[:len(ls[0])], title=legendtitles[0], bbox_to_anchor=(1.05, 1), fontsize=fontsize)
+        # legend2 = plt.legend(handles[len(ls[0]):], labels[len(ls[0]):], title=legendtitles[1], bbox_to_anchor=(1.2, 1), fontsize=fontsize)
+
+        # # Add the two legends to the plot
+        # ax1.add_artist(legend1)
+        # ax1.add_artist(legend2)
+
+        # legend = ax1.get_legend()
+        # if keycolor is not None:
+        #     legend = ax1.get_legend()
+        #     for i, cmap_name in enumerate(colormaps[:len(l)]):
+        #         cmap = cm.get_cmap(cmap_name)
+        #         legend.legendHandles[i].set_color(cmap(0.5))
+    if title:
+        ax1.title(title, fontsize=SIZE)
+    return fig
+
 def plot_key(
     l,
     key_x,
@@ -711,6 +831,7 @@ def plot_key(
     keyerror=None,
     title=None,
     connect_endpoints=False,
+    fig=None,
     fontsize=None,
     kwargs={}
 ):
@@ -732,8 +853,10 @@ def plot_key(
             linewidths = [linewidths[i] for i in list_indexes]
         if markers is not None:
             markers = [markers[i] for i in list_indexes]
-
-    fig, ax1 = plt.subplots()
+    if fig is None:
+        fig, ax1 = plt.subplots()
+    else:
+        ax1 = plt.gca()
 
     if FORMAT_X:
         if FORMAT_X == 1:
@@ -835,13 +958,14 @@ def plot_key(
             linewidth=linewidth,
             linestyle=linestyle
         )
-        ax.scatter(
-            get_x(ll, key_x),
-            get_x(ll, key_y),
-            label=None if order != "nofit" else label,
-            marker=marker,
-            **kwargs
-        )
+        if order not in ["onlyfit1", "onlyconnect"]:
+            ax.scatter(
+                get_x(ll, key_x),
+                get_x(ll, key_y),
+                label=None if order != "nofit" else label,
+                marker=marker,
+                **kwargs
+            )
 
         if connect_endpoints:
             ax.plot(
@@ -873,6 +997,8 @@ def plot_key(
                 "dashdot": "x",
             }
             marker = dictlinestyle_to_marker[linestyle]
+        if marker == "no":
+            marker = None
         if linewidths is not None:
             linewidth = linewidths[index]
         else:
@@ -907,8 +1033,9 @@ def plot_key(
             legend = ax1.legend(title=legendtitle, bbox_to_anchor=loc, fontsize=fontsize)
         else:
             legend = ax1.legend(title=legendtitle, loc=loc, fontsize=fontsize)
-        for lgnd in legend.legendHandles:
-            lgnd.set_markersize(6)
+        if marker is not None:
+            for lgnd in legend.legendHandles:
+                lgnd.set_markersize(6)
         # legend = ax1.get_legend()
         # if keycolor is not None:
         #     legend = ax1.get_legend()
