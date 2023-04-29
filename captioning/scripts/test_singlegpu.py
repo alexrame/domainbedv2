@@ -417,7 +417,8 @@ def test(
             assert ensemble_args.ensemble == "ens"
             ddp_model = get_ensemble_model(model, checkpoints_list, rank=rank)
 
-    print("Evaluation on Validation Set")
+    which_data = os.environ.get("TESTDATASET", "val")
+    print(f"Evaluation on {which_data} Set")
     score_results = evaluate_model_on_set(
         ddp_model,
         coco_dataset.caption_idx2word_list,
@@ -425,7 +426,7 @@ def test(
         coco_dataset.get_eos_token_idx(),
         coco_dataset.val_num_images,
         data_loader,
-        CocoDatasetKarpathy.ValidationSet_ID,
+        (CocoDatasetKarpathy.ValidationSet_ID if which_data == "val" else CocoDatasetKarpathy.TestSet_ID),
         model_max_len,
         rank=rank,
         parallel_batches=eval_parallel_batch_size,
