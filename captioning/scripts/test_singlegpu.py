@@ -227,7 +227,6 @@ def evaluate_model_on_set(
     beam_sizes=[1],
     stanford_model_path='./eval/get_stanford_models.sh',
     use_images_instead_of_features=False,
-    get_predictions=False,
     get_scores=False
 ):
 
@@ -253,10 +252,8 @@ def evaluate_model_on_set(
             )
 
             if rank == 0:
-                if get_predictions:
-                    return dict_out["pred_dict"], dict_out["gts_dict"]
                 if get_scores:
-                    return dict_out["score_results"]
+                    return dict_out["score_results"], dict_out["pred_dict"], dict_out["gts_dict"]
 
     return None, None
 
@@ -419,7 +416,7 @@ def test(
 
     which_data = os.environ.get("TESTDATASET", "val")
     print(f"Evaluation on {which_data} Set")
-    score_results = evaluate_model_on_set(
+    score_results, pred_dict, gts_dict = evaluate_model_on_set(
         ddp_model,
         coco_dataset.caption_idx2word_list,
         coco_dataset.get_sos_token_idx(),
@@ -437,6 +434,9 @@ def test(
     if ensemble_args.ensemble == "wa":
         score_results.append(("lambda", coeffs))
         print(score_results)
+        if os.environ.get("VERBOSE"):
+            print(pred_dict)
+            print(gts_dict)
 
 
 def launch_test(
