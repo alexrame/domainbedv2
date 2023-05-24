@@ -227,7 +227,6 @@ def evaluate_model_on_set(
     beam_sizes=[1],
     stanford_model_path='./eval/get_stanford_models.sh',
     use_images_instead_of_features=False,
-    get_predictions=False,
     get_scores=False
 ):
 
@@ -253,10 +252,8 @@ def evaluate_model_on_set(
             )
 
             if rank == 0:
-                if get_predictions:
-                    return dict_out["pred_dict"], dict_out["gts_dict"]
                 if get_scores:
-                    return dict_out["score_results"]
+                    return dict_out["score_results"], dict_out["pred_dict"], dict_out["gts_dict"]
 
     return None, None
 
@@ -417,15 +414,16 @@ def test(
             assert ensemble_args.ensemble == "ens"
             ddp_model = get_ensemble_model(model, checkpoints_list, rank=rank)
 
-    print("Evaluation on Validation Set")
-    score_results = evaluate_model_on_set(
+    which_data = os.environ.get("TESTDATASET", "val")
+    print(f"Evaluation on {which_data} Set")
+    score_results, pred_dict, gts_dict = evaluate_model_on_set(
         ddp_model,
         coco_dataset.caption_idx2word_list,
         coco_dataset.get_sos_token_idx(),
         coco_dataset.get_eos_token_idx(),
         coco_dataset.val_num_images,
         data_loader,
-        CocoDatasetKarpathy.ValidationSet_ID,
+        (CocoDatasetKarpathy.ValidationSet_ID if which_data == "val" else CocoDatasetKarpathy.TestSet_ID),
         model_max_len,
         rank=rank,
         parallel_batches=eval_parallel_batch_size,
@@ -436,6 +434,9 @@ def test(
     if ensemble_args.ensemble == "wa":
         score_results.append(("lambda", coeffs))
         print(score_results)
+        if os.environ.get("VERBOSE"):
+            print(pred_dict)
+            print(gts_dict)
 
 
 def launch_test(
