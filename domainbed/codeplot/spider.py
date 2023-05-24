@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 plt.rcParams["figure.figsize"] = (6, 6)
-# plt.rcParams['text.usetex'] = True
-# plt.rcParams['font.family'] = 'serif'
+plt.rcParams['text.usetex'] = True
+plt.rcParams['font.family'] = 'serif'
 plt.rcParams['font.serif'] = 'Times Roman'
 
 SIZE = "large"
@@ -46,15 +46,14 @@ class ComplexRadar():
             grid = np.linspace(*ranges[j], num=n_ring_levels,
                                endpoint=True)
             gridlabel = [
-                "{}".format(round(x, 2 if (variables[j] == '$BLEU4$' and x == 0.4238) else 3))
+                "{}".format(round(x, 3))
                 for x in grid
             ]
             gridlabel[0] = "" # remove values from the center
             lines, labels = ax.set_rgrids(grid, labels=gridlabel, angle=angles[j])
-
-            ax.set_ylim(*ranges[j])
+            ax.set_ylim(ranges[j][0], ranges[j][1])
             ax.spines["polar"].set_visible(False)
-            ax.grid(visible=False)
+            ax.grid(visible=True)
 
             if show_scales == False:
                 ax.set_yticklabels([])
@@ -85,11 +84,17 @@ class ComplexRadar():
 
         # Create the outer labels for each variable
         # print(angles)
-        angles_fixed = [angles[0], angles[1]]
-        angles_fixed.extend(angles[2:])
-        print(angles_fixed)
+        self.angles_fixed = [angles[0], angles[1]]
+        self.angles_fixed.extend(angles[2:])
+        if len(self.angles_fixed) == 5:
+            self.angles_fixed = [0.0, 76.0, 144.0, 216.0, 284.0]
+        elif len(self.angles_fixed) == 4:
+            self.angles_fixed = [0.0, 94.0, 180.0, 266.0]
+        #     self.angles_fixed.extend([90, 180, 270])
+        #     variables = [v for v in variables] + [r"$R_1$", r"$R_2$", r"$R_3$"]
+        print(self.angles_fixed)
         l, text = self.ax.set_thetagrids(
-            angles_fixed, labels=variables,
+            self.angles_fixed, labels=variables,
             color="black")
 
         # Beautify them
@@ -108,7 +113,7 @@ class ComplexRadar():
             else:
                 t.set_ha('right')
 
-        self.ax.tick_params(axis='both', pad=10)
+        self.ax.tick_params(axis='both', pad=2)
 
 
     def _scale_data(self, data, ranges):

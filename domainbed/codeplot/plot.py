@@ -307,7 +307,6 @@ def interpolate_points(val1, val2, order, label, color, marker=None, ax=None, li
                 y_smooth = val2
 
             points = np.array([x_smooth, y_smooth]).T  # a (nbre_points x nbre_dim) array
-
             # Linear length along the line:
             distance = np.cumsum(np.sqrt(np.sum(np.diff(points, axis=0)**2, axis=1)))
             distance = np.insert(distance, 0, 0) / distance[-1]
@@ -332,7 +331,8 @@ def interpolate_points(val1, val2, order, label, color, marker=None, ax=None, li
             return
         except Exception as exc:
             print(f"Failed for label: {label} because: {exc}")
-            order = "connect"
+            # import pdb; pdb.set_trace()
+            order = "2"
 
     if order == "inter1":
         x, y = x_smooth, val2
@@ -421,8 +421,8 @@ from matplotlib import cm
 import matplotlib.pyplot as plt
 
 plt.rcParams["figure.figsize"] = (6, 6)
-# plt.rcParams['text.usetex'] = True
-# plt.rcParams['font.family'] = 'serif'
+plt.rcParams['text.usetex'] = True
+plt.rcParams['font.family'] = 'serif'
 plt.rcParams['font.serif'] = 'Times Roman'
 
 MUL = 0
@@ -559,19 +559,37 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_t
             linewidth=2.5
         )
 
-    ax1.set_xlabel(_dict_key_to_label.get(key_x, key_x), fontsize=SIZE)
-    ax1.set_ylabel("Normalized rewards", fontsize=SIZE)
+    ax1.set_xlabel(_dict_key_to_label.get(key_x, key_x), fontsize=SIZE_AXIS)
+    ax1.set_ylabel("Normalized rewards", fontsize=SIZE_AXIS)
     if loc != "no":
+        # obtain the handles and labels from the figure
+        handles, labels = ax1.get_legend_handles_labels()
+        # copy the handles
+        handles = [copy.copy(ha) for ha in handles ]
+        # set the linewidths to the copies
+        if marker is not None:
+            for lgnd in handles:
+                lgnd.set_linewidth(lgnd._linewidth)
+                lgnd.set_markersize(6)
+
         fontsize = fontsize or SIZE
         if isinstance(loc, tuple):
-            legend = ax1.legend(title=legendtitle, bbox_to_anchor=loc, fontsize=fontsize)
+            legend = ax1.legend(handles=handles, labels=labels, title=legendtitle, bbox_to_anchor=loc, loc="center left", fontsize="x-large", title_fontsize="xx-large")
         else:
-            legend = ax1.legend(title=legendtitle, loc=loc, fontsize=fontsize)
-        for lgnd in legend.legendHandles:
-            lgnd.set_markersize(8)
+            legend = ax1.legend(
+                handles=handles,
+                labels=labels,
+                title=legendtitle,
+                loc=loc,
+                fontsize="x-large",
+                title_fontsize="xx-large"
+            )
+
     if title:
-        ax1.set_title(title, fontsize=SIZE)
+        ax1.set_title(title, fontdict={"fontsize": "x-large"})
     return fig
+
+TITLESIZE="xx-large"
 
 import collections
 def lambda_split(l, keysplit, lambda_filtering=None):
@@ -831,6 +849,7 @@ def plot_key(
     keyerror=None,
     title=None,
     connect_endpoints=False,
+    markersizes=None,
     fig=None,
     fontsize=None,
     kwargs={}
@@ -853,6 +872,8 @@ def plot_key(
             linewidths = [linewidths[i] for i in list_indexes]
         if markers is not None:
             markers = [markers[i] for i in list_indexes]
+        if isinstance(markersizes, list):
+            markersizes = [markersizes[i] for i in list_indexes]
     if fig is None:
         fig, ax1 = plt.subplots()
     else:
@@ -911,7 +932,7 @@ def plot_key(
         ax2.set_ylabel(_dict_key_to_label.get(key_y_2, key_y_2), fontsize=SIZE_AXIS)
 
 
-    def plot_with_int(ll, color, colormap, label, marker, linestyle, linewidth, key_y, ax, kwargs):
+    def plot_with_int(ll, color, colormap, label, marker, linestyle, linewidth, key_y, ax, markersize, kwargs):
         ll = [lll for lll in ll if lambda_filtering is None or lambda_filtering(lll)]
         t = get_x(ll, key_x)
         if t == []:
@@ -946,7 +967,8 @@ def plot_key(
                 min_s = min(kwargs["s"])
                 max_s = max(kwargs["s"])
                 kwargs["s"] = [200 * (x-min_s) / (max_s-min_s) + 5 for x in kwargs["s"]]
-
+            if markersize is not None:
+                kwargs["s"] = [markersize for x in t]
         interpolate_points(
             get_x(ll, key_x),
             get_x(ll, key_y),
@@ -992,11 +1014,18 @@ def plot_key(
             dictlinestyle_to_marker = {
                 None: "o",
                 "solid": "o",
+                "solid*": "*",
                 "dashed": "+",
                 "dotted": "*",
                 "dashdot": "x",
             }
             marker = dictlinestyle_to_marker[linestyle]
+        if linestyle == "solid*":
+            linestyle = "solid"
+        if isinstance(markersizes, list):
+            markersize = markersizes[index]
+        else:
+            markersize = markersizes
         if marker == "no":
             marker = None
         if linewidths is not None:
@@ -1004,9 +1033,22 @@ def plot_key(
         else:
             linewidth = None
         kwargs_copy = {k:v for k, v in kwargs.items()}
-        plot_with_int(l[index], color=colors[index], colormap=colormap, label=label, marker=marker, linewidth=linewidth, linestyle=linestyle, key_y=key_y, ax=ax1, kwargs=kwargs_copy)
+        plot_with_int(l[index], color=colors[index], colormap=colormap, label=label, marker=marker, linewidth=linewidth, linestyle=linestyle, key_y=key_y, ax=ax1,
+                                  markersize=markersize,
+                      kwargs=kwargs_copy)
         if key_y_2:
-            plot_with_int(l[index], color=colors[index], colormap=colormap, label=label, marker="*", linestyle="--", key_y=key_y_2, ax=ax2, kwargs=kwargs_copy)
+            plot_with_int(
+                l[index],
+                color=colors[index],
+                colormap=colormap,
+                label=label,
+                marker="*",
+                linestyle="--",
+                key_y=key_y_2,
+                ax=ax2,
+                markersize=markersize,
+                kwargs=kwargs_copy
+            )
 
     if diag:
         xpoints = ypoints = plt.xlim()
@@ -1028,14 +1070,22 @@ def plot_key(
     if key_y_2 is not None and key_y_2 in _dict_key_to_limit:
         ax2.set_ylim(_dict_key_to_limit[key_y_2])
     if loc != "no":
+        # obtain the handles and labels from the figure
+        handles, labels = ax1.get_legend_handles_labels()
+        # copy the handles
+        handles = [copy.copy(ha) for ha in handles ]
+        # set the linewidths to the copies
+        if marker is not None:
+            for lgnd in handles:
+                lgnd.set_linewidth(MULTIPLYLEGENDLINE*lgnd._linewidth)
+                lgnd.set_markersize(MULTIPLYLEGENDMARKER * 6)
+
         fontsize = fontsize or SIZE
         if isinstance(loc, tuple):
-            legend = ax1.legend(title=legendtitle, bbox_to_anchor=loc, fontsize=fontsize)
+            legend = ax1.legend(handles=handles, labels=labels, title=legendtitle, bbox_to_anchor=loc, loc="center left", fontsize=fontsize)
         else:
-            legend = ax1.legend(title=legendtitle, loc=loc, fontsize=fontsize)
-        if marker is not None:
-            for lgnd in legend.legendHandles:
-                lgnd.set_markersize(6)
+            legend = ax1.legend(handles=handles, labels=labels, title=legendtitle, loc=loc, fontsize=fontsize)
+
         # legend = ax1.get_legend()
         # if keycolor is not None:
         #     legend = ax1.get_legend()
@@ -1046,9 +1096,14 @@ def plot_key(
         ax1.title(title, fontsize=SIZE)
     return fig
 
-
+import copy
+MULTIPLYLEGENDMARKER = 2
+MULTIPLYLEGENDLINE = 2
 import os
-def save_fig(fig, name, folder="/home/rame/figures/rlwa/", do_save=True, format="pdf"):
+default_folder = "/Users/alexandrerame/code_repository/dataplace/figures/rlwa"
+# default_folder = "/home/rame/figures/rlwa/"
+
+def save_fig(fig, name, folder=default_folder, do_save=True, format="pdf"):
     name = os.path.splitext(name)[0] + "." + format
     if do_save:
         fig.savefig(
