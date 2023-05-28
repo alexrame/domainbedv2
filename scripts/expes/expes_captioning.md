@@ -15,7 +15,7 @@ https://gist.github.com/AbeHandler/54b32b77d63bd6629d4bcf4e718fd201
 # Main
 
 ```
-srun -p hard -w led --gpus-per-node=1 -t 1400 --pty bash
+srun -p hard --gpus-per-node=1 -t 1400 --pty bash
 srun -p hard -w aerosmith --gpus-per-node=1 -t 2400 --pty bash
 export DATA_DIR=/data/rame/ExpansionNet_v2/github_ignore_material
 ```
