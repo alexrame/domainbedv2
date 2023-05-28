@@ -197,7 +197,12 @@ def Featurizer(input_shape, hparams):
     elif input_shape[1:3] == (32, 32):
         return wide_resnet.Wide_ResNet(input_shape, 16, 2, 0.)
     elif input_shape[1:3] == (224, 224):
-        return ResNet(input_shape, hparams)
+        if hparams['resnet18'] and str(hparams['resnet18']) == "B_16":
+            hparams['backbone'] = hparams['resnet18']
+            from domainbed.lib import vision_transformer
+            return vision_transformer.ViT2(input_shape, hparams)
+        else:
+            return ResNet(input_shape, hparams)
     else:
         raise NotImplementedError
 
