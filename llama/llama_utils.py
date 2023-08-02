@@ -107,6 +107,9 @@ class Instructions:
     @staticmethod
     def get_input(query):
         after_input = ". ".join(query.split(Instructions.input_split)[1:]).replace("\n", " ").strip()
+        # if after_input == "":
+        #     after_input = ". ".join(query.split(Instructions.instruction_split)[1:]).replace("\n"," ").strip()
+        #     assert after_input != ""
         before_response = after_input.split(Instructions.response_split)[0]
         return before_response
 
