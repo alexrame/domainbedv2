@@ -402,6 +402,9 @@ def test(
             if num_models == 2:
                 coeff = ensemble_args.coeffs[0]
                 coeffs = [1. - coeff, coeff]
+            elif num_models == 4:
+                coeff = ensemble_args.coeffs[0]
+                coeffs = [1. - coeff, 1. - coeff, coeff, coeff]
             else:
                 coeffs = ensemble_args.coeffs
         else:
