@@ -108,6 +108,8 @@ def transform_text_summary(sentiment_pipe, post, response):
     if sentiment_pipe.model.name_or_path.startswith("Tristan/gpt2_reward_summarization"):
         return response + " " + sentiment_pipe.tokenizer.bos_token + " " + post
         # truncation=True)
+    if sentiment_pipe.model.name_or_path.startswith("valurank/distilbert-quality"):
+        return response
     raise ValueError(sentiment_pipe)
 
 

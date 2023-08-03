@@ -404,7 +404,14 @@ def test(
                 coeffs = [1. - coeff, coeff]
             elif num_models == 4:
                 coeff = ensemble_args.coeffs[0]
-                coeffs = [1. - coeff, 1. - coeff, coeff, coeff]
+                coeffs = [(1. - coeff)/2, (1. - coeff)/2, coeff/2, coeff/2]
+            else:
+                coeffs = ensemble_args.coeffs
+        elif len(ensemble_args.coeffs) == 2:
+            if num_models == 3:
+                coeffinter = ensemble_args.coeffs[0]
+                coefffixed = ensemble_args.coeffs[1]
+                coeffs = [(1. - coeffinter)*(1-coefffixed), coeffinter*(1-coefffixed), coefffixed]
             else:
                 coeffs = ensemble_args.coeffs
         else:

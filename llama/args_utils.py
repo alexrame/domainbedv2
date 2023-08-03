@@ -107,7 +107,9 @@ class DefaultArgs:
     # pipeline("text-classification", model="CogComp/bart-faithful-summary-detector", device="cpu")
     sentiment_models_summary = [
         "Tristan/gpt2_reward_summarization",
-        "CogComp/bart-faithful-summary-detector"  #  True, label mapping: "0" -> "Hallucinated" "1" -> "Faithful"
+        "CogComp/bart-faithful-summary-detector",  #  True, label mapping: "0" -> "Hallucinated" "1" -> "Faithful"
+        # "valurank/distilbert-quality",
+
     ]
 
     if os.environ.get("XXCAT", "0") == "1":
