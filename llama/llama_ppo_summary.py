@@ -110,7 +110,10 @@ def transform_text_summary(sentiment_pipe, post, response):
         # truncation=True)
     if sentiment_pipe.model.name_or_path.startswith("valurank/distilbert-quality"):
         return response
-    raise ValueError(sentiment_pipe)
+    if sentiment_pipe.model.name_or_path.startswith("cointegrated/rubert-tiny"):
+        return response
+    # raise ValueError(sentiment_pipe)
+    return response
 
 
 if __name__ == "__main__":

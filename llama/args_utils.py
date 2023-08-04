@@ -105,12 +105,23 @@ class DefaultArgs:
         ]
     # pipeline("text-classification", model="Tristan/gpt2_reward_summarization", device="cpu")
     # pipeline("text-classification", model="CogComp/bart-faithful-summary-detector", device="cpu")
-    sentiment_models_summary = [
-        "Tristan/gpt2_reward_summarization",
-        "CogComp/bart-faithful-summary-detector",  #  True, label mapping: "0" -> "Hallucinated" "1" -> "Faithful"
-        # "valurank/distilbert-quality",
-
-    ]
+    if os.environ.get("MLMS", "0") == "gpt":
+        sentiment_models_summary = [
+            "Tristan/gpt2_reward_summarization",
+            "CogComp/bart-faithful-summary-detector",  #  True, label mapping: "0" -> "Hallucinated" "1" -> "Faithful"
+            "gpt",
+        ]
+    elif os.environ.get("MLMS", "0") == "1":
+        sentiment_models_summary = [
+            "Tristan/gpt2_reward_summarization",
+            "CogComp/bart-faithful-summary-detector",  #  True, label mapping: "0" -> "Hallucinated" "1" -> "Faithful"
+            "mlms",
+        ]
+    else:
+        sentiment_models_summary = [
+            "Tristan/gpt2_reward_summarization",
+            "CogComp/bart-faithful-summary-detector",  #  True, label mapping: "0" -> "Hallucinated" "1" -> "Faithful"
+        ]
 
     if os.environ.get("XXCAT", "0") == "1":
         sentiment_models_assistant = ["theblackcat102/deberta-v2-xxlarge-rm"]

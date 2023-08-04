@@ -1,8 +1,77 @@
 import os
+import torch
+import numpy as np
+import tqdm
+
 from transformers import LlamaTokenizer
 from transformers import pipeline
 import args_utils
+from transformers import AutoModelForMaskedLM, AutoTokenizer
+from transformers import GPT2LMHeadModel, GPT2TokenizerFast
 
+class MLMS:
+    # https://stackoverflow.com/questions/70464428/how-to-calculate-perplexity-of-a-sentence-using-huggingface-masked-language-mode
+    def __init__(self):
+        model_name = 'cointegrated/rubert-tiny'
+        self.model = AutoModelForMaskedLM.from_pretrained(model_name)
+        self.model.name_or_path = "cointegrated/rubert-tiny"
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+    def __call__(self, sentence):
+        return self.score(sentence)
+
+    def score(self, sentence):
+        tensor_input = self.tokenizer.encode(sentence, return_tensors='pt')
+        repeat_input = tensor_input.repeat(tensor_input.size(-1)-2, 1)
+        mask = torch.ones(tensor_input.size(-1) - 1).diag(1)[:-2]
+        masked_input = repeat_input.masked_fill(mask == 1, self.tokenizer.mask_token_id)
+        labels = repeat_input.masked_fill( masked_input != self.tokenizer.mask_token_id, -100)
+        with torch.inference_mode():
+            loss = self.model(masked_input, labels=labels).loss
+        return np.exp(loss.item())
+
+class GPT2:
+    # https://huggingface.co/docs/transformers/perplexity
+    def __init__(self):
+        self.device = "cuda"
+        model_id = "gpt2-large"
+        self.model = GPT2LMHeadModel.from_pretrained(model_id).to(self.device)
+        self.tokenizer = GPT2TokenizerFast.from_pretrained(model_id)
+
+    def __call__(self, sentence):
+        return self.score(sentence)
+
+    def score(self, sentence):
+        encodings = self.tokenizer(sentence, return_tensors="pt")
+        max_length = self.model.config.n_positions
+        stride = 512
+        seq_len = encodings.input_ids.size(1)
+
+        nlls = []
+        prev_end_loc = 0
+        for begin_loc in tqdm(range(0, seq_len, stride)):
+            end_loc = min(begin_loc + max_length, seq_len)
+            trg_len = end_loc - prev_end_loc  # may be different from stride on last loop
+            input_ids = encodings.input_ids[:, begin_loc:end_loc].to(self.device)
+            target_ids = input_ids.clone()
+            target_ids[:, :-trg_len] = -100
+
+            with torch.no_grad():
+                outputs = self.model(input_ids, labels=target_ids)
+
+                # loss is calculated using CrossEntropyLoss which averages over valid labels
+                # N.B. the model only calculates loss over trg_len - 1 labels, because it internally shifts the labels
+                # to the left by 1.
+                neg_log_likelihood = outputs.loss
+
+            nlls.append(neg_log_likelihood)
+
+            prev_end_loc = end_loc
+            if end_loc == seq_len:
+                break
+
+        ppl = torch.exp(torch.stack(nlls).mean())
+        return ppl
 
 
 class Pipelines:
@@ -15,9 +84,13 @@ class Pipelines:
 
     @staticmethod
     def load_pipe(sentiment_model, device):
-        print(f"Load sentiment model: {sentiment_model}")
-        pipe = pipeline("text-classification", model=sentiment_model, device=device,
-                        tokenizer=Tokenizer.load_tokenizer_name(sentiment_model))
+        if sentiment_model == "mlms":
+            print("Load mlms")
+            pipe = MLMS()
+        else:
+            print(f"Load sentiment model: {sentiment_model}")
+            pipe = pipeline("text-classification", model=sentiment_model, device=device,
+                            tokenizer=Tokenizer.load_tokenizer_name(sentiment_model))
         return pipe
 
 class Tokenizer:
