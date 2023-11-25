@@ -90,7 +90,7 @@ def plot_histogram(l, labels, key, limits={}, lambda_filtering=None, list_indexe
 
     plt.gca().set_xlabel(
         dict_key_to_label.get(key, key), fontsize=SIZE_AXIS)
-    plt.gca().set_ylabel('Frequency (%)', fontsize=SIZE_AXIS)
+    plt.gca().set_ylabel('Frequency (\%)', fontsize=SIZE_AXIS)
     if key in limits:
         plt.xlim(limits[key][0], limits[key][1])
     if loc:
@@ -229,7 +229,7 @@ def plot_histogram_two(l, labels, key1, key2, limits={}, lambda_filtering=None, 
 dict_key_to_label = {
     "length": "$M$",
     "robust": "Robust Coeff",
-    "step": "# steps",
+    "step": "Number of steps",
     "acc": "$Acc(WA)$",
     # "acc": "OOD test acc.",
     "test_acc": "OOD test acc.",
@@ -444,7 +444,7 @@ SIZE="large"
 SIZE_AXIS="xx-large"
 
 
-def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_to_label="def", colors=None, colormaps=None, keycolor=None, order=0, linestyles=None, keys_error=None, loc="best", title=None, keyclustering=None,  kwargs={}, _dict_key_to_limit={}, ax1=None, lambda_filtering=None, markers=None, legendtitle=None, markersize=12, fontsize=None):
+def plot_basic_scatter(list_dict_values, key_x, keys_y, keys_y_2=None, labels=None, _dict_key_to_label="def", colors=None, colormaps=None, keycolor=None, order=0, linestyles=None, keys_error=None, loc="best", title=None, keyclustering=None,  kwargs={}, _dict_key_to_limit={}, ax1=None, lambda_filtering=None, markers=None, legendtitle=None, markersize=12, fontsize=None, y_axis_name=None, y2_axis_name=None):
     if ax1 is None:
         fig, ax1 = plt.subplots()
     else:
@@ -477,11 +477,17 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_t
     if keyclustering is not None:
         list_dict_values_means = lambda_clustering(list_dict_values, keyclustering)
 
+    ax1.set_ylabel(y_axis_name, fontsize=SIZE_AXIS)
+    ax2 = None
+    if keys_y_2 is not None:
+        ax2 = ax1.twinx()
+        ax2.set_ylabel(y2_axis_name, fontsize=SIZE_AXIS)
     if "x" in _dict_key_to_limit:
         ax1.set_xlim(_dict_key_to_limit["x"])
     if "y" in _dict_key_to_limit:
         ax1.set_ylim(_dict_key_to_limit["y"])
-
+    if "y2" in _dict_key_to_limit:
+        ax2.set_ylim(_dict_key_to_limit["y2"])
     for index in range(len(keys_y)):
         key_y = keys_y[index]
         if linestyles is not None:
@@ -511,7 +517,10 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_t
         else:
             label = labels[index]
         label = _dict_key_to_label.get(label, label)
-
+        if keys_y_2 is not None and key_y in keys_y_2:
+            ax = ax2
+        else:
+            ax = ax1
         if keys_error is not None:
             # plt.errorbar(
             #     x,
@@ -519,7 +528,7 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_t
             #     get_x(list_dict_values, keys_error[i]),
             #     color=color,
             #     label=label)
-            ax1.fill_between(
+            ax.fill_between(
                 get_x(list_dict_values_means, key_x),
                 get_x(list_dict_values_means, key_y + "-" + keys_error[index]),
                 get_x(list_dict_values_means, key_y + "+" + keys_error[index]),
@@ -528,7 +537,7 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_t
                 **kwargs)
 
         if keycolor is not None:
-            ax1.scatter(
+            ax.scatter(
                 get_x(list_dict_values, key_x),
                 get_x(list_dict_values, key_y),
                 c=get_x(list_dict_values, keycolor),
@@ -539,7 +548,7 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_t
             )
             color = cm.get_cmap(color)(0.5)
         else:
-            ax1.scatter(
+            ax.scatter(
                 get_x(list_dict_values, key_x),
                 get_x(list_dict_values, key_y),
                 color=color,
@@ -547,11 +556,13 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_t
                 s=[markersize for _ in get_x(list_dict_values, key_y)],
                 label=None if order != "nofit" else label,
             )
+        # print(key_y, order)
         interpolate_points(
             get_x(list_dict_values, key_x),
             get_x(list_dict_values, key_y),
-            order=order,
-            ax=ax1,
+            order=order if key_y != "mlms" else "5",
+            # order=order,
+            ax=ax,
             label=label,
             color=color,
             marker=marker,
@@ -560,30 +571,37 @@ def plot_basic_scatter(list_dict_values, key_x, keys_y, labels=None, _dict_key_t
         )
 
     ax1.set_xlabel(_dict_key_to_label.get(key_x, key_x), fontsize=SIZE_AXIS)
-    ax1.set_ylabel("Normalized rewards", fontsize=SIZE_AXIS)
+
     if loc != "no":
         # obtain the handles and labels from the figure
-        handles, labels = ax1.get_legend_handles_labels()
-        # copy the handles
-        handles = [copy.copy(ha) for ha in handles ]
-        # set the linewidths to the copies
-        if marker is not None:
-            for lgnd in handles:
-                lgnd.set_linewidth(lgnd._linewidth)
-                lgnd.set_markersize(6)
-
-        fontsize = fontsize or SIZE
-        if isinstance(loc, tuple):
-            legend = ax1.legend(handles=handles, labels=labels, title=legendtitle, bbox_to_anchor=loc, loc="center left", fontsize="x-large", title_fontsize="xx-large")
+        if isinstance(legendtitle, list):
+            legendtitles = legendtitle
         else:
-            legend = ax1.legend(
-                handles=handles,
-                labels=labels,
-                title=legendtitle,
-                loc=loc,
-                fontsize="x-large",
-                title_fontsize="xx-large"
-            )
+            legendtitles = [legendtitle, legendtitle]
+        for ax, loc, legendtitle in zip([ax1, ax2], [loc, "upper right"], legendtitles):
+            if ax is None:
+                continue
+            handles, labels = ax.get_legend_handles_labels()
+            # copy the handles
+            handles = [copy.copy(ha) for ha in handles ]
+            # set the linewidths to the copies
+            if marker is not None:
+                for lgnd in handles:
+                    lgnd.set_linewidth(lgnd._linewidth)
+                    lgnd.set_markersize(6)
+
+            fontsize = fontsize or SIZE
+            if isinstance(loc, tuple):
+                ax.legend(handles=handles, labels=labels, title=legendtitle, bbox_to_anchor=loc, loc="center left", fontsize="x-large", title_fontsize="xx-large")
+            else:
+                ax.legend(
+                    handles=handles,
+                    labels=labels,
+                    title=legendtitle,
+                    loc=loc,
+                    fontsize="x-large",
+                    title_fontsize="xx-large"
+                )
 
     if title:
         ax1.set_title(title, fontdict={"fontsize": "x-large"})
@@ -646,11 +664,11 @@ FORMAT_Y=0
 import matplotlib
 from matplotlib.colors import ListedColormap,LinearSegmentedColormap
 
-def get_color_from_cmap(cmp, dict_colormaps):
+def get_color_from_cmap(cmp, dict_colormaps, coeff=0.5):
     cmp = dict_colormaps.get(cmp, cmp)
     if isinstance(cmp, str) and cmp.startswith("fake_"):
         return cmp.split("_")[1]
-    return cm.get_cmap(cmp)(0.5)
+    return cm.get_cmap(cmp)(coeff)
 
 
 def create_colormaps():
